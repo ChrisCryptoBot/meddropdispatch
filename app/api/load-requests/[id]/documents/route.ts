@@ -91,7 +91,7 @@ Tracking Code: ${loadRequest.publicTrackingCode}
 Document Type: ${title}
 Uploaded: ${new Date().toLocaleString()}
 
-You can view and download this document in your shipper portal, or it is attached to this email for your records.
+You can view and download this document in your shipper portal. If you received this document via email attachment (due to a technical issue), you can also upload it to the portal yourself for your records.
 
 Route: ${loadRequest.pickupFacility.city}, ${loadRequest.pickupFacility.state} → ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}
 
@@ -136,7 +136,7 @@ Medical Courier Services
         <strong>File:</strong> ${file.name} (${(file.size / 1024).toFixed(2)} KB)
       </div>
 
-      <p>You can view and download this document in your shipper portal. The document is also attached to this email for your records.</p>
+      <p>You can view and download this document in your shipper portal. If you experience any technical issues accessing the portal, please contact support and we can email the document directly.</p>
 
       <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/shipper/loads/${id}" class="button">View Load Details</a>
 
