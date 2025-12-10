@@ -41,8 +41,12 @@ export default function ShipperLoginPage() {
           status: response.status,
           statusText: response.statusText,
           data: data,
-          fullResponse: data
+          fullResponse: data,
+          errorMessage: data?.error,
+          errorDetails: JSON.stringify(data, null, 2)
         })
+        // Expand the error object so we can see what's inside
+        console.error('Error data expanded:', data)
         setError(data.error || data.message || `Login failed (${response.status})`)
         setIsLoading(false)
         return

@@ -47,13 +47,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const passwordValid = await verifyPassword(password, shipper.passwordHash)
+    console.log('Attempting password verification...', {
+      passwordHashLength: shipper.passwordHash.length,
+      passwordHashPrefix: shipper.passwordHash.substring(0, 10)
+    })
+    
+    try {
+      const passwordValid = await verifyPassword(password, shipper.passwordHash)
+      console.log('Password verification result:', passwordValid)
 
-    if (!passwordValid) {
-      console.error('Password verification failed for email:', email.toLowerCase())
+      if (!passwordValid) {
+        console.error('Password verification failed for email:', email.toLowerCase())
+        return NextResponse.json(
+          { error: 'Invalid email or password' },
+          { status: 401 }
+        )
+      }
+    } catch (verifyError) {
+      console.error('Password verification threw an error:', verifyError)
       return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
+        { error: 'Login failed', message: verifyError instanceof Error ? verifyError.message : 'Unknown error' },
+        { status: 500 }
       )
     }
 
