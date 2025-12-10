@@ -16,8 +16,8 @@ export default function ShipperLayout({
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    // Don't check auth on login page
-    if (pathname === '/shipper/login') {
+    // Don't check auth on login or signup pages
+    if (pathname === '/shipper/login' || pathname === '/shipper/signup') {
       setIsChecking(false)
       return
     }
@@ -34,22 +34,22 @@ export default function ShipperLayout({
         setShipper(JSON.parse(shipperData))
         setIsChecking(false)
       } else {
-        // Only redirect if we're not already on login page
-        if (pathname !== '/shipper/login') {
+        // Only redirect if we're not already on login or signup page
+        if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
           router.push('/shipper/login')
         }
       }
     } catch (error) {
       console.error('Error checking shipper auth:', error)
       setIsChecking(false)
-      if (pathname !== '/shipper/login') {
+      if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
         router.push('/shipper/login')
       }
     }
   }, [pathname, router])
 
   // Show loading while checking auth
-  if (isChecking && pathname !== '/shipper/login') {
+  if (isChecking && pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -60,8 +60,8 @@ export default function ShipperLayout({
     )
   }
 
-  // Don't show layout on login page
-  if (pathname === '/shipper/login') {
+  // Don't show layout on login or signup pages
+  if (pathname === '/shipper/login' || pathname === '/shipper/signup') {
     return <>{children}</>
   }
 

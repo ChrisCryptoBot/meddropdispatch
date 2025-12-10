@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function ShipperSignupPage() {
@@ -62,7 +63,8 @@ export default function ShipperSignupPage() {
 
       // Store shipper info and redirect
       localStorage.setItem('shipper', JSON.stringify(data.shipper))
-      router.push('/shipper/dashboard')
+      // Use window.location for full page reload to ensure layout updates
+      window.location.href = '/shipper/dashboard'
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
@@ -75,12 +77,24 @@ export default function ShipperSignupPage() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
-              MED DROP
-            </h1>
+          <Link href="/" className="inline-flex flex-col items-center">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-12 h-12 flex items-center justify-center">
+                <Image
+                  src="/logo-icon.png"
+                  alt="MED DROP Logo"
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+                MED DROP
+              </h1>
+            </div>
+            <p className="text-gray-600">Join as Shipper</p>
           </Link>
-          <p className="text-gray-600">Join as Shipper</p>
         </div>
 
         {/* Signup Card */}
