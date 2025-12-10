@@ -46,8 +46,10 @@ export default function ShipperRequestLoadPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to submit request')
+        const errorData = await response.json()
+        // Prioritize user-friendly error message, fallback to details, then generic message
+        const errorMsg = errorData.error || errorData.message || errorData.details || 'Failed to submit request'
+        throw new Error(errorMsg)
       }
 
       const result = await response.json()
@@ -55,8 +57,19 @@ export default function ShipperRequestLoadPage() {
       // Redirect to shipper dashboard with success
       router.push(`/shipper/dashboard?success=true&trackingCode=${result.trackingCode}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      let errorMessage = 'Something went wrong. Please try again.'
+      
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      }
+      
+      setError(errorMessage)
       setIsSubmitting(false)
+      
+      // Log full error for debugging
+      console.error('Load request submission error:', err)
     }
   }
 
@@ -206,6 +219,28 @@ export default function ShipperRequestLoadPage() {
                 />
               </div>
 
+              <div>
+                <label htmlFor="pickupFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Facility Type *
+                </label>
+                <select
+                  id="pickupFacilityType"
+                  name="pickupFacilityType"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  defaultValue="OTHER"
+                >
+                  <option value="CLINIC">Clinic</option>
+                  <option value="LAB">Lab</option>
+                  <option value="HOSPITAL">Hospital</option>
+                  <option value="PHARMACY">Pharmacy</option>
+                  <option value="DIALYSIS">Dialysis Center</option>
+                  <option value="IMAGING">Imaging Center</option>
+                  <option value="GOVERNMENT">Government Facility</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
               <div className="md:col-span-2">
                 <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
                   Address Line 1 *
@@ -341,6 +376,28 @@ export default function ShipperRequestLoadPage() {
                   required
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="dropoffFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Facility Type *
+                </label>
+                <select
+                  id="dropoffFacilityType"
+                  name="dropoffFacilityType"
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  defaultValue="OTHER"
+                >
+                  <option value="CLINIC">Clinic</option>
+                  <option value="LAB">Lab</option>
+                  <option value="HOSPITAL">Hospital</option>
+                  <option value="PHARMACY">Pharmacy</option>
+                  <option value="DIALYSIS">Dialysis Center</option>
+                  <option value="IMAGING">Imaging Center</option>
+                  <option value="GOVERNMENT">Government Facility</option>
+                  <option value="OTHER">Other</option>
+                </select>
               </div>
 
               <div className="md:col-span-2">

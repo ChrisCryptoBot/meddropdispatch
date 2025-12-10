@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         data: {
           shipperId: shipper.id,
           name: data.pickupFacilityName,
-          facilityType: data.pickupFacilityType as any,
+          facilityType: (data.pickupFacilityType as any) || 'OTHER', // Default to 'OTHER' if not provided
           addressLine1: data.pickupAddressLine1,
           addressLine2: data.pickupAddressLine2 || null,
           city: data.pickupCity,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         data: {
           shipperId: shipper.id,
           name: data.dropoffFacilityName,
-          facilityType: data.dropoffFacilityType as any,
+          facilityType: (data.dropoffFacilityType as any) || 'OTHER', // Default to 'OTHER' if not provided
           addressLine1: data.dropoffAddressLine1,
           addressLine2: data.dropoffAddressLine2 || null,
           city: data.dropoffCity,
@@ -171,8 +171,45 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating load request:', error)
+    
+    // Extract detailed error message
+    let errorMessage = 'Failed to create load request'
+    let details = ''
+    
+    if (error instanceof Error) {
+      const errorStr = error.message || ''
+      
+      // Handle Prisma validation errors
+      if (errorStr.includes('Argument') && errorStr.includes('is missing')) {
+        const match = errorStr.match(/Argument `(\w+)` is missing/)
+        if (match) {
+          errorMessage = `Missing required field: ${match[1]}`
+          details = 'Please fill in all required fields in the form.'
+        }
+      }
+      // Handle Prisma unique constraint errors
+      else if (errorStr.includes('Unique constraint failed')) {
+        errorMessage = 'A record with this information already exists'
+        details = 'Please check that you are not creating a duplicate facility or load request.'
+      }
+      // Handle other Prisma errors
+      else if (errorStr.includes('Invalid')) {
+        errorMessage = 'Invalid data provided'
+        details = errorStr.split('Invalid')[1]?.split('\n')[0] || errorStr
+      }
+      // Generic error with details
+      else {
+        errorMessage = 'Unable to process your request'
+        details = errorStr
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create load request', message: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: errorMessage,
+        message: details || errorMessage,
+        details: error instanceof Error ? error.message : 'Unknown error occurred'
+      },
       { status: 500 }
     )
   }
