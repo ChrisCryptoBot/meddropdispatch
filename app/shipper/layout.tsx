@@ -136,7 +136,7 @@ export default function ShipperLayout({
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <aside className="w-64 glass border-r border-white/30 flex-shrink-0">
+      <aside className="w-64 glass border-r border-white/30 flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-white/30">
@@ -154,7 +154,17 @@ export default function ShipperLayout({
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href === '/shipper/dashboard' && pathname.startsWith('/shipper/dashboard'))
+              // Check if current path matches the nav item
+              const isActive = 
+                pathname === item.href || 
+                (item.href === '/shipper/dashboard' && pathname.startsWith('/shipper/dashboard')) ||
+                (item.href === '/shipper/facilities' && pathname.startsWith('/shipper/facilities')) ||
+                (item.href === '/shipper/documents' && pathname.startsWith('/shipper/documents')) ||
+                (item.href === '/shipper/settings' && pathname.startsWith('/shipper/settings')) ||
+                (item.href === '/shipper/support' && pathname.startsWith('/shipper/support')) ||
+                (item.href === '/shipper/loads' && pathname.startsWith('/shipper/loads')) ||
+                (item.href === '/track' && pathname.startsWith('/track')) ||
+                (item.href === '/request-load' && pathname.startsWith('/request-load'))
 
               return (
                 <Link
