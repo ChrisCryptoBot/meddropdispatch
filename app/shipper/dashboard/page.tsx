@@ -277,7 +277,6 @@ export default function ShipperDashboardPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   )
 }
