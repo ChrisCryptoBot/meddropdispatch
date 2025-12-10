@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Glass morphism utility */
+  .glass {
+    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+
+  .glass-dark {
+    @apply bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-glass;
+  }
+
+  /* Smooth transitions */
+  .transition-base {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-base hover:scale-[1.02] hover:shadow-glass-lg;
+  }
+
+  /* Button base styles */
+  .btn-base {
+    @apply px-4 py-2 rounded-lg font-medium transition-base;
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+}
+
+/* Animation keyframes */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Focus visible for accessibility */
+@layer base {
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

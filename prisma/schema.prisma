@@ -1,0 +1,255 @@
+// Prisma Schema for MED DROP - Medical Courier Portal
+// Database: SQLite for development (swap to PostgreSQL for production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum ClientType {
+  INDEPENDENT_PHARMACY
+  CLINIC
+  LAB
+  DIALYSIS_CENTER
+  IMAGING_CENTER
+  HOSPITAL
+  GOVERNMENT
+  OTHER
+}
+
+enum FacilityType {
+  CLINIC
+  LAB
+  HOSPITAL
+  PHARMACY
+  DIALYSIS
+  IMAGING
+  GOVERNMENT
+  OTHER
+}
+
+enum ServiceType {
+  STAT              // Immediate pickup/delivery
+  SAME_DAY          // Same-day service
+  SCHEDULED_ROUTE   // Regular scheduled route
+  OVERFLOW          // Overflow/backup service
+  GOVERNMENT        // Government contract work
+}
+
+enum SpecimenCategory {
+  UN3373_CATEGORY_B              // UN3373 Biological Substance, Category B
+  NON_SPECIMEN_MEDICAL           // Medical supplies, equipment
+  PHARMACEUTICAL_NON_CONTROLLED  // Pharmaceutical (non-controlled)
+  OTHER
+}
+
+enum TemperatureRequirement {
+  AMBIENT      // Room temperature
+  REFRIGERATED // 2-8°C
+  FROZEN       // Below 0°C
+  OTHER
+}
+
+enum LoadStatus {
+  NEW              // Submitted by shipper, not reviewed
+  QUOTED           // Price quoted to shipper
+  QUOTE_ACCEPTED   // Shipper accepted quote
+  SCHEDULED        // Scheduled with driver
+  PICKED_UP        // Picked up from origin
+  IN_TRANSIT       // En route to destination
+  DELIVERED        // Delivered to destination
+  COMPLETED        // Paperwork complete, invoiced
+  CANCELLED        // Cancelled
+}
+
+enum PreferredContactMethod {
+  PHONE
+  EMAIL
+}
+
+enum CreatedVia {
+  WEB_FORM   // Created via public web form
+  INTERNAL   // Created by admin/dispatcher
+}
+
+enum TrackingEventCode {
+  REQUEST_RECEIVED        // Initial request received
+  PRICE_QUOTED           // Price quoted to shipper
+  SHIPPER_CONFIRMED      // Shipper confirmed/accepted
+  DRIVER_EN_ROUTE_PICKUP // Driver en route to pickup
+  PICKED_UP              // Picked up from origin
+  IN_TRANSIT             // In transit
+  ARRIVED_AT_DESTINATION // Arrived at destination
+  DELIVERED              // Delivered
+  PAPERWORK_COMPLETED    // All paperwork completed
+  CANCELLED              // Load cancelled
+}
+
+enum DocumentType {
+  PROOF_OF_PICKUP   // Proof of pickup (signature, timestamp)
+  PROOF_OF_DELIVERY // Proof of delivery (signature, timestamp)
+  BILL_OF_LADING    // Bill of lading
+  OTHER             // Other documents
+}
+
+enum UserRole {
+  ADMIN       // Full access
+  DISPATCHER  // Can manage loads
+  VIEW_ONLY   // Read-only access
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+// Shipper: The client company requesting courier services
+model Shipper {
+  id          String     @id @default(cuid())
+  companyName String
+  clientType  ClientType
+  contactName String
+  phone       String
+  email       String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  facilities   Facility[]
+  loadRequests LoadRequest[]
+
+  @@index([email])
+  @@index([companyName])
+}
+
+// Facility: Pickup or dropoff locations
+model Facility {
+  id                 String       @id @default(cuid())
+  shipperId          String
+  name               String
+  facilityType       FacilityType
+  addressLine1       String
+  addressLine2       String?
+  city               String
+  state              String
+  postalCode         String
+  contactName        String
+  contactPhone       String
+  defaultAccessNotes String?      // Default access instructions for this facility
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Relations
+  shipper                 Shipper       @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  pickupLoadRequests      LoadRequest[] @relation("PickupFacility")
+  dropoffLoadRequests     LoadRequest[] @relation("DropoffFacility")
+
+  @@index([shipperId])
+}
+
+// LoadRequest: The main entity representing a courier job
+model LoadRequest {
+  id                     String                  @id @default(cuid())
+  publicTrackingCode     String                  @unique // e.g., "MED-1234-AB"
+
+  // Shipper & Facilities
+  shipperId              String
+  pickupFacilityId       String
+  dropoffFacilityId      String
+
+  // Service Details
+  serviceType            ServiceType
+  commodityDescription   String                  // What's being shipped
+  specimenCategory       SpecimenCategory
+  temperatureRequirement TemperatureRequirement
+
+  // Load Specifications (optional)
+  estimatedContainers    Int?
+  estimatedWeightKg      Float?
+  declaredValue          Float?
+
+  // Timing
+  readyTime              DateTime?               // When ready for pickup
+  deliveryDeadline       DateTime?               // Must deliver by
+
+  // Instructions & Contact
+  accessNotes            String?                 // Pickup/delivery access notes
+  preferredContactMethod PreferredContactMethod  @default(EMAIL)
+
+  // Status & Workflow
+  status                 LoadStatus              @default(NEW)
+
+  // Pricing/Quoting
+  quoteAmount            Float?
+  quoteCurrency          String                  @default("USD")
+  quoteNotes             String?                 // Internal notes about the quote
+
+  // Metadata
+  createdVia             CreatedVia              @default(WEB_FORM)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  // Relations
+  shipper         Shipper          @relation(fields: [shipperId], references: [id])
+  pickupFacility  Facility         @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
+  dropoffFacility Facility         @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
+  trackingEvents  TrackingEvent[]
+  documents       Document[]
+
+  @@index([publicTrackingCode])
+  @@index([shipperId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// TrackingEvent: UPS-style tracking checkpoints
+model TrackingEvent {
+  id            String            @id @default(cuid())
+  loadRequestId String
+  code          TrackingEventCode // Event type code
+  label         String            // Human-friendly display text (e.g., "Picked up from ABC Clinic")
+  description   String?           // Optional detailed description
+  locationText  String?           // City/facility text for display
+  createdAt     DateTime          @default(now()) // Event timestamp
+
+  // Relations
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+
+  @@index([loadRequestId])
+  @@index([createdAt])
+}
+
+// Document: Attachments for proof of pickup/delivery, BOL, etc.
+model Document {
+  id            String       @id @default(cuid())
+  loadRequestId String
+  type          DocumentType
+  title         String       // e.g., "Proof of Pickup - ABC Clinic"
+  url           String       // Storage URL (S3, etc.) - TODO: implement file upload
+  createdAt     DateTime     @default(now())
+
+  // Relations
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+
+  @@index([loadRequestId])
+}
+
+// User: Internal staff for admin access
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   // bcrypt hash
+  role         UserRole @default(DISPATCHER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
