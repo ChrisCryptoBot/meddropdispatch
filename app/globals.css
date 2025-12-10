@@ -39,7 +39,7 @@
 
   /* Text gradient */
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent;
   }
 }
 
@@ -97,7 +97,7 @@
 /* Focus visible for accessibility */
 @layer base {
   *:focus-visible {
-    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+    @apply outline-none ring-2 ring-slate-500 ring-offset-2;
   }
 }
 

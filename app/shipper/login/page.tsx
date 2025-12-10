@@ -45,12 +45,12 @@ export default function ShipperLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
               MED DROP
             </h1>
           </Link>
@@ -103,7 +103,7 @@ export default function ShipperLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-slate-600 to-slate-700 text-white py-3 rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
@@ -113,7 +113,7 @@ export default function ShipperLoginPage() {
           <div className="mt-6 text-center text-sm text-gray-600">
             <p>
               Don't have an account?{' '}
-              <Link href="/shipper/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/shipper/signup" className="text-slate-600 hover:text-slate-700 font-medium">
                 Sign up as Shipper
               </Link>
             </p>
@@ -124,11 +124,11 @@ export default function ShipperLoginPage() {
         </div>
 
         {/* Test Credentials */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-          <p className="font-semibold text-blue-900 mb-2">Test Credentials:</p>
-          <div className="text-blue-800 space-y-1">
-            <p>Email: <code className="bg-blue-100 px-2 py-0.5 rounded">acme@healthcare.com</code></p>
-            <p>Password: <code className="bg-blue-100 px-2 py-0.5 rounded">password123</code></p>
+        <div className="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-slate-900 mb-2">Test Credentials:</p>
+          <div className="text-slate-800 space-y-1">
+            <p>Email: <code className="bg-slate-100 px-2 py-0.5 rounded">acme@healthcare.com</code></p>
+            <p>Password: <code className="bg-slate-100 px-2 py-0.5 rounded">password123</code></p>
           </div>
         </div>
       </div>

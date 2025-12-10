@@ -41,12 +41,12 @@ export default function DriverLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="glass p-8 rounded-3xl">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -74,7 +74,7 @@ export default function DriverLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-lg"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-lg"
                 placeholder="driver@meddrop.com"
                 autoComplete="email"
               />
@@ -90,7 +90,7 @@ export default function DriverLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-lg"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-lg"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
@@ -99,7 +99,7 @@ export default function DriverLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-lg hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
+              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold text-lg hover:from-slate-700 hover:to-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
@@ -109,11 +109,11 @@ export default function DriverLoginPage() {
           <div className="mt-8 text-center space-y-2">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <Link href="/driver/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link href="/driver/signup" className="text-slate-600 hover:text-slate-700 font-medium">
                 Sign up as Driver
               </Link>
             </p>
-            <Link href="/" className="text-sm text-gray-600 hover:text-primary-600 transition-base inline-block">
+            <Link href="/" className="text-sm text-gray-600 hover:text-slate-600 transition-base inline-block">
               ← Back to Home
             </Link>
           </div>

@@ -86,12 +86,12 @@ export default function DriverSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="glass p-8 rounded-3xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
@@ -125,7 +125,7 @@ export default function DriverSignupPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                   />
                 </div>
 
@@ -140,7 +140,7 @@ export default function DriverSignupPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                   />
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function DriverSignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                 />
               </div>
 
@@ -171,7 +171,7 @@ export default function DriverSignupPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -186,7 +186,7 @@ export default function DriverSignupPage() {
                   name="licenseNumber"
                   value={formData.licenseNumber}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                 />
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function DriverSignupPage() {
                   name="vehicleType"
                   value={formData.vehicleType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                 >
                   <option value="">Select vehicle type</option>
                   <option value="SEDAN">Sedan</option>
@@ -225,7 +225,7 @@ export default function DriverSignupPage() {
                     name="vehicleMake"
                     value={formData.vehicleMake}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                     placeholder="Toyota"
                   />
                 </div>
@@ -240,7 +240,7 @@ export default function DriverSignupPage() {
                     name="vehicleModel"
                     value={formData.vehicleModel}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                     placeholder="Sienna"
                   />
                 </div>
@@ -259,7 +259,7 @@ export default function DriverSignupPage() {
                     onChange={handleChange}
                     min="1900"
                     max={new Date().getFullYear() + 1}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                     placeholder="2020"
                   />
                 </div>
@@ -274,7 +274,7 @@ export default function DriverSignupPage() {
                     name="vehiclePlate"
                     value={formData.vehiclePlate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                     placeholder="ABC-1234"
                   />
                 </div>
@@ -287,7 +287,7 @@ export default function DriverSignupPage() {
                   name="hasRefrigeration"
                   checked={formData.hasRefrigeration}
                   onChange={handleChange}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  className="w-4 h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
                 />
                 <label htmlFor="hasRefrigeration" className="ml-2 text-sm text-gray-700">
                   My vehicle has refrigeration capabilities
@@ -311,7 +311,7 @@ export default function DriverSignupPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                   placeholder="At least 6 characters"
                 />
               </div>
@@ -327,7 +327,7 @@ export default function DriverSignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
                 />
               </div>
             </div>
@@ -335,7 +335,7 @@ export default function DriverSignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-lg hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
+              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold text-lg hover:from-slate-700 hover:to-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
             >
               {isLoading ? 'Creating Account...' : 'Create Driver Account'}
             </button>
@@ -345,7 +345,7 @@ export default function DriverSignupPage() {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/driver/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link href="/driver/login" className="text-slate-600 hover:text-slate-700 font-medium">
                 Sign in
               </Link>
             </p>

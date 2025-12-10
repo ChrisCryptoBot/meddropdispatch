@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 antialiased">
+      <body className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 antialiased">
         {children}
       </body>
     </html>

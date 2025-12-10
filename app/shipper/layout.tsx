@@ -141,7 +141,7 @@ export default function ShipperLayout({
           {/* Logo */}
           <div className="p-6 border-b border-white/30">
             <Link href="/shipper/dashboard" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">MD</span>
               </div>
               <div>
@@ -171,9 +171,9 @@ export default function ShipperLayout({
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
-                    isActive
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-white/40'
+                        isActive
+                          ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-white/40'
                   }`}
                 >
                   {item.icon}
@@ -186,7 +186,7 @@ export default function ShipperLayout({
           {/* User Info / Logout */}
           <div className="p-4 border-t border-white/30">
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-700 rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">
                   {shipper?.companyName?.charAt(0).toUpperCase() || 'S'}
                 </span>
