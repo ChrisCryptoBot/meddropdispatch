@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function ShipperLayout({
   children,
@@ -141,8 +142,15 @@ export default function ShipperLayout({
           {/* Logo */}
           <div className="p-6 border-b border-white/30">
             <Link href="/shipper/dashboard" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">MD</span>
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Image
+                  src="/logo-icon.png"
+                  alt="MED DROP Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gradient">MED DROP</h1>

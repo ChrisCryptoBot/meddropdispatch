@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function RequestLoadPage() {
@@ -46,8 +47,15 @@ export default function RequestLoadPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">MD</span>
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Image
+                  src="/logo-icon.png"
+                  alt="MED DROP Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gradient">MED DROP</h1>

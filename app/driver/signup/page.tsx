@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function DriverSignupPage() {
@@ -91,10 +92,15 @@ export default function DriverSignupPage() {
         <div className="glass p-8 rounded-3xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
+            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+              <Image
+                src="/logo-icon.png"
+                alt="MED DROP Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+                priority
+              />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Join as Driver</h1>
             <p className="text-gray-600">Create your driver account</p>

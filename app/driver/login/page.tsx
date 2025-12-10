@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function DriverLoginPage() {
   const router = useRouter()
@@ -46,10 +47,15 @@ export default function DriverLoginPage() {
         <div className="glass p-8 rounded-3xl">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-slate-600 to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+              <Image
+                src="/logo-icon.png"
+                alt="MED DROP Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+                priority
+              />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">MED DROP</h1>
             <p className="text-gray-600">Driver Portal</p>
