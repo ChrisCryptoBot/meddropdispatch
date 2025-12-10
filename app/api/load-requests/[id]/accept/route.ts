@@ -79,7 +79,26 @@ export async function POST(
       },
     })
 
-    // Create tracking event
+    // Update the initial "Request Received" event description to reflect acceptance
+    // Find the first REQUEST_RECEIVED event and update its description
+    const initialEvent = await prisma.trackingEvent.findFirst({
+      where: {
+        loadRequestId: id,
+        code: 'REQUEST_RECEIVED',
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (initialEvent) {
+      await prisma.trackingEvent.update({
+        where: { id: initialEvent.id },
+        data: {
+          description: 'Your load request has been received and accepted by a driver.',
+        },
+      })
+    }
+
+    // Create tracking event for driver acceptance
     await prisma.trackingEvent.create({
       data: {
         loadRequestId: id,
@@ -87,6 +106,8 @@ export async function POST(
         label: `Accepted by driver: ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
         description: `Load accepted and scheduled with driver ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
         locationText: 'MED DROP Driver Portal',
+        actorType: 'DRIVER',
+        actorId: driverId,
       },
     })
 
