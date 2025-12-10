@@ -29,12 +29,6 @@ export default function HomePage() {
               >
                 Driver Login
               </Link>
-              <Link
-                href="/admin/login"
-                className="glass px-4 py-2 rounded-lg text-primary-700 hover:bg-white/60 transition-base font-medium"
-              >
-                Staff Login
-              </Link>
             </nav>
           </div>
         </div>
