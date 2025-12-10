@@ -113,8 +113,8 @@ export default function ShipperLoginPage() {
           <div className="mt-6 text-center text-sm text-gray-600">
             <p>
               Don't have an account?{' '}
-              <Link href="/request-load" className="text-blue-600 hover:text-blue-700 font-medium">
-                Request a Load
+              <Link href="/shipper/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+                Sign up as Shipper
               </Link>
             </p>
             <Link href="/" className="text-gray-500 hover:text-gray-700 mt-2 inline-block">

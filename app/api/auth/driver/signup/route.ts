@@ -1,0 +1,85 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { hashPassword } from '@/lib/auth'
+
+/**
+ * POST /api/auth/driver/signup
+ * Create a new driver account
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      licenseNumber,
+      vehicleType,
+      vehicleMake,
+      vehicleModel,
+      vehicleYear,
+      vehiclePlate,
+      hasRefrigeration,
+    } = await request.json()
+
+    // Validation
+    if (!email || !password || !firstName || !lastName || !phone) {
+      return NextResponse.json(
+        { error: 'Email, password, first name, last name, and phone are required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if driver already exists
+    const existing = await prisma.driver.findUnique({
+      where: { email: email.toLowerCase() },
+    })
+
+    if (existing) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Hash password
+    const passwordHash = await hashPassword(password)
+
+    // Create driver
+    const driver = await prisma.driver.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash,
+        firstName,
+        lastName,
+        phone,
+        licenseNumber: licenseNumber || null,
+        vehicleType: vehicleType || null,
+        vehicleMake: vehicleMake || null,
+        vehicleModel: vehicleModel || null,
+        vehicleYear: vehicleYear ? parseInt(vehicleYear) : null,
+        vehiclePlate: vehiclePlate || null,
+        hasRefrigeration: hasRefrigeration || false,
+        status: 'AVAILABLE',
+      },
+    })
+
+    // Remove password hash from response
+    const { passwordHash: _, ...driverWithoutPassword } = driver
+
+    return NextResponse.json({
+      success: true,
+      driver: driverWithoutPassword,
+      message: 'Driver account created successfully',
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Driver signup error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create account', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}
+

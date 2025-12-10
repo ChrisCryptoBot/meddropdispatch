@@ -106,8 +106,14 @@ export default function DriverLoginPage() {
           </form>
 
           {/* Footer Links */}
-          <div className="mt-8 text-center">
-            <Link href="/" className="text-sm text-gray-600 hover:text-primary-600 transition-base">
+          <div className="mt-8 text-center space-y-2">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link href="/driver/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+                Sign up as Driver
+              </Link>
+            </p>
+            <Link href="/" className="text-sm text-gray-600 hover:text-primary-600 transition-base inline-block">
               ← Back to Home
             </Link>
           </div>

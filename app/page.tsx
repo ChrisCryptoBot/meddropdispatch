@@ -40,25 +40,52 @@ export default function HomePage() {
           <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary-600 via-primary-700 to-accent-600 bg-clip-text text-transparent">
             Professional Medical<br />Courier Services
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12">
             Secure, reliable transportation for medical specimens, pharmaceuticals, and healthcare supplies.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          
+          {/* Primary CTAs */}
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
             <Link
-              href="/request-load"
-              className="glass px-8 py-4 rounded-xl text-lg font-semibold text-primary-700 hover:bg-white/60 hover-lift inline-flex items-center justify-center"
+              href="/shipper/signup"
+              className="glass px-10 py-6 rounded-2xl text-xl font-bold text-primary-700 hover:bg-white/70 hover-lift inline-flex flex-col items-center justify-center shadow-lg transition-all transform hover:scale-105"
             >
-              Request a Pickup
-              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <svg className="w-12 h-12 mb-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
+              <span>Join as Shipper</span>
+              <span className="text-sm font-normal text-gray-600 mt-1">Request pickups & track shipments</span>
             </Link>
             <Link
-              href="/track"
-              className="bg-white/60 backdrop-blur-sm px-8 py-4 rounded-xl text-lg font-semibold text-gray-700 hover:bg-white/80 hover-lift inline-flex items-center justify-center border border-white/40"
+              href="/driver/signup"
+              className="glass px-10 py-6 rounded-2xl text-xl font-bold text-accent-700 hover:bg-white/70 hover-lift inline-flex flex-col items-center justify-center shadow-lg transition-all transform hover:scale-105"
             >
-              Track Shipment
+              <svg className="w-12 h-12 mb-3 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>Join as Driver</span>
+              <span className="text-sm font-normal text-gray-600 mt-1">View loads & manage deliveries</span>
             </Link>
+          </div>
+
+          {/* Login Links */}
+          <div className="text-center">
+            <p className="text-gray-600 mb-3">Already have an account?</p>
+            <div className="flex gap-4 justify-center">
+              <Link
+                href="/shipper/login"
+                className="text-primary-600 hover:text-primary-700 font-medium underline"
+              >
+                Shipper Login
+              </Link>
+              <span className="text-gray-400">•</span>
+              <Link
+                href="/driver/login"
+                className="text-primary-600 hover:text-primary-700 font-medium underline"
+              >
+                Driver Login
+              </Link>
+            </div>
           </div>
         </div>
 
