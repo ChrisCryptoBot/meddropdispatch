@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS } from '@/lib/types'
+import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS, type LoadStatus } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
-import type { LoadStatus, TrackingEventCode } from '@prisma/client'
 
 type LoadData = any // We'll get this from the API
 
@@ -32,6 +31,10 @@ export default function AdminLoadDetailPage() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [selectedDriver, setSelectedDriver] = useState('')
   const [isAssigningDriver, setIsAssigningDriver] = useState(false)
+
+  // Invoice generation
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false)
+  const [invoice, setInvoice] = useState<any>(null)
 
   // Load data
   useEffect(() => {
@@ -60,6 +63,20 @@ export default function AdminLoadDetailPage() {
       setLoad(data)
       setQuoteAmount(data.quoteAmount?.toString() || '')
       setQuoteNotes(data.quoteNotes || '')
+      
+      // If load has an invoice, fetch it
+      if (data.invoiceId) {
+        try {
+          const invoiceResponse = await fetch(`/api/invoices/${data.invoiceId}`)
+          if (invoiceResponse.ok) {
+            const invoiceData = await invoiceResponse.json()
+            setInvoice(invoiceData.invoice)
+          }
+        } catch (err) {
+          console.error('Error fetching invoice:', err)
+        }
+      }
+      
       setIsLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data')
@@ -129,6 +146,45 @@ export default function AdminLoadDetailPage() {
     }
   }
 
+  const handleGenerateInvoice = async () => {
+    if (!load || !load.quoteAmount) {
+      alert('Load must have a quote amount to generate an invoice')
+      return
+    }
+
+    setIsGeneratingInvoice(true)
+    try {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loadRequestIds: [load.id],
+          shipperId: load.shipperId,
+          subtotal: load.quoteAmount,
+          tax: 0, // Can be adjusted later
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate invoice')
+      }
+
+      const data = await response.json()
+      setInvoice(data.invoice)
+      
+      // Refresh load data to get invoice ID
+      await fetchLoad()
+      
+      alert(`Invoice ${data.invoice.invoiceNumber} created successfully!`)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to generate invoice')
+      console.error('Error generating invoice:', err)
+    } finally {
+      setIsGeneratingInvoice(false)
+    }
+  }
+
   const handleDriverAssignment = async () => {
     if (!selectedDriver) return
 
@@ -189,8 +245,8 @@ export default function AdminLoadDetailPage() {
             <p className="text-gray-600">Manage load request and tracking</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`px-4 py-2 rounded-lg font-semibold ${LOAD_STATUS_COLORS[load.status]}`}>
-              {LOAD_STATUS_LABELS[load.status]}
+            <span className={`px-4 py-2 rounded-lg font-semibold ${LOAD_STATUS_COLORS[load.status as LoadStatus] || 'bg-gray-100 text-gray-800'}`}>
+              {LOAD_STATUS_LABELS[load.status as LoadStatus] || load.status}
             </span>
             <Link
               href={`/track/${load.publicTrackingCode}`}
@@ -469,6 +525,73 @@ export default function AdminLoadDetailPage() {
               </button>
             </form>
           </div>
+
+          {/* Invoice Generation */}
+          {(load.status === 'DELIVERED' || load.status === 'COMPLETED') && (
+            <div className="glass p-6 rounded-2xl">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice</h3>
+              {load.invoiceId ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                    <p className="text-sm text-green-800 font-medium mb-2">
+                      This load has been invoiced
+                    </p>
+                    {invoice && (
+                      <div className="space-y-1 text-sm text-gray-700">
+                        <p>Invoice #: <span className="font-mono font-bold">{invoice.invoiceNumber}</span></p>
+                        <p>Amount: <span className="font-bold">${invoice.total.toFixed(2)}</span></p>
+                        <p>Status: <span className="font-semibold">{invoice.status}</span></p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/api/invoices/${load.invoiceId}/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold hover:from-slate-700 hover:to-slate-800 transition-all text-center"
+                    >
+                      View Invoice PDF
+                    </a>
+                    <a
+                      href="/admin/invoices"
+                      className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+                    >
+                      Manage Invoices
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {!load.quoteAmount ? (
+                    <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                      <p className="text-sm text-yellow-800">
+                        Please set a quote amount before generating an invoice
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <p className="text-sm text-blue-800 font-medium mb-2">
+                          Ready to generate invoice
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          Amount: <span className="font-bold">${load.quoteAmount.toFixed(2)}</span>
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleGenerateInvoice}
+                        disabled={isGeneratingInvoice || !load.quoteAmount}
+                        className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {isGeneratingInvoice ? 'Generating Invoice...' : 'Generate Invoice'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Status Update */}
           <div className="glass p-6 rounded-2xl">

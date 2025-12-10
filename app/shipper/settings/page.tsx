@@ -8,6 +8,14 @@ export default function SettingsPage() {
   const [shipper, setShipper] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    companyName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+  })
 
   useEffect(() => {
     const shipperData = localStorage.getItem('shipper')
@@ -16,18 +24,59 @@ export default function SettingsPage() {
       return
     }
 
-    setShipper(JSON.parse(shipperData))
-    setIsLoading(false)
+    const parsed = JSON.parse(shipperData)
+    setShipper(parsed)
+    
+    // Load shipper details including billing info
+    fetchShipperDetails(parsed.id)
   }, [router])
+
+  const fetchShipperDetails = async (shipperId: string) => {
+    try {
+      const response = await fetch(`/api/shippers/${shipperId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setShipper(data.shipper)
+        setFormData({
+          companyName: data.shipper.companyName || '',
+          contactName: data.shipper.contactName || '',
+          email: data.shipper.email || '',
+          phone: data.shipper.phone || '',
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching shipper details:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSaving(true)
-    // TODO: Implement settings update API
-    setTimeout(() => {
+    
+    try {
+      const response = await fetch(`/api/shippers/${shipper?.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setShipper(data.shipper)
+        localStorage.setItem('shipper', JSON.stringify(data.shipper))
+        alert('Settings updated successfully!')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to update settings')
+      }
+    } catch (error) {
+      console.error('Error updating settings:', error)
+      alert('An error occurred while updating settings')
+    } finally {
       setIsSaving(false)
-      alert('Settings updated successfully!')
-    }, 1000)
+    }
   }
 
   if (isLoading) {
@@ -59,8 +108,10 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                defaultValue={shipper?.companyName || ''}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={formData.companyName}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                required
               />
             </div>
 
@@ -70,8 +121,10 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                defaultValue={shipper?.contactName || ''}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={formData.contactName}
+                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                required
               />
             </div>
 
@@ -81,8 +134,10 @@ export default function SettingsPage() {
               </label>
               <input
                 type="email"
-                defaultValue={shipper?.email || ''}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                required
               />
             </div>
 
@@ -92,8 +147,10 @@ export default function SettingsPage() {
               </label>
               <input
                 type="tel"
-                defaultValue={shipper?.phone || ''}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                required
               />
             </div>
           </div>
@@ -107,7 +164,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               />
             </div>
 
@@ -117,7 +174,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               />
             </div>
 
@@ -127,7 +184,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -136,12 +193,13 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               type="button"
+              onClick={() => router.back()}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
             >
               Cancel

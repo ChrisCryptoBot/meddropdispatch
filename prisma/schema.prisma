@@ -35,20 +35,33 @@ datasource db {
 
 // Shipper: The client company requesting courier services
 model Shipper {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   companyName  String
   clientType   String // ClientType enum
   contactName  String
   phone        String
-  email        String     @unique
-  passwordHash String?    // For shipper portal login
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  email        String  @unique
+  passwordHash String? // For shipper portal login
+  isActive     Boolean @default(true)
+
+  // Payment Terms & Billing
+  paymentTerms        String  @default("NET_14") // NET_7, NET_14, NET_30, INVOICE_ONLY
+  billingContactName  String?
+  billingContactEmail String?
+  billingAddressLine1 String?
+  billingAddressLine2 String?
+  billingCity         String?
+  billingState        String?
+  billingPostalCode   String?
+  stripeCustomerId    String? // Optional - only if client uses Stripe ACH
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   facilities   Facility[]
   loadRequests LoadRequest[]
+  invoices     Invoice[]
 
   @@index([email])
   @@index([companyName])
@@ -56,7 +69,7 @@ model Shipper {
 
 // Facility: Pickup or dropoff locations
 model Facility {
-  id                 String       @id @default(cuid())
+  id                 String   @id @default(cuid())
   shipperId          String
   name               String
   facilityType       String // FacilityType enum
@@ -67,90 +80,94 @@ model Facility {
   postalCode         String
   contactName        String
   contactPhone       String
-  defaultAccessNotes String?      // Default access instructions for this facility
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  defaultAccessNotes String? // Default access instructions for this facility
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
-  shipper                 Shipper       @relation(fields: [shipperId], references: [id], onDelete: Cascade)
-  pickupLoadRequests      LoadRequest[] @relation("PickupFacility")
-  dropoffLoadRequests     LoadRequest[] @relation("DropoffFacility")
+  shipper             Shipper       @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  pickupLoadRequests  LoadRequest[] @relation("PickupFacility")
+  dropoffLoadRequests LoadRequest[] @relation("DropoffFacility")
 
   @@index([shipperId])
 }
 
 // LoadRequest: The main entity representing a courier job
 model LoadRequest {
-  id                     String                  @id @default(cuid())
-  publicTrackingCode     String                  @unique // e.g., "MED-1234-AB"
+  id                 String @id @default(cuid())
+  publicTrackingCode String @unique // e.g., "MED-1234-AB"
 
   // Shipper & Facilities
-  shipperId              String
-  pickupFacilityId       String
-  dropoffFacilityId      String
+  shipperId         String
+  pickupFacilityId  String
+  dropoffFacilityId String
 
   // Service Details
   serviceType            String // ServiceType enum
-  commodityDescription   String                  // What's being shipped
+  commodityDescription   String // What's being shipped
   specimenCategory       String // SpecimenCategory enum
   temperatureRequirement String // TemperatureRequirement enum
 
   // Load Specifications (optional)
-  estimatedContainers    Int?
-  estimatedWeightKg      Float?
-  declaredValue          Float?
+  estimatedContainers Int?
+  estimatedWeightKg   Float?
+  declaredValue       Float?
 
   // Timing
-  readyTime              DateTime?               // When ready for pickup
-  deliveryDeadline       DateTime?               // Must deliver by
+  readyTime        DateTime? // When ready for pickup
+  deliveryDeadline DateTime? // Must deliver by
 
   // Instructions & Contact
-  accessNotes            String?                 // Pickup/delivery access notes
-  preferredContactMethod String                  @default("EMAIL") // PreferredContactMethod enum
+  accessNotes            String? // Pickup/delivery access notes
+  preferredContactMethod String  @default("EMAIL") // PreferredContactMethod enum
 
   // Status & Workflow
-  status                 String                  @default("NEW") // LoadStatus enum
+  status String @default("NEW") // LoadStatus enum
 
   // Driver Assignment
-  driverId              String?                 // Assigned driver
-  assignedAt            DateTime?               // When assigned to driver
-  acceptedByDriverAt    DateTime?               // When driver accepted
+  driverId           String? // Assigned driver
+  assignedAt         DateTime? // When assigned to driver
+  acceptedByDriverAt DateTime? // When driver accepted
 
   // Signatures & Compliance
-  pickupSignature       String?                 // Base64 signature image
-  pickupSignerName      String?                 // Who signed at pickup
-  deliverySignature     String?                 // Base64 signature image
-  deliverySignerName    String?                 // Who signed at delivery
+  pickupSignature    String? // Base64 signature image
+  pickupSignerName   String? // Who signed at pickup
+  deliverySignature  String? // Base64 signature image
+  deliverySignerName String? // Who signed at delivery
 
   // Temperature Tracking
-  pickupTemperature     Float?                  // Temperature at pickup (°C)
-  deliveryTemperature   Float?                  // Temperature at delivery (°C)
+  pickupTemperature   Float? // Temperature at pickup (°C)
+  deliveryTemperature Float? // Temperature at delivery (°C)
 
   // Actual Timing
-  actualPickupTime      DateTime?               // Actual pickup timestamp
-  actualDeliveryTime    DateTime?               // Actual delivery timestamp
+  actualPickupTime   DateTime? // Actual pickup timestamp
+  actualDeliveryTime DateTime? // Actual delivery timestamp
 
   // Pricing/Quoting
-  quoteAmount           Float?
-  quoteCurrency         String                  @default("USD")
-  quoteNotes            String?                 // Internal notes about the quote
-  quoteAcceptedAt       DateTime?               // When shipper accepted quote
+  quoteAmount     Float?
+  quoteCurrency   String    @default("USD")
+  quoteNotes      String? // Internal notes about the quote
+  quoteAcceptedAt DateTime? // When shipper accepted quote
+
+  // Invoice Linking
+  invoiceId  String? // Link to invoice when billed
+  invoicedAt DateTime? // When invoice was generated
 
   // Metadata
-  createdVia            String                  @default("WEB_FORM") // CreatedVia enum
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
+  createdVia String   @default("WEB_FORM") // CreatedVia enum
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  shipper         Shipper          @relation(fields: [shipperId], references: [id])
-  pickupFacility  Facility         @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
-  dropoffFacility Facility         @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
-  driver          Driver?          @relation(fields: [driverId], references: [id])
+  shipper         Shipper         @relation(fields: [shipperId], references: [id])
+  pickupFacility  Facility        @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
+  dropoffFacility Facility        @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
+  driver          Driver?         @relation(fields: [driverId], references: [id])
+  invoice         Invoice?        @relation(fields: [invoiceId], references: [id])
   trackingEvents  TrackingEvent[]
   documents       Document[]
 
   @@index([driverId])
-
   @@index([publicTrackingCode])
   @@index([shipperId])
   @@index([status])
@@ -159,13 +176,13 @@ model LoadRequest {
 
 // TrackingEvent: UPS-style tracking checkpoints
 model TrackingEvent {
-  id            String            @id @default(cuid())
+  id            String   @id @default(cuid())
   loadRequestId String
   code          String // TrackingEventCode enum - Event type code
-  label         String            // Human-friendly display text (e.g., "Picked up from ABC Clinic")
-  description   String?           // Optional detailed description
-  locationText  String?           // City/facility text for display
-  createdAt     DateTime          @default(now()) // Event timestamp
+  label         String // Human-friendly display text (e.g., "Picked up from ABC Clinic")
+  description   String? // Optional detailed description
+  locationText  String? // City/facility text for display
+  createdAt     DateTime @default(now()) // Event timestamp
 
   // Relations
   loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
@@ -176,15 +193,15 @@ model TrackingEvent {
 
 // Document: Attachments for proof of pickup/delivery, BOL, etc.
 model Document {
-  id            String       @id @default(cuid())
+  id            String   @id @default(cuid())
   loadRequestId String
   type          String // DocumentType enum
-  title         String       // e.g., "Proof of Pickup - ABC Clinic"
-  url           String       // Storage URL (S3, etc.) or base64 data
-  mimeType      String?      // MIME type (image/jpeg, application/pdf, etc.)
-  fileSize      Int?         // File size in bytes
-  uploadedBy    String?      // User ID or "driver" or "shipper"
-  createdAt     DateTime     @default(now())
+  title         String // e.g., "Proof of Pickup - ABC Clinic"
+  url           String // Storage URL (S3, etc.) or base64 data
+  mimeType      String? // MIME type (image/jpeg, application/pdf, etc.)
+  fileSize      Int? // File size in bytes
+  uploadedBy    String? // User ID or "driver" or "shipper"
+  createdAt     DateTime @default(now())
 
   // Relations
   loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
@@ -192,43 +209,83 @@ model Document {
   @@index([loadRequestId])
 }
 
-// Driver: Courier drivers
-model Driver {
-  id                 String        @id @default(cuid())
-  firstName          String
-  lastName           String
-  email              String        @unique
-  phone              String
-  passwordHash       String        // bcrypt hash
+// Invoice: Billing invoices for completed loads
+model Invoice {
+  id            String @id @default(cuid())
+  invoiceNumber String @unique // Internal invoice number (e.g., "INV-2024-001")
 
-  // Driver Details
-  licenseNumber      String?       // Driver's license number
-  licenseExpiry      DateTime?     // License expiration date
-  status             String        @default("AVAILABLE") // DriverStatus enum
+  // Billing Details
+  shipperId   String
+  invoiceDate DateTime @default(now())
+  dueDate     DateTime // Calculated based on payment terms
 
-  // Vehicle Information
-  vehicleType        String?       // VehicleType enum
-  vehicleMake        String?
-  vehicleModel       String?
-  vehicleYear        Int?
-  vehiclePlate       String?
-  hasRefrigeration   Boolean       @default(false)
+  // Amounts
+  subtotal Float // Service amount before tax
+  tax      Float @default(0) // Tax amount
+  total    Float // Total amount due
 
-  // Training & Certifications
-  un3373Certified    Boolean       @default(false)
-  un3373ExpiryDate   DateTime?
-  hipaaTrainingDate  DateTime?
+  // Status Tracking
+  status           String    @default("DRAFT") // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  sentAt           DateTime? // When invoice was emailed
+  paidAt           DateTime? // When payment was received
+  paymentMethod    String? // ACH, CHECK, WIRE, STRIPE_ACH, OTHER
+  paymentReference String? // Check number, ACH confirmation, transaction ID, etc.
+  notes            String? // Internal notes about payment
 
-  // Employment
-  hiredDate          DateTime?
-  emergencyContact   String?
-  emergencyPhone     String?
+  // Optional Stripe Integration (secondary, not primary)
+  stripeInvoiceId String? // Stripe invoice ID if using Stripe (optional)
 
   // Relations
-  loadRequests       LoadRequest[]
+  shipper      Shipper       @relation(fields: [shipperId], references: [id])
+  loadRequests LoadRequest[] // Many loads can be on one invoice
 
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shipperId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([invoiceNumber])
+  @@index([invoiceDate])
+}
+
+// Driver: Courier drivers
+model Driver {
+  id           String @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String @unique
+  phone        String
+  passwordHash String // bcrypt hash
+
+  // Driver Details
+  licenseNumber String? // Driver's license number
+  licenseExpiry DateTime? // License expiration date
+  status        String    @default("AVAILABLE") // DriverStatus enum
+
+  // Vehicle Information
+  vehicleType      String? // VehicleType enum
+  vehicleMake      String?
+  vehicleModel     String?
+  vehicleYear      Int?
+  vehiclePlate     String?
+  hasRefrigeration Boolean @default(false)
+
+  // Training & Certifications
+  un3373Certified   Boolean   @default(false)
+  un3373ExpiryDate  DateTime?
+  hipaaTrainingDate DateTime?
+
+  // Employment
+  hiredDate        DateTime?
+  emergencyContact String?
+  emergencyPhone   String?
+
+  // Relations
+  loadRequests LoadRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([status])
@@ -239,7 +296,7 @@ model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
-  passwordHash String   // bcrypt hash
+  passwordHash String // bcrypt hash
   role         String   @default("DISPATCHER") // UserRole enum
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

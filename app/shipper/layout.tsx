@@ -119,6 +119,15 @@ export default function ShipperLayout({
         </svg>
       ),
     },
+    {
+      name: 'Invoices',
+      href: '/shipper/invoices',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm5 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+        </svg>
+      ),
+    },
   ]
 
   return (
@@ -247,6 +256,7 @@ export default function ShipperLayout({
                 (item.href === '/shipper/dashboard' && pathname.startsWith('/shipper/dashboard')) ||
                 (item.href === '/shipper/facilities' && pathname.startsWith('/shipper/facilities')) ||
                 (item.href === '/shipper/documents' && pathname.startsWith('/shipper/documents')) ||
+                (item.href === '/shipper/invoices' && pathname.startsWith('/shipper/invoices')) ||
                 (item.href === '/shipper/settings' && pathname.startsWith('/shipper/settings')) ||
                 (item.href === '/shipper/support' && pathname.startsWith('/shipper/support')) ||
                 (item.href === '/shipper/loads' && pathname.startsWith('/shipper/loads')) ||
