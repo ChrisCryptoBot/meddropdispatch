@@ -18,18 +18,6 @@ export default function HomePage() {
             </div>
             <nav className="hidden md:flex items-center space-x-6">
               <Link
-                href="/request-load"
-                className="text-gray-700 hover:text-primary-600 transition-base font-medium"
-              >
-                Request a Load
-              </Link>
-              <Link
-                href="/track"
-                className="text-gray-700 hover:text-primary-600 transition-base font-medium"
-              >
-                Track Shipment
-              </Link>
-              <Link
                 href="/admin/login"
                 className="glass px-4 py-2 rounded-lg text-primary-700 hover:bg-white/60 transition-base font-medium"
               >
