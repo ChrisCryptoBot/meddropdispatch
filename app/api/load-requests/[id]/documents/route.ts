@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { createHash } from 'crypto'
 
 /**
  * POST /api/load-requests/[id]/documents
@@ -40,6 +41,9 @@ export async function POST(
     const buffer = Buffer.from(arrayBuffer)
     const base64 = buffer.toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
+    
+    // Calculate SHA-256 hash for immutability marker
+    const fileHash = createHash('sha256').update(buffer).digest('hex')
 
     // Get load request with shipper info for email
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -87,6 +91,7 @@ export async function POST(
         url: dataUrl, // Stored as base64 data URL
         mimeType: file.type,
         fileSize: file.size,
+        fileHash: fileHash, // SHA-256 hash for immutability verification
         uploadedBy: uploadedBy || 'unknown',
         isLocked: isLocked,
         lockedAt: lockedAt,

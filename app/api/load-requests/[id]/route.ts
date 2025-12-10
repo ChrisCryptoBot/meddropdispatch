@@ -81,6 +81,11 @@ export async function PATCH(
       } else {
         updateData.pickupTempException = false
       }
+      
+      // Set temperature timestamp if recording temperature
+      if (data.pickupTemperature !== null && data.pickupTempRecordedAt === undefined) {
+        updateData.pickupTempRecordedAt = new Date()
+      }
     }
 
     // Check delivery temperature
@@ -94,6 +99,11 @@ export async function PATCH(
       } else {
         updateData.deliveryTempException = false
       }
+      
+      // Set temperature timestamp if recording temperature
+      if (data.deliveryTemperature !== null && data.deliveryTempRecordedAt === undefined) {
+        updateData.deliveryTempRecordedAt = new Date()
+      }
     }
 
     // Set attestation timestamps
@@ -102,6 +112,21 @@ export async function PATCH(
     }
     if (data.deliveryAttested === true) {
       updateData.deliveryAttestedAt = new Date()
+    }
+    
+    // Check for late delivery when actualDeliveryTime is set
+    if (data.actualDeliveryTime) {
+      const deliveryTime = new Date(data.actualDeliveryTime)
+      // Need to get deadline from current load
+      const loadWithDeadline = await prisma.loadRequest.findUnique({
+        where: { id },
+        select: { deliveryDeadline: true }
+      })
+      
+      if (loadWithDeadline?.deliveryDeadline && deliveryTime > loadWithDeadline.deliveryDeadline) {
+        updateData.lateDeliveryFlag = true
+        // Note: lateDeliveryReasonNotes should be provided separately or admin can add later
+      }
     }
 
     // Update load request
@@ -112,6 +137,8 @@ export async function PATCH(
         // Convert ISO strings to Date objects if present
         actualPickupTime: data.actualPickupTime ? new Date(data.actualPickupTime) : undefined,
         actualDeliveryTime: data.actualDeliveryTime ? new Date(data.actualDeliveryTime) : undefined,
+        pickupTempRecordedAt: data.pickupTempRecordedAt ? new Date(data.pickupTempRecordedAt) : (updateData.pickupTempRecordedAt || undefined),
+        deliveryTempRecordedAt: data.deliveryTempRecordedAt ? new Date(data.deliveryTempRecordedAt) : (updateData.deliveryTempRecordedAt || undefined),
       }
     })
 

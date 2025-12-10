@@ -27,6 +27,8 @@ datasource db {
 // UserRole: ADMIN, DISPATCHER, VIEW_ONLY
 // DriverStatus: AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
 // VehicleType: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
+// CancellationReason: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
+// CancellationBillingRule: BILLABLE, PARTIAL, NOT_BILLABLE
 // ============================================================================
 
 // ============================================================================
@@ -132,8 +134,10 @@ model LoadRequest {
   // Signatures & Compliance
   pickupSignature    String? // Base64 signature image
   pickupSignerName   String? // Who signed at pickup
+  pickupSignatureDriverId String? // Driver ID who captured pickup signature (explicit for legal coverage)
   deliverySignature  String? // Base64 signature image
   deliverySignerName String? // Who signed at delivery
+  deliverySignatureDriverId String? // Driver ID who captured delivery signature (explicit for legal coverage)
   pickupAttested     Boolean @default(false) // Driver attestation checkbox at pickup
   pickupAttestedAt   DateTime? // When attestation was given
   deliveryAttested   Boolean @default(false) // Driver attestation checkbox at delivery
@@ -143,7 +147,9 @@ model LoadRequest {
 
   // Temperature Tracking
   pickupTemperature   Float? // Temperature at pickup (°C)
+  pickupTempRecordedAt DateTime? // Precise timestamp when pickup temperature was recorded
   deliveryTemperature Float? // Temperature at delivery (°C)
+  deliveryTempRecordedAt DateTime? // Precise timestamp when delivery temperature was recorded
   temperatureMin      Float? // Minimum acceptable temperature (°C)
   temperatureMax      Float? // Maximum acceptable temperature (°C)
   pickupTempException Boolean @default(false) // Flag if out of range at pickup
@@ -153,6 +159,8 @@ model LoadRequest {
   // Actual Timing
   actualPickupTime   DateTime? // Actual pickup timestamp
   actualDeliveryTime DateTime? // Actual delivery timestamp
+  lateDeliveryFlag   Boolean @default(false) // Flag if delivery was after deadline
+  lateDeliveryReasonNotes String? // Explanation for late delivery
 
   // Pricing/Quoting
   quoteAmount     Float?
@@ -163,6 +171,13 @@ model LoadRequest {
   // Invoice Linking
   invoiceId  String? // Link to invoice when billed
   invoicedAt DateTime? // When invoice was generated
+
+  // Cancellation Tracking
+  cancellationReason String? // CancellationReason enum: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
+  cancelledBy String? // Who cancelled: "SHIPPER", "ADMIN", "DRIVER", "SYSTEM"
+  cancelledById String? // User/Shipper/Driver ID who cancelled
+  cancelledAt DateTime? // When load was cancelled
+  cancellationBillingRule String? // Billing rule: "BILLABLE", "PARTIAL", "NOT_BILLABLE"
 
   // Metadata
   createdVia String   @default("WEB_FORM") // CreatedVia enum

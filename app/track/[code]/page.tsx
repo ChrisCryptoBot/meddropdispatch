@@ -81,8 +81,8 @@ export default async function TrackingDetailPage({
               </h2>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`px-4 py-2 rounded-lg font-semibold text-sm ${LOAD_STATUS_COLORS[load.status]}`}>
-                {LOAD_STATUS_LABELS[load.status]}
+              <span className={`px-4 py-2 rounded-lg font-semibold text-sm ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS] || 'bg-gray-100 text-gray-800'}`}>
+                {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS] || load.status}
               </span>
             </div>
           </div>
