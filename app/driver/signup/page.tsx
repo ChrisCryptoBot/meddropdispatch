@@ -78,7 +78,8 @@ export default function DriverSignupPage() {
 
       // Store driver info and redirect
       localStorage.setItem('driver', JSON.stringify(data.driver))
-      router.push('/driver/dashboard')
+      // Use window.location for full page reload to ensure layout updates
+      window.location.href = '/driver/dashboard'
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
