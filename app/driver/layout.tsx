@@ -107,7 +107,7 @@ export default function DriverLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header - Same as Homepage */}
-      <header className="glass sticky top-0 z-50 border-b border-white/30">
+      <header className="glass sticky top-0 z-50 border-b border-white/30 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -162,9 +162,9 @@ export default function DriverLayout({
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 73px)' }}>
         {/* Sidebar */}
-        <aside className="w-64 glass border-r border-white/30 flex-shrink-0 overflow-y-auto">
+        <aside className="w-64 glass border-r border-white/30 flex-shrink-0 overflow-y-auto h-full">
           <div className="flex flex-col h-full">
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2">
