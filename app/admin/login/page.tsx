@@ -24,17 +24,24 @@ export default function AdminLoginPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Login failed')
+        const errorData = await response.json()
+        throw new Error(errorData.error || errorData.message || 'Login failed')
       }
 
-      const { user } = await response.json()
+      const data = await response.json()
+
+      if (!data.user) {
+        throw new Error('Invalid response from server')
+      }
 
       // Store user info in localStorage (in production, use httpOnly cookies/sessions)
-      localStorage.setItem('admin', JSON.stringify(user))
+      localStorage.setItem('admin', JSON.stringify(data.user))
 
+      // Redirect to dashboard
       router.push('/admin/loads')
+      router.refresh()
     } catch (err) {
+      console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')
       setIsLoading(false)
     }
