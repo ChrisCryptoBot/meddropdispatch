@@ -191,14 +191,6 @@ export default function HomePage() {
                     </div>
                   </li>
                 </ul>
-                <div className="mt-8">
-                  <Link
-                    href="/shipper/signup"
-                    className="inline-block px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-800 text-white rounded-xl font-semibold hover:from-slate-700 hover:to-slate-900 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    Get Started as Shipper →
-                  </Link>
-                </div>
               </div>
 
               {/* Driver Benefits */}
@@ -260,14 +252,6 @@ export default function HomePage() {
                     </div>
                   </li>
                 </ul>
-                <div className="mt-8">
-                  <Link
-                    href="/driver/signup"
-                    className="inline-block px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-800 text-white rounded-xl font-semibold hover:from-slate-700 hover:to-slate-900 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    Get Started as Driver →
-                  </Link>
-                </div>
               </div>
             </div>
           </div>
@@ -372,32 +356,6 @@ export default function HomePage() {
                   <p className="text-sm text-gray-600">Refrigerated and frozen transport available</p>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA Section */}
-        <section className="py-20 bg-gradient-to-br from-slate-100/50 via-neutral-100/50 to-stone-100/50 border-t border-white/30">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Ready to Get Started?
-            </h3>
-            <p className="text-xl text-gray-600 mb-10">
-              Join MED DROP today and experience professional medical courier services
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link
-                href="/shipper/signup"
-                className="px-10 py-5 bg-gradient-to-r from-slate-600 to-slate-800 text-white rounded-xl font-bold text-lg hover:from-slate-700 hover:to-slate-900 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
-              >
-                Sign Up as Shipper
-              </Link>
-              <Link
-                href="/driver/signup"
-                className="px-10 py-5 glass border-2 border-slate-600 text-slate-700 rounded-xl font-bold text-lg hover:bg-white/70 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
-              >
-                Sign Up as Driver
-              </Link>
             </div>
           </div>
         </section>
