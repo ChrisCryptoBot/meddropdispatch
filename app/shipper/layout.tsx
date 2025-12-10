@@ -163,8 +163,8 @@ export default function ShipperLayout({
                 (item.href === '/shipper/settings' && pathname.startsWith('/shipper/settings')) ||
                 (item.href === '/shipper/support' && pathname.startsWith('/shipper/support')) ||
                 (item.href === '/shipper/loads' && pathname.startsWith('/shipper/loads')) ||
-                (item.href === '/track' && pathname.startsWith('/track')) ||
-                (item.href === '/request-load' && pathname.startsWith('/request-load'))
+                (item.href === '/shipper/tracking' && pathname.startsWith('/shipper/tracking')) ||
+                (item.href === '/shipper/request-load' && pathname.startsWith('/shipper/request-load'))
 
               return (
                 <Link
