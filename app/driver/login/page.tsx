@@ -124,6 +124,15 @@ export default function DriverLoginPage() {
             </Link>
           </div>
         </div>
+
+        {/* Test Credentials */}
+        <div className="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-slate-900 mb-2">Test Credentials:</p>
+          <div className="text-slate-800 space-y-1">
+            <p>Email: <code className="bg-slate-100 px-2 py-0.5 rounded">driver@meddrop.com</code></p>
+            <p>Password: <code className="bg-slate-100 px-2 py-0.5 rounded">driver123</code></p>
+          </div>
+        </div>
       </div>
     </div>
   )
