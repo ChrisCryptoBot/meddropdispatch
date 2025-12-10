@@ -3,26 +3,36 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/drivers/[id]/loads
- * Get all loads assigned to a specific driver
+ * Get all loads - all drivers see the same load board
+ * Shows all active loads regardless of assignment
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    await params // Driver ID not used - all drivers see all loads
 
+    // Return all active loads (excluding cancelled and completed)
     const loads = await prisma.loadRequest.findMany({
       where: {
-        driverId: id,
         status: {
-          in: ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED']
+          notIn: ['CANCELLED', 'COMPLETED']
         }
       },
       include: {
         shipper: true,
         pickupFacility: true,
         dropoffFacility: true,
+        driver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            vehicleType: true,
+          }
+        },
         trackingEvents: {
           orderBy: { createdAt: 'desc' },
           take: 5
@@ -31,7 +41,8 @@ export async function GET(
       },
       orderBy: [
         { status: 'asc' }, // Active loads first
-        { readyTime: 'asc' } // Then by ready time
+        { readyTime: 'asc' }, // Then by ready time
+        { createdAt: 'desc' } // Most recent first
       ]
     })
 

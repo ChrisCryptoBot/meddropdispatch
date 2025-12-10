@@ -144,7 +144,7 @@ export default function DriverDashboardPage() {
 
         {/* Loads List */}
         <div className="mb-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Your Assigned Loads</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Available Loads</h3>
 
           {isLoading ? (
             <div className="glass p-8 rounded-2xl text-center">
@@ -156,8 +156,8 @@ export default function DriverDashboardPage() {
               <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
               </svg>
-              <p className="text-lg font-medium text-gray-700 mb-2">No assigned loads</p>
-              <p className="text-sm text-gray-500">Check back later for new assignments</p>
+              <p className="text-lg font-medium text-gray-700 mb-2">No loads available</p>
+              <p className="text-sm text-gray-500">New requests will appear here as they come in</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -174,6 +174,11 @@ export default function DriverDashboardPage() {
                         {load.publicTrackingCode}
                       </p>
                       <p className="text-sm text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
+                      {load.driver && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Driver: {load.driver.firstName} {load.driver.lastName}
+                        </p>
+                      )}
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
                       {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS]}
