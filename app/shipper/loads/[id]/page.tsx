@@ -146,7 +146,7 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading load details...</p>
@@ -157,7 +157,7 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
 
   if (!load) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Load not found</p>
           <Link href="/shipper/dashboard" className="text-blue-600 hover:text-blue-700">
@@ -169,7 +169,7 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="p-8">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

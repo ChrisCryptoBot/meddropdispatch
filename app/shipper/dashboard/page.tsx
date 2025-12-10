@@ -60,10 +60,6 @@ export default function ShipperDashboardPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('shipper')
-    router.push('/shipper/login')
-  }
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -122,57 +118,39 @@ export default function ShipperDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                MED DROP
-              </h1>
-              <p className="text-sm text-gray-600">Welcome back, {shipper?.companyName}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="p-8">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="glass rounded-xl p-6">
             <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</div>
             <div className="text-sm text-gray-600">Total Loads</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+          <div className="glass rounded-xl p-6">
             <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pending}</div>
             <div className="text-sm text-gray-600">Pending Quotes</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+          <div className="glass rounded-xl p-6">
             <div className="text-3xl font-bold text-blue-600 mb-1">{stats.active}</div>
             <div className="text-sm text-gray-600">Active Shipments</div>
           </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+          <div className="glass rounded-xl p-6">
             <div className="text-3xl font-bold text-green-600 mb-1">{stats.completed}</div>
             <div className="text-sm text-gray-600">Completed</div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">My Loads</h2>
-          <Link
-            href="/request-load"
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all text-sm"
-          >
-            + New Load Request
-          </Link>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-4xl font-bold text-gray-900">My Loads</h1>
+            <Link
+              href="/request-load"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              + New Load Request
+            </Link>
+          </div>
+          <p className="text-gray-600">Manage and track all your shipment requests</p>
         </div>
 
         {/* Filters */}
@@ -188,8 +166,8 @@ export default function ShipperDashboardPage() {
               onClick={() => setFilter(key)}
               className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 filter === key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/80 text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                  : 'glass text-gray-700 hover:bg-white/60'
               }`}
             >
               {label}
@@ -199,15 +177,20 @@ export default function ShipperDashboardPage() {
 
         {/* Loads List */}
         {filteredLoads.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-12 text-center border border-gray-200">
-            <div className="text-gray-400 text-5xl mb-4">📦</div>
-            <p className="text-gray-600 mb-4">
+          <div className="glass rounded-2xl p-12 text-center">
+            <div className="text-gray-400 text-6xl mb-4">📦</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
               {filter === 'all' ? 'No load requests yet' : `No ${filter} loads`}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filter === 'all' 
+                ? 'Get started by creating your first shipment request' 
+                : 'There are no loads matching this filter'}
             </p>
             {filter === 'all' && (
               <Link
                 href="/request-load"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
               >
                 Create Your First Load
               </Link>
@@ -219,7 +202,7 @@ export default function ShipperDashboardPage() {
               <Link
                 key={load.id}
                 href={`/shipper/loads/${load.id}`}
-                className="block bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all"
+                className="block glass rounded-xl p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
