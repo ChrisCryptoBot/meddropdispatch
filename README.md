@@ -75,13 +75,23 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 👤 Creating Users
+## 👤 Creating Your First Admin User
 
-The application requires real user data. Create users through the admin interface or by adding them directly to the database:
+Before you can access the admin portal, you need to create an admin user:
 
-- **Admin Users**: Create via Prisma Studio or direct database access
-- **Drivers**: Add through admin portal or database
-- **Shippers**: Register through the public request form or admin portal
+```bash
+# Create admin with default credentials (admin@meddrop.com / admin123)
+npm run create:admin
+
+# Or create with custom credentials
+npm run create:admin your-email@example.com your-password "Your Name"
+```
+
+Then login at http://localhost:3000/admin/login
+
+**Creating Other Users:**
+- **Drivers**: Add through admin portal (after logging in)
+- **Shippers**: Register through the public request form (will be created automatically)
 
 ## 📁 Project Structure
 

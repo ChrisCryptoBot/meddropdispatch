@@ -30,7 +30,7 @@ export default function HomePage() {
                 Track Shipment
               </Link>
               <Link
-                href="/admin"
+                href="/admin/login"
                 className="glass px-4 py-2 rounded-lg text-primary-700 hover:bg-white/60 transition-base font-medium"
               >
                 Staff Login
