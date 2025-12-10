@@ -13,7 +13,7 @@ async function main() {
   const password = process.argv[3] || 'shipper123'
   const companyName = process.argv[4] || 'Test Medical Clinic'
 
-  console.log('🚚 Creating shipper account...')
+  console.log('Creating shipper account...')
   console.log(`Email: ${email}`)
   console.log(`Company: ${companyName}`)
   console.log(`Password: ${password}`)
@@ -26,7 +26,7 @@ async function main() {
     })
 
     if (existing) {
-      console.log('⚠️  Shipper already exists. Updating password and info...')
+      console.log('WARNING: Shipper already exists. Updating password and info...')
       await prisma.shipper.update({
         where: { email: email.toLowerCase() },
         data: {
@@ -38,7 +38,7 @@ async function main() {
           isActive: true,
         },
       })
-      console.log('✅ Shipper account updated successfully!')
+      console.log('SUCCESS: Shipper account updated successfully!')
     } else {
       await prisma.shipper.create({
         data: {
@@ -51,16 +51,16 @@ async function main() {
           isActive: true,
         },
       })
-      console.log('✅ Shipper account created successfully!')
+      console.log('SUCCESS: Shipper account created successfully!')
     }
 
     console.log('')
-    console.log('📝 You can now login with:')
+    console.log('You can now login with:')
     console.log(`   Email: ${email}`)
     console.log(`   Password: ${password}`)
     console.log(`   URL: http://localhost:3000/shipper/login`)
   } catch (error) {
-    console.error('❌ Error creating shipper:', error)
+    console.error('ERROR: Error creating shipper:', error)
     process.exit(1)
   } finally {
     await prisma.$disconnect()

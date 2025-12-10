@@ -19,7 +19,7 @@ async function main() {
   const lastName = process.argv[5] || 'Doe'
   const phone = process.argv[6] || '555-0100'
 
-  console.log('🚗 Creating driver account...')
+  console.log('Creating driver account...')
   console.log(`Email: ${email}`)
   console.log(`Name: ${firstName} ${lastName}`)
   console.log(`Phone: ${phone}`)
@@ -33,7 +33,7 @@ async function main() {
     })
 
     if (existing) {
-      console.log('⚠️  Driver already exists. Updating password and info...')
+      console.log('WARNING: Driver already exists. Updating password and info...')
       await prisma.driver.update({
         where: { email: email.toLowerCase() },
         data: {
@@ -47,7 +47,7 @@ async function main() {
           vehiclePlate: 'ABC-1234',
         },
       })
-      console.log('✅ Driver account updated successfully!')
+      console.log('SUCCESS: Driver account updated successfully!')
     } else {
       await prisma.driver.create({
         data: {
@@ -62,16 +62,16 @@ async function main() {
           vehiclePlate: 'ABC-1234',
         },
       })
-      console.log('✅ Driver account created successfully!')
+      console.log('SUCCESS: Driver account created successfully!')
     }
 
     console.log('')
-    console.log('📝 You can now login with:')
+    console.log('You can now login with:')
     console.log(`   Email: ${email}`)
     console.log(`   Password: ${password}`)
     console.log(`   URL: http://localhost:3000/driver/login`)
   } catch (error) {
-    console.error('❌ Error creating driver:', error)
+    console.error('ERROR: Error creating driver:', error)
     process.exit(1)
   } finally {
     await prisma.$disconnect()

@@ -13,7 +13,7 @@ async function main() {
   const password = process.argv[3] || 'admin123'
   const name = process.argv[4] || 'Admin User'
 
-  console.log('🔐 Creating admin user...')
+  console.log('Creating admin user...')
   console.log(`Email: ${email}`)
   console.log(`Name: ${name}`)
   console.log(`Password: ${password}`)
@@ -26,7 +26,7 @@ async function main() {
     })
 
     if (existing) {
-      console.log('⚠️  User already exists. Updating password...')
+      console.log('WARNING: User already exists. Updating password...')
       await prisma.user.update({
         where: { email: email.toLowerCase() },
         data: {
@@ -35,7 +35,7 @@ async function main() {
           role: 'ADMIN',
         },
       })
-      console.log('✅ Admin user updated successfully!')
+      console.log('SUCCESS: Admin user updated successfully!')
     } else {
       await prisma.user.create({
         data: {
@@ -45,15 +45,15 @@ async function main() {
           role: 'ADMIN',
         },
       })
-      console.log('✅ Admin user created successfully!')
+      console.log('SUCCESS: Admin user created successfully!')
     }
 
     console.log('')
-    console.log('📝 You can now login with:')
+    console.log('You can now login with:')
     console.log(`   Email: ${email}`)
     console.log(`   Password: ${password}`)
   } catch (error) {
-    console.error('❌ Error creating admin user:', error)
+    console.error('ERROR: Error creating admin user:', error)
     process.exit(1)
   } finally {
     await prisma.$disconnect()

@@ -253,7 +253,11 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
             {load.status === 'QUOTED' && load.quoteAmount && (
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="text-4xl">💰</div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-gray-900 mb-2">Quote Ready for Review</h3>
                     <div className="mb-4">
@@ -280,7 +284,11 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
             {load.status === 'QUOTE_ACCEPTED' && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="text-4xl">✅</div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-green-900 mb-2">Quote Accepted</h3>
                     <p className="text-green-700">
@@ -305,7 +313,10 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                      <span className="text-green-600 text-lg">📍</span>
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     </div>
                   </div>
                   <div className="flex-1">
@@ -338,7 +349,9 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 text-lg">🏁</span>
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
                   </div>
                   <div className="flex-1">
@@ -425,7 +438,13 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
                           <p className="text-sm text-gray-600 mb-1">{event.description}</p>
                         )}
                         {event.locationText && (
-                          <p className="text-sm text-gray-500 mb-1">📍 {event.locationText}</p>
+                          <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {event.locationText}
+                          </p>
                         )}
                         <p className="text-xs text-gray-500">
                           {new Date(event.createdAt).toLocaleString()}

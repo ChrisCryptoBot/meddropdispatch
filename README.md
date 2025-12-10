@@ -2,7 +2,7 @@
 
 A modern web application for medical courier and logistics services, built with Next.js 14, TypeScript, Prisma, and Tailwind CSS.
 
-## 🚀 Features
+## Features
 
 ### Public-Facing
 - **Request a Load**: Comprehensive form for shippers to submit courier requests
@@ -16,7 +16,7 @@ A modern web application for medical courier and logistics services, built with 
 - **Shipper Management**: View all client companies and facilities
 - **Email Notifications**: Automatic email updates on status changes (configurable)
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
@@ -25,12 +25,12 @@ A modern web application for medical courier and logistics services, built with 
 - **Authentication**: Simple email/password (ready for NextAuth integration)
 - **Email**: Abstract email service (ready for Resend/SendGrid/etc.)
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Node.js 18+
 - npm or yarn
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### 1. Install Dependencies
 
@@ -75,7 +75,7 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 👤 Creating Your First Admin User
+## Creating Your First Admin User
 
 Before you can access the admin portal, you need to create an admin user:
 
@@ -93,7 +93,7 @@ Then login at http://localhost:3000/admin/login
 - **Drivers**: Add through admin portal (after logging in)
 - **Shippers**: Register through the public request form (will be created automatically)
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 med-drop/
@@ -123,7 +123,7 @@ med-drop/
 └── package.json
 ```
 
-## 🔑 Key Entities
+## Key Entities
 
 ### Data Models
 
@@ -140,7 +140,7 @@ med-drop/
 NEW → QUOTED → QUOTE_ACCEPTED → SCHEDULED → PICKED_UP → IN_TRANSIT → DELIVERED → COMPLETED
 ```
 
-## 🎨 Design Features
+## Design Features
 
 - **Modern Professional Design**: Clean, corporate-friendly aesthetics
 - **Glassmorphism**: Subtle glass effects on cards and containers
@@ -148,7 +148,7 @@ NEW → QUOTED → QUOTE_ACCEPTED → SCHEDULED → PICKED_UP → IN_TRANSIT →
 - **Accessibility**: WCAG-compliant with keyboard navigation support
 - **Performance**: Optimized with Next.js App Router and React Server Components
 
-## 📧 Email Integration
+## Email Integration
 
 The application includes an abstract email service in `lib/email.ts`. To integrate with a real provider:
 
@@ -186,7 +186,7 @@ export async function sendEmail(options: EmailOptions) {
 }
 ```
 
-## 📦 Deployment
+## Deployment
 
 ### Vercel (Recommended)
 
@@ -224,7 +224,7 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-## 🔐 Authentication
+## Authentication
 
 Currently uses a simple email/password system. To add full authentication with NextAuth:
 
@@ -233,7 +233,7 @@ Currently uses a simple email/password system. To add full authentication with N
 3. Configure providers (credentials, Google, etc.)
 4. Add middleware for protected routes
 
-## 📄 File Upload Integration
+## File Upload Integration
 
 To add document uploads, integrate with:
 
@@ -261,7 +261,7 @@ await prisma.document.create({
 })
 ```
 
-## 🧰 Available Scripts
+## Available Scripts
 
 ```bash
 npm run dev          # Start development server
@@ -276,7 +276,7 @@ npm run prisma:studio     # Open Prisma Studio (database GUI)
 npm run prisma:seed       # Seed database with sample data
 ```
 
-## 🎯 Future Enhancements
+## Future Enhancements
 
 - [ ] Real-time driver location tracking
 - [ ] SMS notifications via Twilio
@@ -287,14 +287,14 @@ npm run prisma:seed       # Seed database with sample data
 - [ ] Automated routing and dispatch
 - [ ] Integration with accounting software
 
-## 📝 License
+## License
 
 Private and proprietary. All rights reserved.
 
-## 🤝 Support
+## Support
 
 For questions or support, contact your development team.
 
 ---
 
-**Built with ❤️ for MED DROP Medical Courier Services**
+**Built for MED DROP Medical Courier Services**

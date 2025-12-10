@@ -18,7 +18,7 @@ export interface EmailOptions {
  * - Postmark: https://postmarkapp.com/developer
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
-  console.log('📧 EMAIL NOTIFICATION:')
+  console.log('EMAIL NOTIFICATION:')
   console.log('To:', options.to)
   console.log('Subject:', options.subject)
   console.log('Text:', options.text)
