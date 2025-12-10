@@ -17,17 +17,33 @@ export default function ShipperLoginPage() {
     setIsLoading(true)
 
     try {
+      const loginPayload = { email, password }
+      console.log('Attempting login with:', { email, passwordLength: password.length })
+      
       const response = await fetch('/api/auth/shipper/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(loginPayload),
       })
 
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError)
+        setError('Invalid response from server')
+        setIsLoading(false)
+        return
+      }
 
       if (!response.ok) {
-        console.error('Login API error:', data)
-        setError(data.error || data.message || 'Login failed')
+        console.error('Login API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+          fullResponse: data
+        })
+        setError(data.error || data.message || `Login failed (${response.status})`)
         setIsLoading(false)
         return
       }
@@ -46,7 +62,12 @@ export default function ShipperLoginPage() {
       window.location.href = '/shipper/dashboard'
 
     } catch (error) {
-      console.error('Login error:', error)
+      console.error('Login network error:', error)
+      console.error('Error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       setError('An unexpected error occurred. Please try again.')
       setIsLoading(false)
     }

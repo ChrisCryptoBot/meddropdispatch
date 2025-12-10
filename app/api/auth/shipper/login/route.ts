@@ -9,8 +9,15 @@ import { verifyPassword } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
+    
+    console.log('Login attempt received:', {
+      email,
+      hasPassword: !!password,
+      passwordLength: password?.length || 0
+    })
 
     if (!email || !password) {
+      console.error('Missing email or password')
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
