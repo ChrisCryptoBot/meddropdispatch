@@ -26,7 +26,15 @@ export default function ShipperLoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Login failed')
+        console.error('Login API error:', data)
+        setError(data.error || data.message || 'Login failed')
+        setIsLoading(false)
+        return
+      }
+
+      if (!data.shipper) {
+        console.error('No shipper data in response:', data)
+        setError('Invalid response from server')
         setIsLoading(false)
         return
       }
@@ -34,8 +42,8 @@ export default function ShipperLoginPage() {
       // Store shipper data in localStorage (temporary - should use httpOnly cookies)
       localStorage.setItem('shipper', JSON.stringify(data.shipper))
 
-      // Redirect to shipper dashboard
-      router.push('/shipper/dashboard')
+      // Redirect to shipper dashboard (full page reload to ensure layout picks up auth)
+      window.location.href = '/shipper/dashboard'
 
     } catch (error) {
       console.error('Login error:', error)

@@ -17,12 +17,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find shipper by email
+    // Find shipper by email (case-insensitive)
     const shipper = await prisma.shipper.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase() }
     })
 
     if (!shipper) {
+      console.error('Shipper not found for email:', email.toLowerCase())
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Check if shipper has a password set
     if (!shipper.passwordHash) {
+      console.error('Shipper found but no password hash set for email:', email.toLowerCase())
       return NextResponse.json(
         { error: 'Account not set up for login. Please contact support.' },
         { status: 401 }
@@ -41,11 +43,14 @@ export async function POST(request: NextRequest) {
     const passwordValid = await verifyPassword(password, shipper.passwordHash)
 
     if (!passwordValid) {
+      console.error('Password verification failed for email:', email.toLowerCase())
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
+
+    console.log('Shipper login successful for email:', email.toLowerCase())
 
     // Return shipper data (excluding password hash)
     const { passwordHash, ...shipperData } = shipper
