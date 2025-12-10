@@ -44,3 +44,40 @@ export async function GET(
     )
   }
 }
+
+/**
+ * PATCH /api/load-requests/[id]
+ * Update load request fields (signatures, temperatures, etc.)
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const data = await request.json()
+
+    // Update load request
+    const updatedLoad = await prisma.loadRequest.update({
+      where: { id },
+      data: {
+        ...data,
+        // Convert ISO strings to Date objects if present
+        actualPickupTime: data.actualPickupTime ? new Date(data.actualPickupTime) : undefined,
+        actualDeliveryTime: data.actualDeliveryTime ? new Date(data.actualDeliveryTime) : undefined,
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      loadRequest: updatedLoad,
+    })
+
+  } catch (error) {
+    console.error('Error updating load request:', error)
+    return NextResponse.json(
+      { error: 'Failed to update load request', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}
