@@ -21,13 +21,29 @@ export default function AdminLayout({
       return
     }
 
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      return
+    }
+
     // Check if admin is logged in
-    const adminData = localStorage.getItem('admin')
-    if (adminData) {
-      setAdmin(JSON.parse(adminData))
+    try {
+      const adminData = localStorage.getItem('admin')
+      if (adminData) {
+        setAdmin(JSON.parse(adminData))
+        setIsChecking(false)
+      } else {
+        // Only redirect if we're not already on login page
+        if (pathname !== '/admin/login') {
+          router.push('/admin/login')
+        }
+      }
+    } catch (error) {
+      console.error('Error checking admin auth:', error)
       setIsChecking(false)
-    } else {
-      router.push('/admin/login')
+      if (pathname !== '/admin/login') {
+        router.push('/admin/login')
+      }
     }
   }, [pathname, router])
 
