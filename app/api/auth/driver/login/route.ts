@@ -29,14 +29,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if driver is active
-    if (!driver.isActive) {
-      return NextResponse.json(
-        { error: 'Account is inactive. Please contact dispatch.' },
-        { status: 403 }
-      )
-    }
-
     // Verify password
     const isValidPassword = await verifyPassword(password, driver.passwordHash)
 
