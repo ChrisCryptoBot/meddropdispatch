@@ -28,12 +28,29 @@ export default function AdminLoadDetailPage() {
   const [locationText, setLocationText] = useState('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
+  // Driver assignment
+  const [drivers, setDrivers] = useState<any[]>([])
+  const [selectedDriver, setSelectedDriver] = useState('')
+  const [isAssigningDriver, setIsAssigningDriver] = useState(false)
+
   // Load data
   useEffect(() => {
     if (params.id) {
       fetchLoad()
+      fetchDrivers()
     }
   }, [params.id])
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await fetch('/api/drivers')
+      if (!response.ok) throw new Error('Failed to fetch drivers')
+      const data = await response.json()
+      setDrivers(data.drivers)
+    } catch (error) {
+      console.error('Error fetching drivers:', error)
+    }
+  }
 
   const fetchLoad = async () => {
     try {
@@ -109,6 +126,29 @@ export default function AdminLoadDetailPage() {
       alert(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
       setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleDriverAssignment = async () => {
+    if (!selectedDriver) return
+
+    setIsAssigningDriver(true)
+
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/assign-driver`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId: selectedDriver }),
+      })
+
+      if (!response.ok) throw new Error('Failed to assign driver')
+
+      await fetchLoad()
+      alert('Driver assigned successfully!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to assign driver')
+    } finally {
+      setIsAssigningDriver(false)
     }
   }
 
@@ -348,6 +388,52 @@ export default function AdminLoadDetailPage() {
 
         {/* Sidebar - Right 1/3 */}
         <div className="space-y-8">
+          {/* Driver Assignment */}
+          <div className="glass p-6 rounded-2xl">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Driver Assignment</h3>
+            {load.driver ? (
+              <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                <p className="text-sm text-gray-600 mb-1">Assigned Driver</p>
+                <p className="font-bold text-gray-900">{load.driver.firstName} {load.driver.lastName}</p>
+                <p className="text-sm text-gray-600">{load.driver.vehicleType} • {load.driver.vehiclePlate}</p>
+                <p className="text-sm text-gray-600">{load.driver.phone}</p>
+                {load.assignedAt && (
+                  <p className="text-xs text-gray-500 mt-2">Assigned: {formatDateTime(load.assignedAt)}</p>
+                )}
+              </div>
+            ) : (
+              <div className="mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                <p className="text-sm text-yellow-800 font-medium">No driver assigned</p>
+              </div>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {load.driver ? 'Reassign to Driver' : 'Assign Driver'}
+                </label>
+                <select
+                  value={selectedDriver}
+                  onChange={(e) => setSelectedDriver(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                >
+                  <option value="">Select driver...</option>
+                  {drivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.firstName} {driver.lastName} - {driver.vehicleType} ({driver.status})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleDriverAssignment}
+                disabled={isAssigningDriver || !selectedDriver}
+                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
+              >
+                {isAssigningDriver ? 'Assigning...' : load.driver ? 'Reassign Driver' : 'Assign Driver'}
+              </button>
+            </div>
+          </div>
+
           {/* Quote Management */}
           <div className="glass p-6 rounded-2xl">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Quote & Pricing</h3>
