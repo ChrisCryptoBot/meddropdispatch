@@ -37,9 +37,8 @@ export default function AdminLoginPage() {
       // Store user info in localStorage (in production, use httpOnly cookies/sessions)
       localStorage.setItem('admin', JSON.stringify(data.user))
 
-      // Redirect to dashboard
-      router.push('/admin/loads')
-      router.refresh()
+      // Redirect to admin loads page with full page reload
+      window.location.href = '/admin/loads'
     } catch (err) {
       console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')
