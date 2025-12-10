@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcrypt'
+import { verifyPassword } from '@/lib/auth'
 
 /**
  * POST /api/auth/shipper/login
