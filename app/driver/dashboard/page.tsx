@@ -87,38 +87,7 @@ export default function DriverDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-20">
-      {/* Header */}
-      <header className="glass sticky top-0 z-50 border-b border-white/30">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">MED DROP</h1>
-                <p className="text-xs text-gray-600">Driver Portal</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 py-6">
+    <div className="p-8">
         {/* Driver Info Card */}
         <div className="glass p-6 rounded-2xl mb-6">
           <div className="flex items-start justify-between mb-4">
@@ -180,11 +149,6 @@ export default function DriverDashboardPage() {
                         {load.publicTrackingCode}
                       </p>
                       <p className="text-sm text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
-                      {load.driver && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Driver: {load.driver.firstName} {load.driver.lastName}
-                        </p>
-                      )}
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
                       {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS]}
