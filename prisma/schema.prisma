@@ -106,20 +106,38 @@ enum UserRole {
   VIEW_ONLY   // Read-only access
 }
 
+enum DriverStatus {
+  AVAILABLE    // Ready for assignments
+  ON_ROUTE     // Currently on a delivery
+  OFF_DUTY     // Not available
+  INACTIVE     // Account disabled
+}
+
+enum VehicleType {
+  SEDAN        // Standard car
+  SUV          // SUV
+  VAN          // Cargo van
+  SPRINTER     // Sprinter van
+  BOX_TRUCK    // Box truck
+  REFRIGERATED // Temperature-controlled vehicle
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
 
 // Shipper: The client company requesting courier services
 model Shipper {
-  id          String     @id @default(cuid())
-  companyName String
-  clientType  ClientType
-  contactName String
-  phone       String
-  email       String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  companyName  String
+  clientType   ClientType
+  contactName  String
+  phone        String
+  email        String     @unique
+  passwordHash String?    // For shipper portal login
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // Relations
   facilities   Facility[]
@@ -164,6 +182,11 @@ model LoadRequest {
   pickupFacilityId       String
   dropoffFacilityId      String
 
+  // Driver Assignment
+  driverId               String?                 // Assigned driver (nullable)
+  assignedAt             DateTime?               // When driver was assigned
+  acceptedByDriverAt     DateTime?               // When driver accepted the assignment
+
   // Service Details
   serviceType            ServiceType
   commodityDescription   String                  // What's being shipped
@@ -178,6 +201,8 @@ model LoadRequest {
   // Timing
   readyTime              DateTime?               // When ready for pickup
   deliveryDeadline       DateTime?               // Must deliver by
+  actualPickupTime       DateTime?               // Actual pickup timestamp
+  actualDeliveryTime     DateTime?               // Actual delivery timestamp
 
   // Instructions & Contact
   accessNotes            String?                 // Pickup/delivery access notes
@@ -185,11 +210,22 @@ model LoadRequest {
 
   // Status & Workflow
   status                 LoadStatus              @default(NEW)
+  quoteAcceptedAt        DateTime?               // When shipper accepted the quote
 
   // Pricing/Quoting
   quoteAmount            Float?
   quoteCurrency          String                  @default("USD")
   quoteNotes             String?                 // Internal notes about the quote
+
+  // Signatures & Confirmation
+  pickupSignature        String?                 // Signature data (base64 or URL)
+  pickupSignatureName    String?                 // Name of person who signed
+  deliverySignature      String?                 // Signature data
+  deliverySignatureName  String?                 // Name of person who signed
+
+  // Temperature Tracking
+  pickupTemperature      Float?                  // Temperature at pickup (°C)
+  deliveryTemperature    Float?                  // Temperature at delivery (°C)
 
   // Metadata
   createdVia             CreatedVia              @default(WEB_FORM)
@@ -200,11 +236,13 @@ model LoadRequest {
   shipper         Shipper          @relation(fields: [shipperId], references: [id])
   pickupFacility  Facility         @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
   dropoffFacility Facility         @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
+  driver          Driver?          @relation(fields: [driverId], references: [id])
   trackingEvents  TrackingEvent[]
   documents       Document[]
 
   @@index([publicTrackingCode])
   @@index([shipperId])
+  @@index([driverId])
   @@index([status])
   @@index([createdAt])
 }
@@ -232,7 +270,10 @@ model Document {
   loadRequestId String
   type          DocumentType
   title         String       // e.g., "Proof of Pickup - ABC Clinic"
-  url           String       // Storage URL (S3, etc.) - TODO: implement file upload
+  url           String       // Storage URL (S3, etc.) or base64 data
+  mimeType      String?      // MIME type (image/jpeg, application/pdf, etc.)
+  fileSize      Int?         // File size in bytes
+  uploadedBy    String?      // User ID or "driver" or "shipper"
   createdAt     DateTime     @default(now())
 
   // Relations
@@ -252,4 +293,46 @@ model User {
   updatedAt    DateTime @updatedAt
 
   @@index([email])
+}
+
+// Driver: Courier drivers
+model Driver {
+  id                 String        @id @default(cuid())
+  firstName          String
+  lastName           String
+  email              String        @unique
+  phone              String
+  passwordHash       String        // bcrypt hash
+
+  // Driver Details
+  licenseNumber      String?       // Driver's license number
+  licenseExpiry      DateTime?     // License expiration date
+  status             DriverStatus  @default(AVAILABLE)
+
+  // Vehicle Information
+  vehicleType        VehicleType?
+  vehicleMake        String?       // e.g., "Ford"
+  vehicleModel       String?       // e.g., "Transit"
+  vehicleYear        Int?
+  vehiclePlate       String?       // License plate
+  hasRefrigeration   Boolean       @default(false)
+
+  // Certifications & Training
+  un3373Certified    Boolean       @default(false)
+  un3373ExpiryDate   DateTime?
+  hipaaTrainingDate  DateTime?
+
+  // Metadata
+  isActive           Boolean       @default(true)
+  hiredDate          DateTime?
+  emergencyContact   String?       // Emergency contact info (JSON or text)
+  notes              String?       // Internal notes
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  assignedLoads      LoadRequest[]
+
+  @@index([email])
+  @@index([status])
 }
