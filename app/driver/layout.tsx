@@ -14,6 +14,7 @@ export default function DriverLayout({
   const router = useRouter()
   const [driver, setDriver] = useState<any>(null)
   const [isChecking, setIsChecking] = useState(true)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
 
   useEffect(() => {
     // Don't check auth on login or signup pages
@@ -47,6 +48,11 @@ export default function DriverLayout({
       }
     }
   }, [pathname, router])
+
+  // Close dropdown when route changes
+  useEffect(() => {
+    setProfileDropdownOpen(false)
+  }, [pathname])
 
   // Show loading while checking auth
   if (isChecking && pathname !== '/driver/login' && pathname !== '/driver/signup') {
@@ -93,15 +99,6 @@ export default function DriverLayout({
         </svg>
       ),
     },
-    {
-      name: 'Support',
-      href: '/driver/support',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
   ]
 
   return (
@@ -139,21 +136,96 @@ export default function DriverLayout({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </Link>
-              <Link
-                href="/driver/profile"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-base ${
-                  pathname === '/driver/profile' || pathname?.startsWith('/driver/profile')
-                    ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
-                    : 'text-gray-700 hover:bg-white/60'
-                }`}
-              >
-                <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-base flex items-center gap-2 ${
+                    pathname?.startsWith('/driver/settings') || pathname?.startsWith('/driver/vehicle') || pathname?.startsWith('/driver/payments') || pathname?.startsWith('/driver/security')
+                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
+                      : 'text-gray-700 hover:bg-white/60'
+                  }`}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   Profile
-                </div>
-              </Link>
+                  <svg className={`w-4 h-4 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {profileDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setProfileDropdownOpen(false)}></div>
+                    <div className="absolute right-0 mt-2 w-56 glass rounded-lg shadow-lg z-20 border border-white/30 overflow-hidden">
+                      <Link
+                        href="/driver/settings"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-base ${
+                          pathname?.startsWith('/driver/settings')
+                            ? 'bg-slate-600 text-white'
+                            : 'text-gray-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          Profile Settings
+                        </div>
+                      </Link>
+                      <Link
+                        href="/driver/vehicle"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
+                          pathname?.startsWith('/driver/vehicle')
+                            ? 'bg-slate-600 text-white'
+                            : 'text-gray-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                          </svg>
+                          Vehicle Info
+                        </div>
+                      </Link>
+                      <Link
+                        href="/driver/payments"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
+                          pathname?.startsWith('/driver/payments')
+                            ? 'bg-slate-600 text-white'
+                            : 'text-gray-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          Payments & Payouts
+                        </div>
+                      </Link>
+                      <Link
+                        href="/driver/security"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
+                          pathname?.startsWith('/driver/security')
+                            ? 'bg-slate-600 text-white'
+                            : 'text-gray-700 hover:bg-white/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          Security
+                        </div>
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
             </nav>
           </div>
         </div>
@@ -192,8 +264,21 @@ export default function DriverLayout({
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-white/30">
+          {/* Support & Logout */}
+          <div className="p-4 border-t border-white/30 space-y-2">
+            <Link
+              href="/driver/support"
+              className={`w-full px-4 py-2 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 ${
+                pathname === '/driver/support' || pathname?.startsWith('/driver/support')
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
+                  : 'text-gray-700 hover:bg-white/40'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Support
+            </Link>
             <button
               onClick={() => {
                 localStorage.removeItem('driver')

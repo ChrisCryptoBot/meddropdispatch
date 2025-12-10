@@ -58,12 +58,6 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
   const [load, setLoad] = useState<LoadRequest | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAccepting, setIsAccepting] = useState(false)
-  const [documents, setDocuments] = useState<any[]>([])
-  const [showUploadModal, setShowUploadModal] = useState(false)
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
-  const [uploadTitle, setUploadTitle] = useState('')
-  const [uploadType, setUploadType] = useState('OTHER')
-  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     // Check authentication
