@@ -257,7 +257,6 @@ export default function DriverDashboardPage() {
             </div>
           )}
         </div>
-      </main>
     </div>
   )
 }
