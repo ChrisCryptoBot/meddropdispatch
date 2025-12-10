@@ -36,17 +36,16 @@ export async function PATCH(
       )
     }
 
-    // CHAIN-OF-CUSTODY: Enforce linear status transitions
+    // CHAIN-OF-CUSTODY: Enforce linear status transitions (scheduling system)
     const validTransitions: Record<string, string[]> = {
-      'NEW': ['QUOTED', 'CANCELLED'],
-      'QUOTED': ['QUOTE_ACCEPTED', 'NEW', 'CANCELLED'],
-      'QUOTE_ACCEPTED': ['SCHEDULED', 'QUOTED', 'CANCELLED'],
-      'SCHEDULED': ['PICKED_UP', 'CANCELLED'],
+      'REQUESTED': ['SCHEDULED', 'DENIED'], // Phone call → Schedule or Deny
+      'SCHEDULED': ['EN_ROUTE'], // Start driving (tracking active)
+      'EN_ROUTE': ['PICKED_UP'], // Arrive at pickup
       'PICKED_UP': ['IN_TRANSIT', 'DELIVERED'], // Can skip IN_TRANSIT
       'IN_TRANSIT': ['DELIVERED'],
       'DELIVERED': ['COMPLETED'],
       'COMPLETED': [], // Terminal state
-      'CANCELLED': [], // Terminal state
+      'DENIED': [], // Terminal state
     }
 
     const currentStatus = loadRequest.status
@@ -150,15 +149,14 @@ export async function PATCH(
  */
 function getEventCodeForStatus(status: LoadStatus): TrackingEventCode {
   const mapping: Record<LoadStatus, TrackingEventCode> = {
-    NEW: 'REQUEST_RECEIVED',
-    QUOTED: 'PRICE_QUOTED',
-    QUOTE_ACCEPTED: 'SHIPPER_CONFIRMED',
-    SCHEDULED: 'SHIPPER_CONFIRMED',
+    REQUESTED: 'REQUEST_RECEIVED',
+    SCHEDULED: 'SCHEDULED',
+    EN_ROUTE: 'EN_ROUTE_PICKUP',
     PICKED_UP: 'PICKED_UP',
     IN_TRANSIT: 'IN_TRANSIT',
     DELIVERED: 'DELIVERED',
-    COMPLETED: 'PAPERWORK_COMPLETED',
-    CANCELLED: 'CANCELLED',
+    COMPLETED: 'COMPLETED',
+    DENIED: 'DENIED',
   }
 
   return mapping[status] || 'REQUEST_RECEIVED'

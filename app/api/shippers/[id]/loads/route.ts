@@ -12,6 +12,9 @@ export async function GET(
   try {
     const { id } = await params
 
+    // Log for debugging
+    console.log(`[Fetch Shipper Loads] Requesting loads for shipper: ${id}`)
+
     const loads = await prisma.loadRequest.findMany({
       where: {
         shipperId: id,
@@ -37,6 +40,10 @@ export async function GET(
         createdAt: 'desc',
       },
     })
+
+    // Ensure all loads are returned, including REQUESTED status loads
+    // REQUESTED loads should show if they've been reviewed/accepted by a driver
+    console.log(`[Fetch Shipper Loads] Found ${loads.length} loads for shipper ${id}. Statuses: ${loads.map(l => l.status).join(', ')}`)
 
     return NextResponse.json({ loads })
 

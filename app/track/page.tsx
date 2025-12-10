@@ -62,7 +62,7 @@ export default function TrackPage() {
           </h2>
 
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Enter your tracking code to view the status and location of your shipment.
+            Enter your tracking code to view delivery status and tracking events.
           </p>
 
           <form onSubmit={handleSubmit} className="max-w-lg mx-auto">

@@ -11,27 +11,34 @@ import {
 
 // Type definitions (enums converted to strings for SQLite compatibility)
 export type LoadStatus = 
-  | 'NEW'
-  | 'QUOTED'
-  | 'QUOTE_ACCEPTED'
-  | 'SCHEDULED'
-  | 'PICKED_UP'
-  | 'IN_TRANSIT'
-  | 'DELIVERED'
-  | 'COMPLETED'
-  | 'CANCELLED'
+  | 'REQUESTED'      // Initial status - shipper submitted scheduling request (no tracking yet)
+  | 'SCHEDULED'      // Load scheduled after phone call agreement (tracking starts here)
+  | 'EN_ROUTE'       // Driver en route to pickup
+  | 'PICKED_UP'      // Load picked up
+  | 'IN_TRANSIT'     // Load in transit to destination
+  | 'DELIVERED'      // Load delivered
+  | 'COMPLETED'      // Paperwork complete, closed
+  | 'DENIED'         // Driver declined (doesn't fit schedule, no tracking)
 
 export type TrackingEventCode =
-  | 'REQUEST_RECEIVED'
-  | 'PRICE_QUOTED'
-  | 'SHIPPER_CONFIRMED'
-  | 'DRIVER_EN_ROUTE_PICKUP'
-  | 'PICKED_UP'
-  | 'IN_TRANSIT'
-  | 'ARRIVED_AT_DESTINATION'
-  | 'DELIVERED'
-  | 'PAPERWORK_COMPLETED'
-  | 'CANCELLED'
+  | 'REQUEST_RECEIVED'      // Shipper submitted scheduling request (no tracking yet)
+  | 'SCHEDULED'             // Load scheduled after phone call (tracking starts here)
+  | 'EN_ROUTE_PICKUP'       // Driver en route to pickup
+  | 'PICKED_UP'             // Load picked up
+  | 'IN_TRANSIT'            // Load in transit
+  | 'ARRIVED_AT_DESTINATION'// Arrived at delivery location
+  | 'DELIVERED'             // Load delivered
+  | 'COMPLETED'             // Paperwork complete
+  | 'DENIED'                // Driver declined (doesn't fit schedule, no tracking)
+
+export type DriverDenialReason =
+  | 'PRICE_TOO_LOW'
+  | 'ROUTE_NOT_FEASIBLE'
+  | 'TIMING_NOT_WORKABLE'
+  | 'TOO_FAR'
+  | 'EQUIPMENT_REQUIRED'
+  | 'ALREADY_BOOKED'
+  | 'OTHER'
 
 // Extended types with relations
 export type LoadRequestWithRelations = LoadRequest & {
@@ -50,41 +57,48 @@ export type LoadRequestWithBasicRelations = LoadRequest & {
 
 // Status display configurations
 export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
-  NEW: 'New Request',
-  QUOTED: 'Quoted',
-  QUOTE_ACCEPTED: 'Quote Accepted',
+  REQUESTED: 'Scheduling Request',
   SCHEDULED: 'Scheduled',
+  EN_ROUTE: 'En Route to Pickup',
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
   DELIVERED: 'Delivered',
   COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
+  DENIED: 'Not Scheduled',
 }
 
 export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
-  NEW: 'bg-blue-100 text-blue-800',
-  QUOTED: 'bg-purple-100 text-purple-800',
-  QUOTE_ACCEPTED: 'bg-green-100 text-green-800',
+  REQUESTED: 'bg-blue-100 text-blue-800',
   SCHEDULED: 'bg-cyan-100 text-cyan-800',
+  EN_ROUTE: 'bg-purple-100 text-purple-800',
   PICKED_UP: 'bg-orange-100 text-orange-800',
   IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
   DELIVERED: 'bg-emerald-100 text-emerald-800',
   COMPLETED: 'bg-gray-100 text-gray-800',
-  CANCELLED: 'bg-red-100 text-red-800',
+  DENIED: 'bg-red-100 text-red-800',
 }
 
 // Tracking event configurations
 export const TRACKING_EVENT_LABELS: Record<TrackingEventCode, string> = {
-  REQUEST_RECEIVED: 'Request Received',
-  PRICE_QUOTED: 'Price Quoted',
-  SHIPPER_CONFIRMED: 'Shipper Confirmed',
-  DRIVER_EN_ROUTE_PICKUP: 'Driver En Route to Pickup',
+  REQUEST_RECEIVED: 'Scheduling Request Received',
+  SCHEDULED: 'Scheduled',
+  EN_ROUTE_PICKUP: 'En Route to Pickup',
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
   ARRIVED_AT_DESTINATION: 'Arrived at Destination',
   DELIVERED: 'Delivered',
-  PAPERWORK_COMPLETED: 'Paperwork Completed',
-  CANCELLED: 'Cancelled',
+  COMPLETED: 'Completed',
+  DENIED: 'Not Scheduled',
+}
+
+export const DRIVER_DENIAL_REASON_LABELS: Record<DriverDenialReason, string> = {
+  PRICE_TOO_LOW: 'Price Too Low',
+  ROUTE_NOT_FEASIBLE: 'Route Not Feasible',
+  TIMING_NOT_WORKABLE: 'Timing Not Workable',
+  TOO_FAR: 'Too Far / Distance Issue',
+  EQUIPMENT_REQUIRED: 'Equipment Required (Not Available)',
+  ALREADY_BOOKED: 'Already Booked / Schedule Conflict',
+  OTHER: 'Other Reason',
 }
 
 // Form submission types

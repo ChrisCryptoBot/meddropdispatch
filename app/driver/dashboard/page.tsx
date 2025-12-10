@@ -68,8 +68,8 @@ interface Load {
   createdAt: string
 }
 
-type SortOption = 'newest' | 'oldest' | 'readyTime' | 'deadline' | 'status' | 'amount'
-type FilterOption = 'all' | 'new' | 'quoted' | 'scheduled' | 'pickedUp' | 'inTransit'
+type SortOption = 'newest' | 'oldest' | 'readyTime' | 'deadline' | 'status' | 'amount' | 'cancelled'
+type FilterOption = 'all' | 'new' | 'quoted' | 'scheduled' | 'pickedUp' | 'inTransit' | 'cancelled'
 
 export default function DriverDashboardPage() {
   const router = useRouter()
@@ -80,6 +80,15 @@ export default function DriverDashboardPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showDenyModal, setShowDenyModal] = useState(false)
+  const [denyLoadId, setDenyLoadId] = useState<string | null>(null)
+  const [denyReason, setDenyReason] = useState<string>('OTHER')
+  const [denyNotes, setDenyNotes] = useState('')
+  const [showQuoteModal, setShowQuoteModal] = useState(false)
+  const [quoteLoadId, setQuoteLoadId] = useState<string | null>(null)
+  const [quoteAmount, setQuoteAmount] = useState('')
+  const [quoteNotes, setQuoteNotes] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     // Check if driver is logged in
@@ -115,7 +124,7 @@ export default function DriverDashboardPage() {
     
     if (!driver) return
 
-    if (!confirm('Are you sure you want to accept this load?')) {
+    if (!confirm('Accept this scheduling request? You should call the shipper first to confirm details and pricing before accepting.')) {
       return
     }
 
@@ -133,9 +142,86 @@ export default function DriverDashboardPage() {
 
       // Refresh loads
       await fetchLoads(driver.id)
-      alert('Load accepted successfully!')
+      alert('Load scheduled! Tracking is now active.')
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to accept load')
+    }
+  }
+
+  const handleDenyLoad = async () => {
+    if (!driver || !denyLoadId || !denyReason) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/load-requests/${denyLoadId}/deny`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driver.id,
+          reason: denyReason,
+          notes: denyNotes || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to deny load')
+      }
+
+      // Refresh loads and close modal
+      await fetchLoads(driver.id)
+      setShowDenyModal(false)
+      setDenyLoadId(null)
+      setDenyReason('OTHER')
+      setDenyNotes('')
+      alert('Load denied. Load is now available for other drivers.')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to deny load')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSubmitQuote = async () => {
+    if (!driver || !quoteLoadId || !quoteAmount) {
+      alert('Please enter a quote amount')
+      return
+    }
+
+    const amount = parseFloat(quoteAmount)
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid quote amount')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/load-requests/${quoteLoadId}/submit-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driver.id,
+          quoteAmount: amount,
+          notes: quoteNotes || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to submit quote')
+      }
+
+      // Refresh loads and close modal
+      await fetchLoads(driver.id)
+      setShowQuoteModal(false)
+      setQuoteLoadId(null)
+      setQuoteAmount('')
+      setQuoteNotes('')
+      alert('Quote submitted successfully! Waiting for shipper approval.')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to submit quote')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -163,11 +249,12 @@ export default function DriverDashboardPage() {
     if (filterBy !== 'all') {
       const statusMap: Record<FilterOption, string[]> = {
         all: [],
-        new: ['NEW'],
+        new: ['REQUESTED', 'NEW'],
         quoted: ['QUOTED', 'QUOTE_ACCEPTED'],
-        scheduled: ['SCHEDULED'],
+        scheduled: ['SCHEDULED', 'EN_ROUTE'],
         pickedUp: ['PICKED_UP'],
         inTransit: ['IN_TRANSIT'],
+        cancelled: ['CANCELLED', 'DENIED'],
       }
       filtered = filtered.filter(load => statusMap[filterBy].includes(load.status))
     }
@@ -180,17 +267,56 @@ export default function DriverDashboardPage() {
         case 'oldest':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         case 'readyTime':
+          // Nulls go to end
+          if (!a.readyTime && !b.readyTime) return 0
           if (!a.readyTime) return 1
           if (!b.readyTime) return -1
           return new Date(a.readyTime).getTime() - new Date(b.readyTime).getTime()
         case 'deadline':
+          // Nulls go to end
+          if (!a.deliveryDeadline && !b.deliveryDeadline) return 0
           if (!a.deliveryDeadline) return 1
           if (!b.deliveryDeadline) return -1
           return new Date(a.deliveryDeadline).getTime() - new Date(b.deliveryDeadline).getTime()
         case 'status':
+          // Sort by status priority: cancelled/denied at end, then by alphabetical
+          const statusPriority: Record<string, number> = {
+            'REQUESTED': 1,
+            'NEW': 1,
+            'SCHEDULED': 2,
+            'EN_ROUTE': 3,
+            'PICKED_UP': 4,
+            'IN_TRANSIT': 5,
+            'DELIVERED': 6,
+            'COMPLETED': 7,
+            'CANCELLED': 99,
+            'DENIED': 99,
+          }
+          const aPriority = statusPriority[a.status] || 50
+          const bPriority = statusPriority[b.status] || 50
+          if (aPriority !== bPriority) return aPriority - bPriority
           return a.status.localeCompare(b.status)
         case 'amount':
-          return (b.quoteAmount || 0) - (a.quoteAmount || 0)
+          // Nulls go to end
+          const aAmount = a.quoteAmount || 0
+          const bAmount = b.quoteAmount || 0
+          if (aAmount === 0 && bAmount === 0) return 0
+          if (aAmount === 0) return 1
+          if (bAmount === 0) return -1
+          return bAmount - aAmount
+        case 'cancelled':
+          // Sort cancelled/denied to top, then by cancellation date
+          const aIsCancelled = ['CANCELLED', 'DENIED'].includes(a.status)
+          const bIsCancelled = ['CANCELLED', 'DENIED'].includes(b.status)
+          if (aIsCancelled && !bIsCancelled) return -1
+          if (!aIsCancelled && bIsCancelled) return 1
+          if (aIsCancelled && bIsCancelled) {
+            // Both cancelled - sort by cancelled date if available, else by createdAt
+            const aDate = (a as any).cancelledAt ? new Date((a as any).cancelledAt).getTime() : new Date(a.createdAt).getTime()
+            const bDate = (b as any).cancelledAt ? new Date((b as any).cancelledAt).getTime() : new Date(b.createdAt).getTime()
+            return bDate - aDate // Most recently cancelled first
+          }
+          return 0
         default:
           return 0
       }
@@ -289,11 +415,12 @@ export default function DriverDashboardPage() {
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
             >
               <option value="all">All Statuses</option>
-              <option value="new">New</option>
+              <option value="new">New/Requested</option>
               <option value="quoted">Quoted / Accepted</option>
-              <option value="scheduled">Scheduled</option>
+              <option value="scheduled">Scheduled / En Route</option>
               <option value="pickedUp">Picked Up</option>
               <option value="inTransit">In Transit</option>
+              <option value="cancelled">Cancelled / Denied</option>
             </select>
           </div>
 
@@ -309,8 +436,9 @@ export default function DriverDashboardPage() {
               <option value="oldest">Oldest First</option>
               <option value="readyTime">Ready Time (Earliest)</option>
               <option value="deadline">Deadline (Earliest)</option>
-              <option value="status">Status</option>
-              <option value="amount">Amount (Highest)</option>
+              <option value="status">Status (Priority Order)</option>
+              <option value="amount">Amount (Highest First)</option>
+              <option value="cancelled">Cancelled First</option>
             </select>
           </div>
         </div>
@@ -348,7 +476,7 @@ export default function DriverDashboardPage() {
           <div className="space-y-4">
             {filteredLoads.map((load) => {
               const canAccept = !load.driver?.id && 
-                                ['NEW', 'QUOTED', 'QUOTE_ACCEPTED'].includes(load.status) &&
+                                load.status === 'REQUESTED' &&
                                 activeTab === 'all'
               const isMyLoad = load.driver?.id === driver?.id
 
@@ -526,19 +654,162 @@ export default function DriverDashboardPage() {
                 </div>
                 </Link>
 
-                {/* Accept Button */}
+                {/* Action Buttons */}
                 {canAccept && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                     <button
                       onClick={(e) => handleAcceptLoad(load.id, e)}
                       className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 transition-all"
                     >
                       Accept Load
                     </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDenyLoadId(load.id)
+                        setShowDenyModal(true)
+                      }}
+                      className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all"
+                    >
+                      Deny Load
+                    </button>
                   </div>
                 )}
+                
               </div>
             )})}
+          </div>
+        )}
+
+        {/* Deny Load Modal */}
+        {showDenyModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDenyModal(false)}>
+            <div className="glass max-w-md w-full rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Deny Load</h3>
+              <p className="text-sm text-gray-600 mb-4">Why are you declining this load?</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Reason *
+                  </label>
+                  <select
+                    value={denyReason}
+                    onChange={(e) => setDenyReason(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  >
+                    <option value="PRICE_TOO_LOW">Price Too Low</option>
+                    <option value="ROUTE_NOT_FEASIBLE">Route Not Feasible</option>
+                    <option value="TIMING_NOT_WORKABLE">Timing Not Workable</option>
+                    <option value="TOO_FAR">Too Far / Distance Issue</option>
+                    <option value="EQUIPMENT_REQUIRED">Equipment Required (Not Available)</option>
+                    <option value="ALREADY_BOOKED">Already Booked / Schedule Conflict</option>
+                    <option value="OTHER">Other Reason</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    value={denyNotes}
+                    onChange={(e) => setDenyNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    placeholder="Provide more details..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowDenyModal(false)
+                    setDenyLoadId(null)
+                    setDenyReason('OTHER')
+                    setDenyNotes('')
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDenyLoad}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Deny Load'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Submit Quote Modal */}
+        {showQuoteModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowQuoteModal(false)}>
+            <div className="glass max-w-md w-full rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Quote</h3>
+              <p className="text-sm text-gray-600 mb-4">Provide your quote amount and any notes for the shipper.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quote Amount (USD) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={quoteAmount}
+                      onChange={(e) => setQuoteAmount(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={quoteNotes}
+                    onChange={(e) => setQuoteNotes(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    placeholder="Add any terms, conditions, or notes for the shipper..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Quote expires in 48 hours if not approved.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowQuoteModal(false)
+                    setQuoteLoadId(null)
+                    setQuoteAmount('')
+                    setQuoteNotes('')
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitQuote}
+                  disabled={isSubmitting || !quoteAmount}
+                  className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Quote'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

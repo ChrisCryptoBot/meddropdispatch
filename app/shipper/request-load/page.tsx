@@ -47,15 +47,36 @@ export default function ShipperRequestLoadPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        // Prioritize user-friendly error message, fallback to details, then generic message
-        const errorMsg = errorData.error || errorData.message || errorData.details || 'Failed to submit request'
+        
+        // Build detailed error message
+        let errorMsg = errorData.error || errorData.message || 'Failed to submit request'
+        
+        // Add specific field information if available
+        if (errorData.missingFields && errorData.missingFields.length > 0) {
+          errorMsg += `\n\nMissing fields: ${errorData.missingFields.join(', ')}`
+        }
+        
+        if (errorData.invalidFields && errorData.invalidFields.length > 0) {
+          const invalidDetails = errorData.invalidFields.map((f: any) => `${f.field}: ${f.issue}`).join('\n')
+          errorMsg += `\n\nInvalid fields:\n${invalidDetails}`
+        }
+        
+        if (errorData.field) {
+          errorMsg += `\n\nField with issue: ${errorData.field}`
+        }
+        
+        // Prioritize user-friendly error message, fallback to details
+        if (!errorMsg.includes('\n') && errorData.details) {
+          errorMsg = errorData.details
+        }
+        
         throw new Error(errorMsg)
       }
 
       const result = await response.json()
 
-      // Redirect to shipper dashboard with success
-      router.push(`/shipper/dashboard?success=true&trackingCode=${result.trackingCode}`)
+      // Redirect to shipper dashboard with success and force refresh
+      router.push(`/shipper/dashboard?success=true&trackingCode=${result.trackingCode}&refresh=${Date.now()}`)
     } catch (err) {
       let errorMessage = 'Something went wrong. Please try again.'
       
@@ -104,16 +125,23 @@ export default function ShipperRequestLoadPage() {
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-sm font-semibold text-red-800 mb-1">Error</h3>
-                <p className="text-sm text-red-700 whitespace-pre-wrap">{error}</p>
+                <div className="text-sm text-red-700">
+                  {error.split('\n').map((line, index) => (
+                    <p key={index} className={index === 0 ? 'font-semibold mb-1' : index === 1 ? 'mb-2' : ''}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Company Information - Pre-filled */}
+          {/* Company Information - Pre-filled and Read-only */}
           <div className="glass p-8 rounded-2xl">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Company Information</h3>
+            <p className="text-sm text-gray-600 mb-4">Your account information (cannot be changed here)</p>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -124,8 +152,9 @@ export default function ShipperRequestLoadPage() {
                   id="companyName"
                   name="companyName"
                   required
-                  defaultValue={shipper.companyName}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  readOnly
+                  value={shipper.companyName}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100/80 cursor-not-allowed"
                 />
               </div>
 
@@ -137,8 +166,10 @@ export default function ShipperRequestLoadPage() {
                   id="clientType"
                   name="clientType"
                   required
-                  defaultValue={shipper.clientType || ''}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  value={shipper.clientType || ''}
+                  readOnly
+                  disabled
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100/80 cursor-not-allowed"
                 >
                   <option value="">Select type...</option>
                   <option value="INDEPENDENT_PHARMACY">Independent Pharmacy</option>
@@ -161,8 +192,9 @@ export default function ShipperRequestLoadPage() {
                   id="contactName"
                   name="contactName"
                   required
-                  defaultValue={shipper.contactName}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  readOnly
+                  value={shipper.contactName}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100/80 cursor-not-allowed"
                 />
               </div>
 
@@ -175,8 +207,9 @@ export default function ShipperRequestLoadPage() {
                   id="phone"
                   name="phone"
                   required
-                  defaultValue={shipper.phone}
+                  defaultValue={shipper.phone || ''}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  placeholder="e.g. 555-123-4567"
                 />
               </div>
 
@@ -189,8 +222,9 @@ export default function ShipperRequestLoadPage() {
                   id="email"
                   name="email"
                   required
-                  defaultValue={shipper.email}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  readOnly
+                  value={shipper.email}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100/80 cursor-not-allowed"
                 />
               </div>
 
@@ -617,17 +651,17 @@ export default function ShipperRequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="estimatedWeightKg" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Estimated Weight (kg)
+                <label htmlFor="estimatedWeightLbs" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Estimated Weight (lb)
                 </label>
                 <input
                   type="number"
-                  id="estimatedWeightKg"
-                  name="estimatedWeightKg"
+                  id="estimatedWeightLbs"
+                  name="estimatedWeightLbs"
                   min="0"
                   step="0.1"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="2.5"
+                  placeholder="e.g. 5"
                 />
               </div>
 

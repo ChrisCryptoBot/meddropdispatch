@@ -19,16 +19,19 @@ datasource db {
 // ServiceType: STAT, SAME_DAY, SCHEDULED_ROUTE, OVERFLOW, GOVERNMENT
 // SpecimenCategory: UN3373_CATEGORY_B, NON_SPECIMEN_MEDICAL, PHARMACEUTICAL_NON_CONTROLLED, OTHER
 // TemperatureRequirement: AMBIENT, REFRIGERATED, FROZEN, OTHER
-// LoadStatus: NEW, QUOTED, QUOTE_ACCEPTED, SCHEDULED, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED, CANCELLED
+// LoadStatus: REQUESTED, ACCEPTED, SCHEDULED, EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED, DENIED
+// Scheduling system: REQUESTED (initial) → ACCEPTED (after phone call) → SCHEDULED → PICKED_UP → IN_TRANSIT → DELIVERED → COMPLETED
+// OR: REQUESTED → DENIED (if doesn't fit schedule)
 // PreferredContactMethod: PHONE, EMAIL
 // CreatedVia: WEB_FORM, INTERNAL
-// TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, ARRIVED_AT_DESTINATION, DELIVERED, PAPERWORK_COMPLETED, CANCELLED
+// TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, ARRIVED_AT_DESTINATION, DELIVERED, PAPERWORK_COMPLETED, CANCELLED, DRIVER_DENIED
 // DocumentType: PROOF_OF_PICKUP, PROOF_OF_DELIVERY, BILL_OF_LADING, OTHER
 // UserRole: ADMIN, DISPATCHER, VIEW_ONLY
 // DriverStatus: AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
 // VehicleType: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
 // CancellationReason: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
 // CancellationBillingRule: BILLABLE, PARTIAL, NOT_BILLABLE
+// DriverDenialReason: PRICE_TOO_LOW, ROUTE_NOT_FEASIBLE, TIMING_NOT_WORKABLE, TOO_FAR, EQUIPMENT_REQUIRED, ALREADY_BOOKED, OTHER
 // ============================================================================
 
 // ============================================================================
@@ -39,6 +42,7 @@ datasource db {
 model Shipper {
   id           String  @id @default(cuid())
   companyName  String
+  shipperCode  String? @unique // 3-4 letter code for tracking (e.g., "AMZ", "BAY", "JSM")
   clientType   String // ClientType enum
   contactName  String
   phone        String
@@ -130,6 +134,12 @@ model LoadRequest {
   driverId           String? // Assigned driver
   assignedAt         DateTime? // When assigned to driver
   acceptedByDriverAt DateTime? // When driver accepted
+  
+  // Driver Denial Tracking (when driver rejects/declines a load before accepting)
+  driverDenialReason String? // DriverDenialReason: PRICE_TOO_LOW, ROUTE_NOT_FEASIBLE, TIMING_NOT_WORKABLE, TOO_FAR, EQUIPMENT_REQUIRED, ALREADY_BOOKED, OTHER
+  driverDenialNotes  String? // Optional notes explaining denial
+  driverDeniedAt     DateTime? // When load was denied by driver
+  lastDeniedByDriverId String? // ID of driver who last denied this load
 
   // Signatures & Compliance
   pickupSignature    String? // Base64 signature image
@@ -167,6 +177,14 @@ model LoadRequest {
   quoteCurrency   String    @default("USD")
   quoteNotes      String? // Internal notes about the quote
   quoteAcceptedAt DateTime? // When shipper accepted quote
+  
+  // Driver Quote/Negotiation (when driver accepts load and provides quote)
+  driverQuoteAmount       Float? // Driver's proposed rate
+  driverQuoteNotes        String? // Driver's terms/notes for the quote
+  driverQuoteSubmittedAt  DateTime? // When driver submitted quote
+  driverQuoteExpiresAt    DateTime? // Quote expiry deadline (e.g., 48 hours after submission)
+  shipperQuoteDecision    String? // Shipper decision: 'APPROVED', 'DENIED', 'PENDING', null
+  shipperQuoteDecisionAt  DateTime? // When shipper made decision
 
   // Invoice Linking
   invoiceId  String? // Link to invoice when billed

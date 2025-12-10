@@ -82,15 +82,6 @@ export default function ShipperLayout({
       ),
     },
     {
-      name: 'New Request',
-      href: '/shipper/request-load',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
-    {
       name: 'Saved Facilities',
       href: '/shipper/facilities',
       icon: (
@@ -275,8 +266,7 @@ export default function ShipperLayout({
                 (item.href === '/shipper/settings' && pathname.startsWith('/shipper/settings')) ||
                 (item.href === '/shipper/support' && pathname.startsWith('/shipper/support')) ||
                 (item.href === '/shipper/loads' && pathname.startsWith('/shipper/loads')) ||
-                (item.href === '/shipper/tracking' && pathname.startsWith('/shipper/tracking')) ||
-                (item.href === '/shipper/request-load' && pathname.startsWith('/shipper/request-load'))
+                (item.href === '/shipper/tracking' && pathname.startsWith('/shipper/tracking'))
 
               return (
                 <Link

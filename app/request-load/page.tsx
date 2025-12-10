@@ -604,13 +604,14 @@ export default function RequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="estimatedWeightKg" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Estimated Weight (kg)
+                <label htmlFor="estimatedWeightLbs" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Estimated Weight (lb)
                 </label>
                 <input
                   type="number"
-                  id="estimatedWeightKg"
-                  name="estimatedWeightKg"
+                  id="estimatedWeightLbs"
+                  name="estimatedWeightLbs"
+                  placeholder="e.g. 5"
                   min="0"
                   step="0.1"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"

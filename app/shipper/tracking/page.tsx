@@ -20,7 +20,7 @@ export default function ShipperTrackingPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Track Shipment</h1>
           <p className="text-lg text-gray-600">
-            Enter your tracking code to view real-time status updates
+            Enter your tracking code to view delivery status and tracking events
           </p>
         </div>
 

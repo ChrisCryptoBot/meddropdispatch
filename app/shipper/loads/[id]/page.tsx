@@ -6,31 +6,38 @@ import Link from 'next/link'
 
 interface LoadRequest {
   id: string
-  trackingCode: string
+  publicTrackingCode: string
   status: string
-  pickupDate: string
-  deliveryDate: string | null
+  readyTime: string | null
+  deliveryDeadline: string | null
   quoteAmount: number | null
   quoteNotes: string | null
-  specialInstructions: string | null
-  temperatureControlled: boolean
-  weightLbs: number
-  equipmentType: string
+  // Driver quote fields
+  driverQuoteAmount: number | null
+  driverQuoteNotes: string | null
+  driverQuoteSubmittedAt: string | null
+  driverQuoteExpiresAt: string | null
+  shipperQuoteDecision: string | null
+  // Driver denial fields
+  driverDenialReason: string | null
+  driverDenialNotes: string | null
+  driverDeniedAt: string | null
+  lastDeniedByDriverId: string | null
   pickupFacility: {
     name: string
-    address: string
+    addressLine1: string
     city: string
     state: string
-    zip: string
+    postalCode: string
     contactName: string
     contactPhone: string
   }
   dropoffFacility: {
     name: string
-    address: string
+    addressLine1: string
     city: string
     state: string
-    zip: string
+    postalCode: string
     contactName: string
     contactPhone: string
   }
@@ -65,6 +72,15 @@ export default function ShipperLoadDetailPage() {
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploadType, setUploadType] = useState('OTHER')
   const [isUploading, setIsUploading] = useState(false)
+  const [showRejectQuoteModal, setShowRejectQuoteModal] = useState(false)
+  const [rejectQuoteNotes, setRejectQuoteNotes] = useState('')
+  const [isApprovingQuote, setIsApprovingQuote] = useState(false)
+  const [isRejectingQuote, setIsRejectingQuote] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('CLIENT_CANCELLED')
+  const [cancelBillingRule, setCancelBillingRule] = useState('NOT_BILLABLE')
+  const [cancelNotes, setCancelNotes] = useState('')
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -154,58 +170,163 @@ export default function ShipperLoadDetailPage() {
   }
 
   const handleAcceptQuote = async () => {
-    if (!confirm('Accept this quote? This will schedule the shipment.')) return
+    // Handle admin quote acceptance (old flow)
+    if (load?.status === 'QUOTED' && load?.quoteAmount) {
+      if (!confirm('Accept this quote? This will schedule the shipment.')) return
+      if (!params?.id) return
+      setIsAccepting(true)
+      try {
+        const response = await fetch(`/api/load-requests/${params.id}/accept-quote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!response.ok) throw new Error('Failed to accept quote')
+        await fetchLoad()
+        alert('Quote accepted successfully! Your shipment is now scheduled.')
+      } catch (error) {
+        console.error('Error accepting quote:', error)
+        alert('Failed to accept quote. Please try again.')
+      } finally {
+        setIsAccepting(false)
+      }
+      return
+    }
 
-    if (!params?.id) return
-    setIsAccepting(true)
-    try {
-      const response = await fetch(`/api/load-requests/${params.id}/accept-quote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!response.ok) throw new Error('Failed to accept quote')
-
-      const data = await response.json()
-
-      // Refresh load data
-      await fetchLoad()
-
-      alert('Quote accepted successfully! Your shipment is now scheduled.')
-    } catch (error) {
-      console.error('Error accepting quote:', error)
-      alert('Failed to accept quote. Please try again.')
-    } finally {
-      setIsAccepting(false)
+    // Handle driver quote approval (new flow)
+    if (load?.status === 'DRIVER_QUOTE_SUBMITTED' && load?.driverQuoteAmount && shipper) {
+      if (!confirm(`Approve driver quote of $${load.driverQuoteAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}? This will schedule the shipment.`)) return
+      if (!params?.id) return
+      setIsApprovingQuote(true)
+      try {
+        const response = await fetch(`/api/load-requests/${params.id}/approve-driver-quote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shipperId: shipper.id }),
+        })
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to approve quote')
+        }
+        await fetchLoad()
+        alert('Driver quote approved! Your shipment is now scheduled.')
+      } catch (error) {
+        console.error('Error approving quote:', error)
+        alert(error instanceof Error ? error.message : 'Failed to approve quote. Please try again.')
+      } finally {
+        setIsApprovingQuote(false)
+      }
     }
   }
 
+  const handleRejectDriverQuote = async () => {
+    if (!shipper || !params?.id) return
+    
+    setIsRejectingQuote(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/reject-driver-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipperId: shipper.id,
+          rejectionNotes: rejectQuoteNotes || null,
+        }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to reject quote')
+      }
+      
+      await fetchLoad()
+      setShowRejectQuoteModal(false)
+      setRejectQuoteNotes('')
+      alert('Quote rejected. Load is now available for other drivers.')
+    } catch (error) {
+      console.error('Error rejecting quote:', error)
+      alert(error instanceof Error ? error.message : 'Failed to reject quote. Please try again.')
+    } finally {
+      setIsRejectingQuote(false)
+    }
+  }
+
+  const handleCancelLoad = async () => {
+    if (!shipper || !params?.id) return
+    
+    setIsCancelling(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cancellationReason: cancelReason,
+          cancelledBy: 'SHIPPER',
+          cancelledById: shipper.id,
+          cancellationBillingRule: cancelBillingRule,
+          notes: cancelNotes || null,
+        }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to cancel load')
+      }
+      
+      await fetchLoad()
+      setShowCancelModal(false)
+      setCancelReason('CLIENT_CANCELLED')
+      setCancelBillingRule('NOT_BILLABLE')
+      setCancelNotes('')
+      alert('Load cancelled successfully.')
+      router.push('/shipper/dashboard')
+    } catch (error) {
+      console.error('Error cancelling load:', error)
+      alert(error instanceof Error ? error.message : 'Failed to cancel load. Please try again.')
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
+  // Check if load can be cancelled
+  const canCancel = load && !['DELIVERED', 'COMPLETED', 'CANCELLED', 'DENIED'].includes(load.status)
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
+      'REQUESTED': 'bg-blue-100 text-blue-800 border-blue-200',
       'NEW': 'bg-blue-100 text-blue-800 border-blue-200',
       'QUOTED': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'QUOTE_ACCEPTED': 'bg-green-100 text-green-800 border-green-200',
+      'DRIVER_QUOTE_PENDING': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'DRIVER_QUOTE_SUBMITTED': 'bg-amber-100 text-amber-800 border-amber-200',
+      'QUOTE_NEGOTIATION': 'bg-orange-100 text-orange-800 border-orange-200',
       'SCHEDULED': 'bg-purple-100 text-purple-800 border-purple-200',
+      'EN_ROUTE': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'PICKED_UP': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'IN_TRANSIT': 'bg-cyan-100 text-cyan-800 border-cyan-200',
       'DELIVERED': 'bg-green-100 text-green-800 border-green-200',
       'COMPLETED': 'bg-gray-100 text-gray-800 border-gray-200',
       'CANCELLED': 'bg-red-100 text-red-800 border-red-200',
+      'DENIED': 'bg-red-100 text-red-800 border-red-200',
     }
     return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
   }
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      'REQUESTED': 'Scheduling Request',
       'NEW': 'New Request',
       'QUOTED': 'Quote Pending',
       'QUOTE_ACCEPTED': 'Quote Accepted',
+      'DRIVER_QUOTE_PENDING': 'Driver Quote Pending',
+      'DRIVER_QUOTE_SUBMITTED': 'Quote Submitted - Awaiting Approval',
+      'QUOTE_NEGOTIATION': 'Quote Negotiation',
       'SCHEDULED': 'Scheduled',
+      'EN_ROUTE': 'En Route to Pickup',
       'PICKED_UP': 'Picked Up',
       'IN_TRANSIT': 'In Transit',
       'DELIVERED': 'Delivered',
       'COMPLETED': 'Completed',
       'CANCELLED': 'Cancelled',
+      'DENIED': 'Not Scheduled',
     }
     return labels[status] || status
   }
@@ -235,23 +356,36 @@ export default function ShipperLoadDetailPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen">
+      {/* Header - Fixed at top of content area (below layout header) */}
+      <div className="fixed left-64 right-0 top-[73px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
               <Link href="/shipper/dashboard" className="text-blue-600 hover:text-blue-700 text-sm mb-2 inline-block">
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">{load.trackingCode}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{load.publicTrackingCode}</h1>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(load.status)}`}>
-              {getStatusLabel(load.status)}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(load.status)}`}>
+                {getStatusLabel(load.status)}
+              </span>
+              {canCancel && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                >
+                  Cancel Load
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Spacer to account for fixed header height - adjust based on header content */}
+      <div className="h-24"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
@@ -283,6 +417,114 @@ export default function ShipperLoadDetailPage() {
                     >
                       {isAccepting ? 'Accepting...' : 'Accept Quote & Schedule Shipment'}
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Driver Quote Submission - Awaiting Approval */}
+            {load.status === 'DRIVER_QUOTE_SUBMITTED' && load.driverQuoteAmount && (
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      Driver Quote Received
+                      {load.driver && ` from ${load.driver.firstName} ${load.driver.lastName}`}
+                    </h3>
+                    <div className="mb-4">
+                      <div className="text-3xl font-bold text-gray-900 mb-2">
+                        ${load.driverQuoteAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      {load.driverQuoteNotes && (
+                        <p className="text-sm text-gray-700 mb-2 bg-white/60 p-3 rounded-lg">{load.driverQuoteNotes}</p>
+                      )}
+                      {load.driverQuoteExpiresAt && (
+                        <p className="text-xs text-gray-500">
+                          Quote expires: {new Date(load.driverQuoteExpiresAt).toLocaleString()}
+                        </p>
+                      )}
+                      {load.driver && (
+                        <div className="mt-3 text-sm text-gray-600">
+                          <p>Driver: {load.driver.firstName} {load.driver.lastName}</p>
+                          <p>Vehicle: {load.driver.vehicleType}</p>
+                          {load.driver.phone && <p>Phone: {load.driver.phone}</p>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleAcceptQuote}
+                        disabled={isApprovingQuote}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isApprovingQuote ? 'Approving...' : 'Approve Quote'}
+                      </button>
+                      <button
+                        onClick={() => setShowRejectQuoteModal(true)}
+                        disabled={isApprovingQuote}
+                        className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all disabled:opacity-50"
+                      >
+                        Reject Quote
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Driver Quote Pending - Waiting for Quote */}
+            {load.status === 'DRIVER_QUOTE_PENDING' && load.driver && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-blue-900 mb-2">Driver Quote Pending</h3>
+                    <p className="text-blue-700">
+                      Driver {load.driver.firstName} {load.driver.lastName} has accepted your load and is preparing a quote.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Driver Denial Display */}
+            {load.driverDenialReason && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-red-900 mb-2">Load Denied by Driver</h3>
+                    <div className="space-y-2">
+                      <p className="text-red-700">
+                        <strong>Reason:</strong> {load.driverDenialReason.replace(/_/g, ' ')}
+                      </p>
+                      {load.driverDenialNotes && (
+                        <p className="text-sm text-red-600 bg-white/60 p-3 rounded-lg">
+                          <strong>Notes:</strong> {load.driverDenialNotes}
+                        </p>
+                      )}
+                      {load.driverDeniedAt && (
+                        <p className="text-xs text-red-500">
+                          Denied on: {new Date(load.driverDeniedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-sm text-red-700 mt-3">
+                      This load is now available for other drivers to accept.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -331,8 +573,8 @@ export default function ShipperLoadDetailPage() {
                     <div className="text-xs text-gray-500 mb-1">PICKUP</div>
                     <div className="font-bold text-gray-900 text-lg mb-2">{load.pickupFacility.name}</div>
                     <div className="text-gray-700 space-y-1 text-sm">
-                      <p>{load.pickupFacility.address}</p>
-                      <p>{load.pickupFacility.city}, {load.pickupFacility.state} {load.pickupFacility.zip}</p>
+                      <p>{load.pickupFacility.addressLine1}</p>
+                      <p>{load.pickupFacility.city}, {load.pickupFacility.state} {load.pickupFacility.postalCode}</p>
                       <p className="pt-2">
                         <span className="font-medium">Contact:</span> {load.pickupFacility.contactName}
                       </p>
@@ -340,7 +582,7 @@ export default function ShipperLoadDetailPage() {
                         <span className="font-medium">Phone:</span> {load.pickupFacility.contactPhone}
                       </p>
                       <p className="pt-2">
-                        <span className="font-medium">Date:</span> {new Date(load.pickupDate).toLocaleString()}
+                        <span className="font-medium">Date:</span> {load.readyTime ? new Date(load.readyTime).toLocaleString() : 'TBD'}
                       </p>
                     </div>
                   </div>
@@ -366,17 +608,17 @@ export default function ShipperLoadDetailPage() {
                     <div className="text-xs text-gray-500 mb-1">DELIVERY</div>
                     <div className="font-bold text-gray-900 text-lg mb-2">{load.dropoffFacility.name}</div>
                     <div className="text-gray-700 space-y-1 text-sm">
-                      <p>{load.dropoffFacility.address}</p>
-                      <p>{load.dropoffFacility.city}, {load.dropoffFacility.state} {load.dropoffFacility.zip}</p>
+                      <p>{load.dropoffFacility.addressLine1}</p>
+                      <p>{load.dropoffFacility.city}, {load.dropoffFacility.state} {load.dropoffFacility.postalCode}</p>
                       <p className="pt-2">
                         <span className="font-medium">Contact:</span> {load.dropoffFacility.contactName}
                       </p>
                       <p>
                         <span className="font-medium">Phone:</span> {load.dropoffFacility.contactPhone}
                       </p>
-                      {load.deliveryDate && (
+                      {load.deliveryDeadline && (
                         <p className="pt-2">
-                          <span className="font-medium">Date:</span> {new Date(load.deliveryDate).toLocaleString()}
+                          <span className="font-medium">Deadline:</span> {new Date(load.deliveryDeadline).toLocaleString()}
                         </p>
                       )}
                     </div>
@@ -392,16 +634,16 @@ export default function ShipperLoadDetailPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Equipment Type</div>
-                  <div className="font-medium text-gray-900">{load.equipmentType}</div>
+                  <div className="font-medium text-gray-900">Standard Vehicle</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Weight</div>
-                  <div className="font-medium text-gray-900">{load.weightLbs} lbs</div>
+                  <div className="font-medium text-gray-900">N/A</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Temperature Control</div>
                   <div className="font-medium text-gray-900">
-                    {load.temperatureControlled ? 'Required' : 'Not Required'}
+                    Temperature Controlled
                   </div>
                 </div>
                 <div>
@@ -412,10 +654,10 @@ export default function ShipperLoadDetailPage() {
                 </div>
               </div>
 
-              {load.specialInstructions && (
+              {load.quoteNotes && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="text-xs text-gray-500 mb-1">Special Instructions</div>
-                  <div className="text-gray-700">{load.specialInstructions}</div>
+                  <div className="text-xs text-gray-500 mb-1">Notes</div>
+                  <div className="text-gray-700">{load.quoteNotes}</div>
                 </div>
               )}
             </div>
@@ -553,7 +795,7 @@ export default function ShipperLoadDetailPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Tracking Code</div>
-                  <div className="font-mono font-medium text-gray-900">{load.trackingCode}</div>
+                  <div className="font-mono font-medium text-gray-900">{load.publicTrackingCode}</div>
                 </div>
                 {load.quoteAmount && (
                   <div>
@@ -573,11 +815,11 @@ export default function ShipperLoadDetailPage() {
                 Share this link to allow tracking without login:
               </p>
               <Link
-                href={`/track/${load.trackingCode}`}
+                href={`/track/${load.publicTrackingCode}`}
                 target="_blank"
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium break-all"
               >
-                {typeof window !== 'undefined' && `${window.location.origin}/track/${load.trackingCode}`}
+                {typeof window !== 'undefined' && `${window.location.origin}/track/${load.publicTrackingCode}`}
               </Link>
             </div>
           </div>
@@ -682,6 +924,144 @@ export default function ShipperLoadDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Driver Quote Modal */}
+      {showRejectQuoteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowRejectQuoteModal(false)}>
+          <div className="glass max-w-md w-full rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Reject Driver Quote</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Rejecting this quote will make the load available for other drivers again.
+              {load.driverQuoteAmount && (
+                <span className="block mt-2 font-semibold text-gray-900">
+                  Quote Amount: ${load.driverQuoteAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Rejection Notes (Optional)
+                </label>
+                <textarea
+                  value={rejectQuoteNotes}
+                  onChange={(e) => setRejectQuoteNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  placeholder="Reason for rejecting this quote..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowRejectQuoteModal(false)
+                  setRejectQuoteNotes('')
+                }}
+                className="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectDriverQuote}
+                disabled={isRejectingQuote}
+                className="flex-1 px-4 py-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {isRejectingQuote ? 'Rejecting...' : 'Reject Quote'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Load Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Cancel Load</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to cancel this load? This action cannot be undone.
+            </p>
+
+            <div className="space-y-4">
+              {/* Cancellation Reason */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Reason for Cancellation *
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                >
+                  <option value="CLIENT_CANCELLED">Client Cancelled</option>
+                  <option value="DRIVER_NO_SHOW">Driver No Show</option>
+                  <option value="VEHICLE_BREAKDOWN">Vehicle Breakdown</option>
+                  <option value="FACILITY_CLOSED">Facility Closed</option>
+                  <option value="WEATHER">Weather</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              {/* Billing Rule */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Billing Rule *
+                </label>
+                <select
+                  value={cancelBillingRule}
+                  onChange={(e) => setCancelBillingRule(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                >
+                  <option value="NOT_BILLABLE">Not Billable</option>
+                  <option value="PARTIAL">Partial Charge</option>
+                  <option value="BILLABLE">Fully Billable</option>
+                </select>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Additional Notes (Optional)
+                </label>
+                <textarea
+                  value={cancelNotes}
+                  onChange={(e) => setCancelNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="Provide any additional details about the cancellation..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false)
+                  setCancelReason('CLIENT_CANCELLED')
+                  setCancelBillingRule('NOT_BILLABLE')
+                  setCancelNotes('')
+                }}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCancelLoad}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
           </div>
         </div>
       )}

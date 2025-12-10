@@ -48,12 +48,6 @@ export default function SavedFacilitiesPage() {
           <p className="text-gray-600 mb-6">
             Facilities you use frequently will appear here for quick access when creating load requests
           </p>
-          <Link
-            href="/request-load"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
-          >
-            Create Load Request
-          </Link>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

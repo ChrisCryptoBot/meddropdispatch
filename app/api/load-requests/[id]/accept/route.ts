@@ -43,26 +43,23 @@ export async function POST(
       )
     }
 
-    // Check if load can be accepted (must be QUOTED, QUOTE_ACCEPTED, or NEW)
-    const acceptableStatuses = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED']
-    if (!acceptableStatuses.includes(loadRequest.status)) {
+    // Check if load can be accepted (must be REQUESTED)
+    if (loadRequest.status !== 'REQUESTED') {
       return NextResponse.json(
-        { error: `Cannot accept load with status: ${loadRequest.status}` },
+        { error: `Cannot accept load with status: ${loadRequest.status}. Load must be REQUESTED.` },
         { status: 400 }
       )
     }
 
-    // Update load with driver assignment
+    // Update load with driver assignment - set to SCHEDULED (tracking starts here)
     const updatedLoad = await prisma.loadRequest.update({
       where: { id },
       data: {
         driverId,
         assignedAt: loadRequest.assignedAt || new Date(),
         acceptedByDriverAt: new Date(),
-        // Auto-update status to SCHEDULED if not already
-        status: loadRequest.status === 'NEW' || loadRequest.status === 'QUOTED' || loadRequest.status === 'QUOTE_ACCEPTED'
-          ? 'SCHEDULED'
-          : undefined,
+        // Set status to SCHEDULED - driver accepted after phone call, tracking now active
+        status: 'SCHEDULED',
       },
       include: {
         driver: {
@@ -93,18 +90,18 @@ export async function POST(
       await prisma.trackingEvent.update({
         where: { id: initialEvent.id },
         data: {
-          description: 'Your load request has been received and accepted by a driver.',
+          description: 'Your scheduling request has been received. A driver will call shortly to confirm details and pricing.',
         },
       })
     }
 
-    // Create tracking event for driver acceptance
+    // Create tracking event for scheduling (tracking starts here)
     await prisma.trackingEvent.create({
       data: {
         loadRequestId: id,
-        code: 'SHIPPER_CONFIRMED',
-        label: `Accepted by driver: ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
-        description: `Load accepted and scheduled with driver ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
+        code: 'SCHEDULED',
+        label: `Scheduled`,
+        description: `Your delivery has been scheduled. Tracking is now available.`,
         locationText: 'MED DROP Driver Portal',
         actorType: 'DRIVER',
         actorId: driverId,

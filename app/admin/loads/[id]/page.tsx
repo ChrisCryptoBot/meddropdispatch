@@ -391,7 +391,7 @@ export default function AdminLoadDetailPage() {
               {load.estimatedWeightKg && (
                 <div>
                   <p className="text-gray-600 mb-1">Estimated Weight</p>
-                  <p className="font-semibold text-gray-800">{load.estimatedWeightKg} kg</p>
+                  <p className="font-semibold text-gray-800">{(load.estimatedWeightKg / 0.453592).toFixed(1)} lb</p>
                 </div>
               )}
               {load.declaredValue && (

@@ -30,7 +30,7 @@ export async function GET(
     // For now, we'll fetch all loads and filter client-side if search is provided
     // In production with PostgreSQL, use mode: 'insensitive'
 
-    // Get all loads for this driver (including completed)
+    // Get all loads for this driver (including completed and cancelled)
     let loads = await prisma.loadRequest.findMany({
       where,
       include: {
