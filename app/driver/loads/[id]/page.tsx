@@ -1,8 +1,8 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/types'
 import SignatureCapture from '@/components/SignatureCapture'
@@ -56,8 +56,8 @@ interface Load {
   }>
 }
 
-export default function DriverLoadDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
+export default function DriverLoadDetailPage() {
+  const params = useParams()
   const router = useRouter()
   const [load, setLoad] = useState<Load | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -67,12 +67,14 @@ export default function DriverLoadDetailPage({ params }: { params: Promise<{ id:
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
-    fetchLoad()
-  }, [resolvedParams.id])
+    if (params.id) {
+      fetchLoad()
+    }
+  }, [params.id])
 
   const fetchLoad = async () => {
     try {
-      const response = await fetch(`/api/load-requests/${resolvedParams.id}`)
+      const response = await fetch(`/api/load-requests/${params.id}`)
       if (!response.ok) throw new Error('Failed to fetch load')
       const data = await response.json()
       setLoad(data)

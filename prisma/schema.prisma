@@ -11,116 +11,23 @@ datasource db {
 }
 
 // ============================================================================
-// ENUMS
+// ENUMS (SQLite doesn't support enums, so we use String types)
+// Valid values documented as comments:
+// 
+// ClientType: INDEPENDENT_PHARMACY, CLINIC, LAB, DIALYSIS_CENTER, IMAGING_CENTER, HOSPITAL, GOVERNMENT, OTHER
+// FacilityType: CLINIC, LAB, HOSPITAL, PHARMACY, DIALYSIS, IMAGING, GOVERNMENT, OTHER
+// ServiceType: STAT, SAME_DAY, SCHEDULED_ROUTE, OVERFLOW, GOVERNMENT
+// SpecimenCategory: UN3373_CATEGORY_B, NON_SPECIMEN_MEDICAL, PHARMACEUTICAL_NON_CONTROLLED, OTHER
+// TemperatureRequirement: AMBIENT, REFRIGERATED, FROZEN, OTHER
+// LoadStatus: NEW, QUOTED, QUOTE_ACCEPTED, SCHEDULED, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED, CANCELLED
+// PreferredContactMethod: PHONE, EMAIL
+// CreatedVia: WEB_FORM, INTERNAL
+// TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, ARRIVED_AT_DESTINATION, DELIVERED, PAPERWORK_COMPLETED, CANCELLED
+// DocumentType: PROOF_OF_PICKUP, PROOF_OF_DELIVERY, BILL_OF_LADING, OTHER
+// UserRole: ADMIN, DISPATCHER, VIEW_ONLY
+// DriverStatus: AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
+// VehicleType: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
 // ============================================================================
-
-enum ClientType {
-  INDEPENDENT_PHARMACY
-  CLINIC
-  LAB
-  DIALYSIS_CENTER
-  IMAGING_CENTER
-  HOSPITAL
-  GOVERNMENT
-  OTHER
-}
-
-enum FacilityType {
-  CLINIC
-  LAB
-  HOSPITAL
-  PHARMACY
-  DIALYSIS
-  IMAGING
-  GOVERNMENT
-  OTHER
-}
-
-enum ServiceType {
-  STAT              // Immediate pickup/delivery
-  SAME_DAY          // Same-day service
-  SCHEDULED_ROUTE   // Regular scheduled route
-  OVERFLOW          // Overflow/backup service
-  GOVERNMENT        // Government contract work
-}
-
-enum SpecimenCategory {
-  UN3373_CATEGORY_B              // UN3373 Biological Substance, Category B
-  NON_SPECIMEN_MEDICAL           // Medical supplies, equipment
-  PHARMACEUTICAL_NON_CONTROLLED  // Pharmaceutical (non-controlled)
-  OTHER
-}
-
-enum TemperatureRequirement {
-  AMBIENT      // Room temperature
-  REFRIGERATED // 2-8°C
-  FROZEN       // Below 0°C
-  OTHER
-}
-
-enum LoadStatus {
-  NEW              // Submitted by shipper, not reviewed
-  QUOTED           // Price quoted to shipper
-  QUOTE_ACCEPTED   // Shipper accepted quote
-  SCHEDULED        // Scheduled with driver
-  PICKED_UP        // Picked up from origin
-  IN_TRANSIT       // En route to destination
-  DELIVERED        // Delivered to destination
-  COMPLETED        // Paperwork complete, invoiced
-  CANCELLED        // Cancelled
-}
-
-enum PreferredContactMethod {
-  PHONE
-  EMAIL
-}
-
-enum CreatedVia {
-  WEB_FORM   // Created via public web form
-  INTERNAL   // Created by admin/dispatcher
-}
-
-enum TrackingEventCode {
-  REQUEST_RECEIVED        // Initial request received
-  PRICE_QUOTED           // Price quoted to shipper
-  SHIPPER_CONFIRMED      // Shipper confirmed/accepted
-  DRIVER_EN_ROUTE_PICKUP // Driver en route to pickup
-  PICKED_UP              // Picked up from origin
-  IN_TRANSIT             // In transit
-  ARRIVED_AT_DESTINATION // Arrived at destination
-  DELIVERED              // Delivered
-  PAPERWORK_COMPLETED    // All paperwork completed
-  CANCELLED              // Load cancelled
-}
-
-enum DocumentType {
-  PROOF_OF_PICKUP   // Proof of pickup (signature, timestamp)
-  PROOF_OF_DELIVERY // Proof of delivery (signature, timestamp)
-  BILL_OF_LADING    // Bill of lading
-  OTHER             // Other documents
-}
-
-enum UserRole {
-  ADMIN       // Full access
-  DISPATCHER  // Can manage loads
-  VIEW_ONLY   // Read-only access
-}
-
-enum DriverStatus {
-  AVAILABLE    // Ready for assignments
-  ON_ROUTE     // Currently on a delivery
-  OFF_DUTY     // Not available
-  INACTIVE     // Account disabled
-}
-
-enum VehicleType {
-  SEDAN        // Standard car
-  SUV          // SUV
-  VAN          // Cargo van
-  SPRINTER     // Sprinter van
-  BOX_TRUCK    // Box truck
-  REFRIGERATED // Temperature-controlled vehicle
-}
 
 // ============================================================================
 // MODELS
@@ -130,7 +37,7 @@ enum VehicleType {
 model Shipper {
   id           String     @id @default(cuid())
   companyName  String
-  clientType   ClientType
+  clientType   String // ClientType enum
   contactName  String
   phone        String
   email        String     @unique
@@ -152,7 +59,7 @@ model Facility {
   id                 String       @id @default(cuid())
   shipperId          String
   name               String
-  facilityType       FacilityType
+  facilityType       String // FacilityType enum
   addressLine1       String
   addressLine2       String?
   city               String
@@ -182,16 +89,11 @@ model LoadRequest {
   pickupFacilityId       String
   dropoffFacilityId      String
 
-  // Driver Assignment
-  driverId               String?                 // Assigned driver (nullable)
-  assignedAt             DateTime?               // When driver was assigned
-  acceptedByDriverAt     DateTime?               // When driver accepted the assignment
-
   // Service Details
-  serviceType            ServiceType
+  serviceType            String // ServiceType enum
   commodityDescription   String                  // What's being shipped
-  specimenCategory       SpecimenCategory
-  temperatureRequirement TemperatureRequirement
+  specimenCategory       String // SpecimenCategory enum
+  temperatureRequirement String // TemperatureRequirement enum
 
   // Load Specifications (optional)
   estimatedContainers    Int?
@@ -201,36 +103,43 @@ model LoadRequest {
   // Timing
   readyTime              DateTime?               // When ready for pickup
   deliveryDeadline       DateTime?               // Must deliver by
-  actualPickupTime       DateTime?               // Actual pickup timestamp
-  actualDeliveryTime     DateTime?               // Actual delivery timestamp
 
   // Instructions & Contact
   accessNotes            String?                 // Pickup/delivery access notes
-  preferredContactMethod PreferredContactMethod  @default(EMAIL)
+  preferredContactMethod String                  @default("EMAIL") // PreferredContactMethod enum
 
   // Status & Workflow
-  status                 LoadStatus              @default(NEW)
-  quoteAcceptedAt        DateTime?               // When shipper accepted the quote
+  status                 String                  @default("NEW") // LoadStatus enum
 
-  // Pricing/Quoting
-  quoteAmount            Float?
-  quoteCurrency          String                  @default("USD")
-  quoteNotes             String?                 // Internal notes about the quote
+  // Driver Assignment
+  driverId              String?                 // Assigned driver
+  assignedAt            DateTime?               // When assigned to driver
+  acceptedByDriverAt    DateTime?               // When driver accepted
 
-  // Signatures & Confirmation
-  pickupSignature        String?                 // Signature data (base64 or URL)
-  pickupSignatureName    String?                 // Name of person who signed
-  deliverySignature      String?                 // Signature data
-  deliverySignatureName  String?                 // Name of person who signed
+  // Signatures & Compliance
+  pickupSignature       String?                 // Base64 signature image
+  pickupSignerName      String?                 // Who signed at pickup
+  deliverySignature     String?                 // Base64 signature image
+  deliverySignerName    String?                 // Who signed at delivery
 
   // Temperature Tracking
-  pickupTemperature      Float?                  // Temperature at pickup (°C)
-  deliveryTemperature    Float?                  // Temperature at delivery (°C)
+  pickupTemperature     Float?                  // Temperature at pickup (°C)
+  deliveryTemperature   Float?                  // Temperature at delivery (°C)
+
+  // Actual Timing
+  actualPickupTime      DateTime?               // Actual pickup timestamp
+  actualDeliveryTime    DateTime?               // Actual delivery timestamp
+
+  // Pricing/Quoting
+  quoteAmount           Float?
+  quoteCurrency         String                  @default("USD")
+  quoteNotes            String?                 // Internal notes about the quote
+  quoteAcceptedAt       DateTime?               // When shipper accepted quote
 
   // Metadata
-  createdVia             CreatedVia              @default(WEB_FORM)
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  createdVia            String                  @default("WEB_FORM") // CreatedVia enum
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
 
   // Relations
   shipper         Shipper          @relation(fields: [shipperId], references: [id])
@@ -240,9 +149,10 @@ model LoadRequest {
   trackingEvents  TrackingEvent[]
   documents       Document[]
 
+  @@index([driverId])
+
   @@index([publicTrackingCode])
   @@index([shipperId])
-  @@index([driverId])
   @@index([status])
   @@index([createdAt])
 }
@@ -251,7 +161,7 @@ model LoadRequest {
 model TrackingEvent {
   id            String            @id @default(cuid())
   loadRequestId String
-  code          TrackingEventCode // Event type code
+  code          String // TrackingEventCode enum - Event type code
   label         String            // Human-friendly display text (e.g., "Picked up from ABC Clinic")
   description   String?           // Optional detailed description
   locationText  String?           // City/facility text for display
@@ -268,7 +178,7 @@ model TrackingEvent {
 model Document {
   id            String       @id @default(cuid())
   loadRequestId String
-  type          DocumentType
+  type          String // DocumentType enum
   title         String       // e.g., "Proof of Pickup - ABC Clinic"
   url           String       // Storage URL (S3, etc.) or base64 data
   mimeType      String?      // MIME type (image/jpeg, application/pdf, etc.)
@@ -280,19 +190,6 @@ model Document {
   loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
 
   @@index([loadRequestId])
-}
-
-// User: Internal staff for admin access
-model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String   // bcrypt hash
-  role         UserRole @default(DISPATCHER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([email])
 }
 
 // Driver: Courier drivers
@@ -307,32 +204,45 @@ model Driver {
   // Driver Details
   licenseNumber      String?       // Driver's license number
   licenseExpiry      DateTime?     // License expiration date
-  status             DriverStatus  @default(AVAILABLE)
+  status             String        @default("AVAILABLE") // DriverStatus enum
 
   // Vehicle Information
-  vehicleType        VehicleType?
-  vehicleMake        String?       // e.g., "Ford"
-  vehicleModel       String?       // e.g., "Transit"
+  vehicleType        String?       // VehicleType enum
+  vehicleMake        String?
+  vehicleModel       String?
   vehicleYear        Int?
-  vehiclePlate       String?       // License plate
+  vehiclePlate       String?
   hasRefrigeration   Boolean       @default(false)
 
-  // Certifications & Training
+  // Training & Certifications
   un3373Certified    Boolean       @default(false)
   un3373ExpiryDate   DateTime?
   hipaaTrainingDate  DateTime?
 
-  // Metadata
-  isActive           Boolean       @default(true)
+  // Employment
   hiredDate          DateTime?
-  emergencyContact   String?       // Emergency contact info (JSON or text)
-  notes              String?       // Internal notes
+  emergencyContact   String?
+  emergencyPhone     String?
+
+  // Relations
+  loadRequests       LoadRequest[]
+
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  // Relations
-  assignedLoads      LoadRequest[]
-
   @@index([email])
   @@index([status])
+}
+
+// User: Internal staff for admin access
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   // bcrypt hash
+  role         String   @default("DISPATCHER") // UserRole enum
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
 }

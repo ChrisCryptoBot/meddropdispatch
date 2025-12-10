@@ -7,12 +7,31 @@ import {
   Shipper,
   Facility,
   User,
-  Driver,
-  LoadStatus,
-  TrackingEventCode,
-  DriverStatus,
-  VehicleType
 } from '@prisma/client'
+
+// Type definitions (enums converted to strings for SQLite compatibility)
+export type LoadStatus = 
+  | 'NEW'
+  | 'QUOTED'
+  | 'QUOTE_ACCEPTED'
+  | 'SCHEDULED'
+  | 'PICKED_UP'
+  | 'IN_TRANSIT'
+  | 'DELIVERED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+
+export type TrackingEventCode =
+  | 'REQUEST_RECEIVED'
+  | 'PRICE_QUOTED'
+  | 'SHIPPER_CONFIRMED'
+  | 'DRIVER_EN_ROUTE_PICKUP'
+  | 'PICKED_UP'
+  | 'IN_TRANSIT'
+  | 'ARRIVED_AT_DESTINATION'
+  | 'DELIVERED'
+  | 'PAPERWORK_COMPLETED'
+  | 'CANCELLED'
 
 // Extended types with relations
 export type LoadRequestWithRelations = LoadRequest & {
@@ -27,15 +46,6 @@ export type LoadRequestWithBasicRelations = LoadRequest & {
   shipper: Shipper
   pickupFacility: Facility
   dropoffFacility: Facility
-}
-
-export type LoadRequestWithDriver = LoadRequest & {
-  shipper: Shipper
-  pickupFacility: Facility
-  dropoffFacility: Facility
-  driver: Driver | null
-  trackingEvents: TrackingEvent[]
-  documents: Document[]
 }
 
 // Status display configurations
@@ -132,43 +142,4 @@ export interface StatusUpdateData {
   locationText?: string
   quoteAmount?: number
   quoteNotes?: string
-}
-
-// Driver status configurations
-export const DRIVER_STATUS_LABELS: Record<DriverStatus, string> = {
-  AVAILABLE: 'Available',
-  ON_ROUTE: 'On Route',
-  OFF_DUTY: 'Off Duty',
-  INACTIVE: 'Inactive',
-}
-
-export const DRIVER_STATUS_COLORS: Record<DriverStatus, string> = {
-  AVAILABLE: 'bg-green-100 text-green-800',
-  ON_ROUTE: 'bg-blue-100 text-blue-800',
-  OFF_DUTY: 'bg-gray-100 text-gray-800',
-  INACTIVE: 'bg-red-100 text-red-800',
-}
-
-// Vehicle type labels
-export const VEHICLE_TYPE_LABELS: Record<VehicleType, string> = {
-  SEDAN: 'Sedan',
-  SUV: 'SUV',
-  VAN: 'Cargo Van',
-  SPRINTER: 'Sprinter Van',
-  BOX_TRUCK: 'Box Truck',
-  REFRIGERATED: 'Refrigerated Vehicle',
-}
-
-// Driver load update interface
-export interface DriverLoadUpdate {
-  loadId: string
-  status?: LoadStatus
-  pickupSignature?: string
-  pickupSignatureName?: string
-  deliverySignature?: string
-  deliverySignatureName?: string
-  pickupTemperature?: number
-  deliveryTemperature?: number
-  photoUrl?: string
-  notes?: string
 }

@@ -19,9 +19,11 @@ async function main() {
   })
   console.log('✅ Created admin user:', adminUser.email)
 
-  // Create sample drivers
-  const driver1 = await prisma.driver.create({
-    data: {
+  // Create or update sample drivers
+  const driver1 = await prisma.driver.upsert({
+    where: { email: 'john.doe@meddrop.com' },
+    update: {},
+    create: {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@meddrop.com',
@@ -42,10 +44,12 @@ async function main() {
       hiredDate: new Date('2023-06-01'),
     },
   })
-  console.log('✅ Created driver:', `${driver1.firstName} ${driver1.lastName}`)
+  console.log('✅ Created/updated driver:', `${driver1.firstName} ${driver1.lastName}`)
 
-  const driver2 = await prisma.driver.create({
-    data: {
+  const driver2 = await prisma.driver.upsert({
+    where: { email: 'sarah.johnson@meddrop.com' },
+    update: {},
+    create: {
       firstName: 'Sarah',
       lastName: 'Johnson',
       email: 'sarah.johnson@meddrop.com',
@@ -66,11 +70,16 @@ async function main() {
       hiredDate: new Date('2023-08-15'),
     },
   })
-  console.log('✅ Created driver:', `${driver2.firstName} ${driver2.lastName}`)
+  console.log('✅ Created/updated driver:', `${driver2.firstName} ${driver2.lastName}`)
 
-  // Create a sample shipper
-  const shipper = await prisma.shipper.create({
-    data: {
+  // Create or update a sample shipper
+  const shipper = await prisma.shipper.upsert({
+    where: { email: 'contact@abcmedical.com' },
+    update: {
+      passwordHash: await hashPassword('shipper123'), // Update shipper portal password
+      isActive: true,
+    },
+    create: {
       companyName: 'ABC Medical Center',
       clientType: 'CLINIC',
       contactName: 'Dr. Jane Smith',
@@ -115,9 +124,16 @@ async function main() {
   })
   console.log('✅ Created dropoff facility:', dropoffFacility.name)
 
-  // Create a sample load request with driver assignment
-  const loadRequest = await prisma.loadRequest.create({
-    data: {
+  // Create or update a sample load request with driver assignment
+  const loadRequest = await prisma.loadRequest.upsert({
+    where: { publicTrackingCode: 'MED-0001-AB' },
+    update: {
+      driverId: driver1.id, // Update driver assignment
+      assignedAt: new Date(Date.now() - 1200000),
+      acceptedByDriverAt: new Date(Date.now() - 600000),
+      status: 'SCHEDULED',
+    },
+    create: {
       publicTrackingCode: 'MED-0001-AB',
       shipperId: shipper.id,
       pickupFacilityId: pickupFacility.id,
@@ -140,7 +156,7 @@ async function main() {
       createdVia: 'WEB_FORM',
     },
   })
-  console.log('✅ Created sample load request:', loadRequest.publicTrackingCode)
+  console.log('✅ Created/updated sample load request:', loadRequest.publicTrackingCode)
 
   // Create tracking events
   await prisma.trackingEvent.createMany({

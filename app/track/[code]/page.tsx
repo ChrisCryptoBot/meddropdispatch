@@ -26,9 +26,10 @@ async function getLoadByTrackingCode(code: string) {
 export default async function TrackingDetailPage({
   params,
 }: {
-  params: { code: string }
+  params: Promise<{ code: string }>
 }) {
-  const load = await getLoadByTrackingCode(params.code)
+  const { code } = await params
+  const load = await getLoadByTrackingCode(code)
 
   if (!load) {
     notFound()

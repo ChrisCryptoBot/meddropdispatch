@@ -1,16 +1,16 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
 import type { LoadStatus, TrackingEventCode } from '@prisma/client'
 
 type LoadData = any // We'll get this from the API
 
-export default function AdminLoadDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
+export default function AdminLoadDetailPage() {
+  const params = useParams()
   const router = useRouter()
   const [load, setLoad] = useState<LoadData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -30,12 +30,14 @@ export default function AdminLoadDetailPage({ params }: { params: Promise<{ id: 
 
   // Load data
   useEffect(() => {
-    fetchLoad()
-  }, [resolvedParams.id])
+    if (params.id) {
+      fetchLoad()
+    }
+  }, [params.id])
 
   const fetchLoad = async () => {
     try {
-      const response = await fetch(`/api/load-requests/${resolvedParams.id}`)
+      const response = await fetch(`/api/load-requests/${params.id}`)
       if (!response.ok) throw new Error('Failed to fetch load')
       const data = await response.json()
       setLoad(data)
@@ -53,7 +55,7 @@ export default function AdminLoadDetailPage({ params }: { params: Promise<{ id: 
     setIsSubmittingQuote(true)
 
     try {
-      const response = await fetch(`/api/load-requests/${resolvedParams.id}/status`, {
+      const response = await fetch(`/api/load-requests/${params.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +86,7 @@ export default function AdminLoadDetailPage({ params }: { params: Promise<{ id: 
     setIsUpdatingStatus(true)
 
     try {
-      const response = await fetch(`/api/load-requests/${resolvedParams.id}/status`, {
+      const response = await fetch(`/api/load-requests/${params.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
