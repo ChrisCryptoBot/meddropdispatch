@@ -75,12 +75,13 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 🧪 Test Data
+## 👤 Creating Users
 
-After seeding, you can use:
+The application requires real user data. Create users through the admin interface or by adding them directly to the database:
 
-- **Admin Login**: `admin@meddrop.com` / `admin123` (⚠️ Change in production!)
-- **Sample Tracking Code**: `MED-0001-AB`
+- **Admin Users**: Create via Prisma Studio or direct database access
+- **Drivers**: Add through admin portal or database
+- **Shippers**: Register through the public request form or admin portal
 
 ## 📁 Project Structure
 

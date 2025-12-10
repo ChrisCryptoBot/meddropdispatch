@@ -111,12 +111,6 @@ export default function DriverLoginPage() {
               ← Back to Home
             </Link>
           </div>
-
-          {/* Test Credentials */}
-          <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <p className="text-xs font-semibold text-blue-900 mb-2">Test Credentials:</p>
-            <p className="text-xs text-blue-700">john.doe@meddrop.com / driver123</p>
-          </div>
         </div>
       </div>
     </div>
