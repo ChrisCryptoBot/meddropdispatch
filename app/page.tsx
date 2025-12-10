@@ -24,20 +24,6 @@ export default function HomePage() {
                 <p className="text-xs text-gray-600">Medical Courier Services</p>
               </div>
             </div>
-            <nav className="hidden md:flex items-center space-x-4">
-              <Link
-                href="/shipper/login"
-                className="glass px-4 py-2 rounded-lg text-primary-700 hover:bg-white/60 transition-base font-medium"
-              >
-                Shipper Login
-              </Link>
-              <Link
-                href="/driver/login"
-                className="glass px-4 py-2 rounded-lg text-primary-700 hover:bg-white/60 transition-base font-medium"
-              >
-                Driver Login
-              </Link>
-            </nav>
           </div>
         </div>
       </header>
