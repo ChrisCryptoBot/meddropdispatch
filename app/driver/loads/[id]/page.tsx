@@ -60,6 +60,7 @@ export default function DriverLoadDetailPage() {
   const params = useParams()
   const router = useRouter()
   const [load, setLoad] = useState<Load | null>(null)
+  const [driver, setDriver] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showSignatureCapture, setShowSignatureCapture] = useState<'pickup' | 'delivery' | null>(null)
   const [signerName, setSignerName] = useState('')
@@ -71,6 +72,18 @@ export default function DriverLoadDetailPage() {
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
   const [isUploading, setIsUploading] = useState(false)
+
+  useEffect(() => {
+    // Get driver from localStorage
+    const driverData = localStorage.getItem('driver')
+    if (driverData) {
+      try {
+        setDriver(JSON.parse(driverData))
+      } catch (e) {
+        console.error('Error parsing driver data:', e)
+      }
+    }
+  }, [])
 
 
   const fetchLoad = async () => {
@@ -184,6 +197,7 @@ export default function DriverLoadDetailPage() {
       const updateData: any = {
         [isPickup ? 'pickupSignature' : 'deliverySignature']: signatureData,
         [isPickup ? 'pickupSignatureName' : 'deliverySignatureName']: signerName,
+        [isPickup ? 'pickupSignatureDriverId' : 'deliverySignatureDriverId']: driver?.id || null,
       }
 
       // Add temperature if provided

@@ -231,6 +231,7 @@ model Document {
   url           String // Storage URL (S3, etc.) or base64 data
   mimeType      String? // MIME type (image/jpeg, application/pdf, etc.)
   fileSize      Int? // File size in bytes
+  fileHash      String? // SHA-256 hash for document integrity verification
   uploadedBy    String? // User ID or "driver" or "shipper"
   isLocked      Boolean @default(false) // True if load is DELIVERED (POD locking)
   lockedAt      DateTime? // When document was locked
