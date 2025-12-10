@@ -129,8 +129,9 @@ export default function ShipperLoadDetailPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to upload document')
+        const errorData = await response.json()
+        const errorMsg = errorData.error || errorData.message || 'Failed to upload document'
+        throw new Error(errorMsg)
       }
 
       // Refresh documents list
@@ -145,7 +146,8 @@ export default function ShipperLoadDetailPage() {
       alert('Document uploaded successfully!')
     } catch (error) {
       console.error('Error uploading document:', error)
-      alert(error instanceof Error ? error.message : 'Failed to upload document')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload document'
+      alert(`Upload failed: ${errorMessage}\n\nPlease ensure:\n- File is PDF, JPG, PNG, or HEIC\n- File size is under 10MB\n- All required fields are filled`)
     } finally {
       setIsUploading(false)
     }
@@ -626,12 +628,36 @@ export default function ShipperLoadDetailPage() {
                 </label>
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.heic"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  accept=".pdf,application/pdf,.jpg,.jpeg,.png,image/jpeg,image/png,image/heic"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null
+                    if (file) {
+                      // Validate file type
+                      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic']
+                      const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
+                      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+                      
+                      if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                        alert(`Invalid file type. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`)
+                        e.target.value = '' // Clear the input
+                        setUploadFile(null)
+                        return
+                      }
+                      
+                      // Validate file size (10MB)
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert(`File size is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
+                        e.target.value = ''
+                        setUploadFile(null)
+                        return
+                      }
+                    }
+                    setUploadFile(file)
+                  }}
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Max file size: 10MB</p>
+                <p className="text-xs text-gray-500 mt-1">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
               </div>
 
               <div className="flex gap-4">

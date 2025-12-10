@@ -31,7 +31,34 @@ export async function POST(
     const maxSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'File size must be less than 10MB' },
+        { 
+          error: 'File size exceeds limit',
+          message: `File size must be less than 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate file type
+    const validMimeTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/heic',
+    ]
+    const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+    
+    // Check MIME type or extension
+    const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension)
+    
+    if (!isValidType) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid file type',
+          message: `File type "${file.type || 'unknown'}" is not supported. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`
+        },
         { status: 400 }
       )
     }
