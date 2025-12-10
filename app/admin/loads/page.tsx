@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatDateTime } from '@/lib/utils'
-import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/types'
+import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, type LoadStatus } from '@/lib/types'
 
 async function getLoads() {
   const loads = await prisma.loadRequest.findMany({
@@ -174,8 +174,8 @@ export default async function AdminLoadsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status]}`}>
-                        {LOAD_STATUS_LABELS[load.status]}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as LoadStatus]}`}>
+                        {LOAD_STATUS_LABELS[load.status as LoadStatus]}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

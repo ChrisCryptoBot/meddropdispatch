@@ -4,7 +4,7 @@ import { sendLoadStatusEmail } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, TRACKING_EVENT_LABELS } from '@/lib/types'
 import type { StatusUpdateData } from '@/lib/types'
-import type { LoadStatus, TrackingEventCode } from '@prisma/client'
+import type { LoadStatus, TrackingEventCode } from '@/lib/types'
 
 /**
  * PATCH /api/load-requests/[id]/status

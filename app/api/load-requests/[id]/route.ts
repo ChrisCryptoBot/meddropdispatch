@@ -71,7 +71,7 @@ export async function PATCH(
     const updateData: any = { ...data }
 
     // Check pickup temperature
-    if (data.pickupTemperature !== undefined && currentLoad?.temperatureMin !== null && currentLoad?.temperatureMax !== null) {
+    if (data.pickupTemperature !== undefined && currentLoad && currentLoad.temperatureMin !== null && currentLoad.temperatureMax !== null) {
       const temp = parseFloat(data.pickupTemperature)
       const min = currentLoad.temperatureMin!
       const max = currentLoad.temperatureMax!
@@ -89,7 +89,7 @@ export async function PATCH(
     }
 
     // Check delivery temperature
-    if (data.deliveryTemperature !== undefined && currentLoad?.temperatureMin !== null && currentLoad?.temperatureMax !== null) {
+    if (data.deliveryTemperature !== undefined && currentLoad && currentLoad.temperatureMin !== null && currentLoad.temperatureMax !== null) {
       const temp = parseFloat(data.deliveryTemperature)
       const min = currentLoad.temperatureMin!
       const max = currentLoad.temperatureMax!
