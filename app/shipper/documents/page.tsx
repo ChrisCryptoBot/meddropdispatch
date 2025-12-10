@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function DocumentsPage() {
   const router = useRouter()
@@ -25,34 +26,11 @@ export default function DocumentsPage() {
 
   const fetchDocuments = async (shipperId: string) => {
     try {
-      // Get all loads for this shipper
-      const loadsResponse = await fetch(`/api/shippers/${shipperId}/loads`)
-      if (!loadsResponse.ok) throw new Error('Failed to fetch loads')
-      const loadsData = await loadsResponse.json()
-      const loads = loadsData.loads || []
+      const response = await fetch(`/api/shippers/${shipperId}/documents`)
+      if (!response.ok) throw new Error('Failed to fetch documents')
 
-      // Fetch documents for each load
-      const allDocuments = []
-      for (const load of loads) {
-        try {
-          const docsResponse = await fetch(`/api/load-requests/${load.id}/documents`)
-          if (docsResponse.ok) {
-            const docsData = await docsResponse.json()
-            const loadDocs = (docsData.documents || []).map((doc: any) => ({
-              ...doc,
-              loadRequest: {
-                id: load.id,
-                publicTrackingCode: load.publicTrackingCode || load.trackingCode,
-              }
-            }))
-            allDocuments.push(...loadDocs)
-          }
-        } catch (error) {
-          console.error(`Error fetching documents for load ${load.id}:`, error)
-        }
-      }
-
-      setDocuments(allDocuments)
+      const data = await response.json()
+      setDocuments(data.documents || [])
     } catch (error) {
       console.error('Error fetching documents:', error)
     } finally {

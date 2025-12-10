@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 export default function ShipperTrackingPage() {
   const router = useRouter()
@@ -49,18 +48,6 @@ export default function ShipperTrackingPage() {
               Track Shipment
             </button>
           </form>
-        </div>
-
-        <div className="mt-8 glass rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Links</h3>
-          <div className="space-y-2">
-            <Link
-              href="/shipper/dashboard"
-              className="block text-primary-600 hover:text-primary-700 font-medium"
-            >
-              ← Back to My Loads
-            </Link>
-          </div>
         </div>
       </div>
     </div>

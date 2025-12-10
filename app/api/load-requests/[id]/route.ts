@@ -57,11 +57,58 @@ export async function PATCH(
     const { id } = await params
     const data = await request.json()
 
+    // Get current load to check temperature ranges
+    const currentLoad = await prisma.loadRequest.findUnique({
+      where: { id },
+      select: {
+        temperatureMin: true,
+        temperatureMax: true,
+        status: true,
+      }
+    })
+
+    // TEMPERATURE EXCEPTION HANDLING
+    const updateData: any = { ...data }
+
+    // Check pickup temperature
+    if (data.pickupTemperature !== undefined && currentLoad?.temperatureMin !== null && currentLoad?.temperatureMax !== null) {
+      const temp = parseFloat(data.pickupTemperature)
+      const min = currentLoad.temperatureMin!
+      const max = currentLoad.temperatureMax!
+      
+      if (temp < min || temp > max) {
+        updateData.pickupTempException = true
+      } else {
+        updateData.pickupTempException = false
+      }
+    }
+
+    // Check delivery temperature
+    if (data.deliveryTemperature !== undefined && currentLoad?.temperatureMin !== null && currentLoad?.temperatureMax !== null) {
+      const temp = parseFloat(data.deliveryTemperature)
+      const min = currentLoad.temperatureMin!
+      const max = currentLoad.temperatureMax!
+      
+      if (temp < min || temp > max) {
+        updateData.deliveryTempException = true
+      } else {
+        updateData.deliveryTempException = false
+      }
+    }
+
+    // Set attestation timestamps
+    if (data.pickupAttested === true) {
+      updateData.pickupAttestedAt = new Date()
+    }
+    if (data.deliveryAttested === true) {
+      updateData.deliveryAttestedAt = new Date()
+    }
+
     // Update load request
     const updatedLoad = await prisma.loadRequest.update({
       where: { id },
       data: {
-        ...data,
+        ...updateData,
         // Convert ISO strings to Date objects if present
         actualPickupTime: data.actualPickupTime ? new Date(data.actualPickupTime) : undefined,
         actualDeliveryTime: data.actualDeliveryTime ? new Date(data.actualDeliveryTime) : undefined,

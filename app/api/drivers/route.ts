@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
 
     const drivers = await prisma.driver.findMany({
       where: {
-        isActive: true,
         ...(status && { status: status as any }),
       },
       select: {
@@ -28,11 +27,6 @@ export async function GET(request: NextRequest) {
         vehiclePlate: true,
         hasRefrigeration: true,
         un3373Certified: true,
-        _count: {
-          select: {
-            assignedLoads: true,
-          },
-        },
       },
       orderBy: [
         { status: 'asc' }, // Available first

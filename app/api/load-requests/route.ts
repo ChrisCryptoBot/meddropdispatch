@@ -11,26 +11,41 @@ import type { LoadRequestFormData } from '@/lib/types'
  */
 export async function POST(request: NextRequest) {
   try {
-    const data: LoadRequestFormData = await request.json()
+    const data: LoadRequestFormData & { shipperId?: string } = await request.json()
 
     // Generate unique tracking code
     const publicTrackingCode = await generateTrackingCode()
 
     // Find or create shipper
-    let shipper = await prisma.shipper.findFirst({
-      where: { email: data.email.toLowerCase() }
-    })
-
-    if (!shipper) {
-      shipper = await prisma.shipper.create({
-        data: {
-          companyName: data.companyName,
-          clientType: data.clientType as any,
-          contactName: data.contactName,
-          phone: data.phone,
-          email: data.email.toLowerCase(),
-        }
+    let shipper
+    if (data.shipperId) {
+      // If shipperId is provided (from authenticated shipper request), use it
+      shipper = await prisma.shipper.findUnique({
+        where: { id: data.shipperId }
       })
+      if (!shipper) {
+        return NextResponse.json(
+          { error: 'Shipper not found' },
+          { status: 404 }
+        )
+      }
+    } else {
+      // Public form - find or create by email
+      shipper = await prisma.shipper.findFirst({
+        where: { email: data.email.toLowerCase() }
+      })
+
+      if (!shipper) {
+        shipper = await prisma.shipper.create({
+          data: {
+            companyName: data.companyName,
+            clientType: data.clientType as any,
+            contactName: data.contactName,
+            phone: data.phone,
+            email: data.email.toLowerCase(),
+          }
+        })
+      }
     }
 
     // Create or find pickup facility

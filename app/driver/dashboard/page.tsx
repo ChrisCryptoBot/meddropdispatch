@@ -22,6 +22,12 @@ interface Load {
   status: string
   serviceType: string
   quoteAmount?: number
+  actualPickupTime?: string
+  actualDeliveryTime?: string
+  pickupSignature?: string
+  deliverySignature?: string
+  pickupTemperature?: number
+  deliveryTemperature?: number
   pickupFacility: {
     name: string
     city: string
@@ -46,6 +52,19 @@ interface Load {
     firstName: string
     lastName: string
   }
+  documents?: Array<{
+    id: string
+    type: string
+    title: string
+    createdAt: string
+    uploadedBy: string | null
+  }>
+  trackingEvents?: Array<{
+    id: string
+    label: string
+    createdAt: string
+    locationText?: string
+  }>
   createdAt: string
 }
 
@@ -87,6 +106,36 @@ export default function DriverDashboardPage() {
       console.error('Error fetching loads:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAcceptLoad = async (loadId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!driver) return
+
+    if (!confirm('Are you sure you want to accept this load?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/load-requests/${loadId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId: driver.id }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to accept load')
+      }
+
+      // Refresh loads
+      await fetchLoads(driver.id)
+      alert('Load accepted successfully!')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to accept load')
     }
   }
 
@@ -297,12 +346,18 @@ export default function DriverDashboardPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredLoads.map((load) => (
-              <Link
-                key={load.id}
-                href={`/driver/loads/${load.id}`}
-                className="block glass p-5 rounded-2xl hover:bg-white/60 transition-base"
-              >
+            {filteredLoads.map((load) => {
+              const canAccept = !load.driver?.id && 
+                                ['NEW', 'QUOTED', 'QUOTE_ACCEPTED'].includes(load.status) &&
+                                activeTab === 'all'
+              const isMyLoad = load.driver?.id === driver?.id
+
+              return (
+              <div key={load.id} className="glass p-5 rounded-2xl">
+                <Link
+                  href={`/driver/loads/${load.id}`}
+                  className="block hover:bg-white/60 transition-base"
+                >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -369,7 +424,7 @@ export default function DriverDashboardPage() {
 
                 {/* Cargo Info */}
                 <div className="pt-3 border-t border-gray-200">
-                  <div className="flex items-center gap-4 text-xs text-gray-600">
+                  <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -388,6 +443,79 @@ export default function DriverDashboardPage() {
                       </span>
                     )}
                   </div>
+                  
+                  {/* Enhanced Compliance Data for My Loads Tab */}
+                  {isMyLoad && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                      {/* Signatures */}
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-gray-500">Signatures:</span>
+                        {load.pickupSignature ? (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            Pickup ✓
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Pickup</span>
+                        )}
+                        {load.deliverySignature ? (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            Delivery ✓
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Delivery</span>
+                        )}
+                      </div>
+                      
+                      {/* Temperatures */}
+                      {(load.pickupTemperature !== null && load.pickupTemperature !== undefined) || 
+                       (load.deliveryTemperature !== null && load.deliveryTemperature !== undefined) ? (
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-gray-500">Temps:</span>
+                          {load.pickupTemperature !== null && load.pickupTemperature !== undefined && (
+                            <span className="text-gray-700">
+                              Pickup: <span className="font-medium">{load.pickupTemperature}°C</span>
+                            </span>
+                          )}
+                          {load.deliveryTemperature !== null && load.deliveryTemperature !== undefined && (
+                            <span className="text-gray-700">
+                              Delivery: <span className="font-medium">{load.deliveryTemperature}°C</span>
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                      
+                      {/* Documents & Events Count */}
+                      {(load.documents && load.documents.length > 0) || (load.trackingEvents && load.trackingEvents.length > 0) ? (
+                        <div className="flex items-center gap-3 text-xs">
+                          {load.documents && load.documents.length > 0 && (
+                            <Link
+                              href={`/driver/loads/${load.id}#documents`}
+                              className="text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
+                            </Link>
+                          )}
+                          {load.trackingEvents && load.trackingEvents.length > 0 && (
+                            <span className="text-gray-500">
+                              {load.trackingEvents.length} tracking event{load.trackingEvents.length !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                      
+                      {/* Timestamps */}
+                      {(load.actualPickupTime || load.actualDeliveryTime) && (
+                        <div className="text-xs text-gray-500">
+                          {load.actualPickupTime && `Picked up: ${formatDateTime(load.actualPickupTime)}`}
+                          {load.actualPickupTime && load.actualDeliveryTime && ' • '}
+                          {load.actualDeliveryTime && `Delivered: ${formatDateTime(load.actualDeliveryTime)}`}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Arrow */}
@@ -396,8 +524,21 @@ export default function DriverDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-              </Link>
-            ))}
+                </Link>
+
+                {/* Accept Button */}
+                {canAccept && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <button
+                      onClick={(e) => handleAcceptLoad(load.id, e)}
+                      className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 transition-all"
+                    >
+                      Accept Load
+                    </button>
+                  </div>
+                )}
+              </div>
+            )})}
           </div>
         )}
       </div>

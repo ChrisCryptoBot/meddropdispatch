@@ -27,11 +27,22 @@ export default function ShipperRequestLoadPage() {
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
 
+    // Add shipper ID to the request (so it uses logged-in shipper)
+    const requestData = {
+      ...data,
+      shipperId: shipper.id,
+      // Use shipper's email for the request
+      email: shipper.email,
+      companyName: shipper.companyName,
+      contactName: shipper.contactName,
+      phone: shipper.phone,
+    }
+
     try {
       const response = await fetch('/api/load-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestData),
       })
 
       if (!response.ok) {

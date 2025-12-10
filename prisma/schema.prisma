@@ -134,10 +134,21 @@ model LoadRequest {
   pickupSignerName   String? // Who signed at pickup
   deliverySignature  String? // Base64 signature image
   deliverySignerName String? // Who signed at delivery
+  pickupAttested     Boolean @default(false) // Driver attestation checkbox at pickup
+  pickupAttestedAt   DateTime? // When attestation was given
+  deliveryAttested   Boolean @default(false) // Driver attestation checkbox at delivery
+  deliveryAttestedAt DateTime? // When attestation was given
+  signatureUnavailableReason String? // Reason if signature couldn't be captured
+  signatureFallbackPhoto    String? // Base64 photo if signature unavailable
 
   // Temperature Tracking
   pickupTemperature   Float? // Temperature at pickup (°C)
   deliveryTemperature Float? // Temperature at delivery (°C)
+  temperatureMin      Float? // Minimum acceptable temperature (°C)
+  temperatureMax      Float? // Maximum acceptable temperature (°C)
+  pickupTempException Boolean @default(false) // Flag if out of range at pickup
+  deliveryTempException Boolean @default(false) // Flag if out of range at delivery
+  temperatureExceptionNotes String? // Driver notes about temperature exceptions
 
   // Actual Timing
   actualPickupTime   DateTime? // Actual pickup timestamp
@@ -174,7 +185,7 @@ model LoadRequest {
   @@index([createdAt])
 }
 
-// TrackingEvent: UPS-style tracking checkpoints
+// TrackingEvent: UPS-style tracking checkpoints with chain-of-custody
 model TrackingEvent {
   id            String   @id @default(cuid())
   loadRequestId String
@@ -182,6 +193,10 @@ model TrackingEvent {
   label         String // Human-friendly display text (e.g., "Picked up from ABC Clinic")
   description   String? // Optional detailed description
   locationText  String? // City/facility text for display
+  actorId       String? // Driver ID or user ID who performed this action (chain-of-custody)
+  actorType     String? // "DRIVER", "SHIPPER", "ADMIN" (chain-of-custody)
+  latitude      Float? // GPS latitude (optional, for location verification)
+  longitude     Float? // GPS longitude (optional, for location verification)
   createdAt     DateTime @default(now()) // Event timestamp
 
   // Relations
@@ -189,6 +204,7 @@ model TrackingEvent {
 
   @@index([loadRequestId])
   @@index([createdAt])
+  @@index([actorId])
 }
 
 // Document: Attachments for proof of pickup/delivery, BOL, etc.
@@ -201,6 +217,11 @@ model Document {
   mimeType      String? // MIME type (image/jpeg, application/pdf, etc.)
   fileSize      Int? // File size in bytes
   uploadedBy    String? // User ID or "driver" or "shipper"
+  isLocked      Boolean @default(false) // True if load is DELIVERED (POD locking)
+  lockedAt      DateTime? // When document was locked
+  adminOverride Boolean @default(false) // True if admin allowed late upload
+  adminOverrideBy String? // Admin user ID who approved override
+  adminOverrideNotes String? // Reason for override (audit log)
   createdAt     DateTime @default(now())
 
   // Relations
@@ -280,6 +301,19 @@ model Driver {
   hiredDate        DateTime?
   emergencyContact String?
   emergencyPhone   String?
+
+  // Payment Settings (Optional - stored as strings for SQLite)
+  paymentMethod      String? // ACH, CHECK, etc.
+  bankName           String?
+  accountHolderName  String?
+  routingNumber      String?
+  accountNumber      String? // Encrypted in production
+  accountType        String? // checking, savings
+  payoutFrequency    String? // WEEKLY, BIWEEKLY, MONTHLY
+  minimumPayout      Float?  @default(100)
+  taxId              String? // Encrypted in production
+  taxIdType          String? // SSN, EIN
+  w9Submitted        Boolean @default(false)
 
   // Relations
   loadRequests LoadRequest[]

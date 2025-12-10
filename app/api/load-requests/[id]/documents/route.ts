@@ -58,6 +58,26 @@ export async function POST(
       )
     }
 
+    // POD LOCKING: Check if load is DELIVERED and require admin override for new uploads
+    const requiresOverride = loadRequest.status === 'DELIVERED' || loadRequest.status === 'COMPLETED'
+    const adminOverride = formData.get('adminOverride') === 'true'
+    const adminOverrideBy = formData.get('adminOverrideBy') as string | null
+    const adminOverrideNotes = formData.get('adminOverrideNotes') as string | null
+
+    if (requiresOverride && !adminOverride && uploadedBy !== 'admin') {
+      return NextResponse.json(
+        { 
+          error: 'Cannot upload documents after delivery. Please contact admin to add documents with proper authorization.',
+          requiresAdminOverride: true
+        },
+        { status: 403 }
+      )
+    }
+
+    // POD LOCKING: Lock documents if load is DELIVERED (except if admin override)
+    const isLocked = requiresOverride && !adminOverride
+    const lockedAt = isLocked ? new Date() : null
+
     // Create document record
     const document = await prisma.document.create({
       data: {
@@ -68,6 +88,11 @@ export async function POST(
         mimeType: file.type,
         fileSize: file.size,
         uploadedBy: uploadedBy || 'unknown',
+        isLocked: isLocked,
+        lockedAt: lockedAt,
+        adminOverride: adminOverride || false,
+        adminOverrideBy: adminOverride ? adminOverrideBy : null,
+        adminOverrideNotes: adminOverride ? adminOverrideNotes : null,
       }
     })
 

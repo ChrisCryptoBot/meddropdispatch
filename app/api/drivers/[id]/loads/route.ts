@@ -21,7 +21,13 @@ export async function GET(
         }
       },
       include: {
-        shipper: true,
+        shipper: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+          }
+        },
         pickupFacility: true,
         dropoffFacility: true,
         driver: {
@@ -34,10 +40,26 @@ export async function GET(
           }
         },
         trackingEvents: {
+          select: {
+            id: true,
+            code: true,
+            label: true,
+            createdAt: true,
+            locationText: true,
+          },
           orderBy: { createdAt: 'desc' },
           take: 5
         },
-        documents: true
+        documents: {
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            createdAt: true,
+            uploadedBy: true,
+          },
+          orderBy: { createdAt: 'desc' }
+        }
       },
       orderBy: [
         { status: 'asc' }, // Active loads first

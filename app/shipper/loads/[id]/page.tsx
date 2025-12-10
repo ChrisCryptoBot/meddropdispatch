@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface LoadRequest {
@@ -52,12 +52,19 @@ interface LoadRequest {
   createdAt: string
 }
 
-export default function ShipperLoadDetailPage({ params }: { params: { id: string } }) {
+export default function ShipperLoadDetailPage() {
   const router = useRouter()
+  const params = useParams()
   const [shipper, setShipper] = useState<any>(null)
   const [load, setLoad] = useState<LoadRequest | null>(null)
+  const [documents, setDocuments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAccepting, setIsAccepting] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploadType, setUploadType] = useState('OTHER')
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -71,11 +78,14 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
     setShipper(parsedShipper)
 
     // Fetch load details
-    fetchLoad()
-    fetchDocuments()
-  }, [router])
+    if (params?.id) {
+      fetchLoad()
+      fetchDocuments()
+    }
+  }, [router, params])
 
   const fetchLoad = async () => {
+    if (!params?.id) return
     try {
       const response = await fetch(`/api/load-requests/${params.id}`)
       if (!response.ok) throw new Error('Failed to fetch load')
@@ -90,6 +100,7 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
   }
 
   const fetchDocuments = async () => {
+    if (!params?.id) return
     try {
       const response = await fetch(`/api/load-requests/${params.id}/documents`)
       if (!response.ok) throw new Error('Failed to fetch documents')
@@ -143,6 +154,7 @@ export default function ShipperLoadDetailPage({ params }: { params: { id: string
   const handleAcceptQuote = async () => {
     if (!confirm('Accept this quote? This will schedule the shipment.')) return
 
+    if (!params?.id) return
     setIsAccepting(true)
     try {
       const response = await fetch(`/api/load-requests/${params.id}/accept-quote`, {

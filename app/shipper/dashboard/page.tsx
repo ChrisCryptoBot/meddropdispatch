@@ -6,10 +6,10 @@ import Link from 'next/link'
 
 interface LoadRequest {
   id: string
-  trackingCode: string
+  publicTrackingCode: string
   status: string
-  pickupDate: string
-  deliveryDate: string | null
+  readyTime: string | null
+  deliveryDeadline: string | null
   quoteAmount: number | null
   pickupFacility: {
     name: string
@@ -144,8 +144,8 @@ export default function ShipperDashboardPage() {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold text-gray-900">My Loads</h1>
             <Link
-              href="/request-load"
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+              href="/shipper/request-load"
+              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl"
             >
               + New Load Request
             </Link>
@@ -193,8 +193,8 @@ export default function ShipperDashboardPage() {
             </p>
             {filter === 'all' && (
               <Link
-                href="/request-load"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                href="/shipper/request-load"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
               >
                 Create Your First Load
               </Link>
@@ -211,7 +211,7 @@ export default function ShipperDashboardPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-gray-900 text-lg">{load.trackingCode}</h3>
+                      <h3 className="font-bold text-gray-900 text-lg font-mono">{load.publicTrackingCode}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
                         {getStatusLabel(load.status)}
                       </span>
@@ -245,9 +245,11 @@ export default function ShipperDashboardPage() {
                       <div className="text-sm text-gray-600">
                         {load.pickupFacility.city}, {load.pickupFacility.state}
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {new Date(load.pickupDate).toLocaleDateString()}
-                      </div>
+                      {load.readyTime && (
+                        <div className="text-sm text-gray-600">
+                          Ready: {new Date(load.readyTime).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -264,9 +266,9 @@ export default function ShipperDashboardPage() {
                       <div className="text-sm text-gray-600">
                         {load.dropoffFacility.city}, {load.dropoffFacility.state}
                       </div>
-                      {load.deliveryDate && (
+                      {load.deliveryDeadline && (
                         <div className="text-sm text-gray-600">
-                          {new Date(load.deliveryDate).toLocaleDateString()}
+                          Deadline: {new Date(load.deliveryDeadline).toLocaleDateString()}
                         </div>
                       )}
                     </div>
