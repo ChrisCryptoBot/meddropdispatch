@@ -65,12 +65,13 @@ export default function DriverLoadDetailPage() {
   const [signerName, setSignerName] = useState('')
   const [temperature, setTemperature] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
+  const [documents, setDocuments] = useState<any[]>([])
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
+  const [isUploading, setIsUploading] = useState(false)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchLoad()
-    }
-  }, [params.id])
 
   const fetchLoad = async () => {
     try {
@@ -82,6 +83,64 @@ export default function DriverLoadDetailPage() {
       console.error('Error fetching load:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/documents`)
+      if (!response.ok) throw new Error('Failed to fetch documents')
+      const data = await response.json()
+      setDocuments(data.documents || [])
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (params.id) {
+      fetchLoad()
+      fetchDocuments()
+    }
+  }, [params.id])
+
+  const handleDocumentUpload = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!uploadFile || !uploadTitle || !load) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('type', uploadType)
+      formData.append('title', uploadTitle)
+      formData.append('uploadedBy', 'driver')
+
+      const response = await fetch(`/api/load-requests/${load.id}/documents`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload document')
+      }
+
+      // Refresh documents list
+      await fetchDocuments()
+      
+      // Reset form
+      setShowUploadModal(false)
+      setUploadFile(null)
+      setUploadTitle('')
+      setUploadType('PROOF_OF_PICKUP')
+      
+      alert('Document uploaded successfully! Shipper has been notified via email.')
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload document')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -405,7 +464,134 @@ export default function DriverLoadDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Documents Section */}
+        <div className="glass p-6 rounded-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Documents</h3>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 transition-base text-sm flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Upload Document
+            </button>
+          </div>
+
+          {documents.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No documents uploaded yet</p>
+          ) : (
+            <div className="space-y-3">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{doc.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {doc.type.replace(/_/g, ' ')} • {new Date(doc.createdAt).toLocaleDateString()}
+                        {doc.uploadedBy && ` • Uploaded by ${doc.uploadedBy}`}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+                  >
+                    View
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* Document Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass max-w-2xl w-full rounded-3xl p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Upload Document</h3>
+
+            <form onSubmit={handleDocumentUpload} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Document Type *
+                </label>
+                <select
+                  value={uploadType}
+                  onChange={(e) => setUploadType(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  required
+                >
+                  <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
+                  <option value="PROOF_OF_DELIVERY">Proof of Delivery</option>
+                  <option value="BILL_OF_LADING">Bill of Lading</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Document Title *
+                </label>
+                <input
+                  type="text"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  placeholder="e.g., Proof of Delivery - ABC Clinic"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  File (PDF, Image) *
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.heic"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Max file size: 10MB</p>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false)
+                    setUploadFile(null)
+                    setUploadTitle('')
+                    setUploadType('PROOF_OF_PICKUP')
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading || !uploadFile || !uploadTitle}
+                  className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
+                >
+                  {isUploading ? 'Uploading...' : 'Upload Document'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Signature Capture Modal */}
       {showSignatureCapture && (
