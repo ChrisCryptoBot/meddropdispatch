@@ -12,3 +12,4 @@ console.log('\n📋 Copy this value to Vercel environment variables as NEXTAUTH_
 
 
 
+

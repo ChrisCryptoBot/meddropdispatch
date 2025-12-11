@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
+import DocumentViewButton from '@/components/features/DocumentViewButton'
 
 interface LoadRequest {
   id: string
@@ -742,14 +743,10 @@ export default function ShipperLoadDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
-                      >
-                        View
-                      </a>
+                      <DocumentViewButton 
+                        url={doc.url}
+                        title={doc.title}
+                      />
                     </div>
                   ))}
                 </div>

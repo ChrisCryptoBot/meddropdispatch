@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
-import { driverPaymentSettingsSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const paymentSettingsSchema = z.object({
+  paymentMethod: z.enum(['ACH', 'CHECK']).optional(),
+  bankName: z.string().optional(),
+  accountHolderName: z.string().optional(),
+  routingNumber: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountType: z.enum(['checking', 'savings']).optional(),
+  payoutFrequency: z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']).optional(),
+  minimumPayout: z.number().min(0).optional(),
+  minimumRatePerMile: z.number().min(0).optional(),
+  taxId: z.string().optional(),
+  taxIdType: z.enum(['SSN', 'EIN']).optional(),
+  w9Submitted: z.boolean().optional(),
+})
 
 /**
  * GET /api/drivers/[id]/payment-settings
@@ -13,7 +28,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withErrorHandling(async (req: NextRequest) => {
-    // Apply rate limiting
     try {
       rateLimit(RATE_LIMITS.api)(req)
     } catch (error) {
@@ -25,7 +39,6 @@ export async function GET(
     const driver = await prisma.driver.findUnique({
       where: { id },
       select: {
-        id: true,
         paymentMethod: true,
         bankName: true,
         accountHolderName: true,
@@ -34,6 +47,7 @@ export async function GET(
         accountType: true,
         payoutFrequency: true,
         minimumPayout: true,
+        minimumRatePerMile: true,
         taxId: true,
         taxIdType: true,
         w9Submitted: true,
@@ -44,7 +58,22 @@ export async function GET(
       throw new NotFoundError('Driver')
     }
 
-    return NextResponse.json({ paymentSettings: driver })
+    return NextResponse.json({
+      paymentSettings: {
+        paymentMethod: driver.paymentMethod || 'ACH',
+        bankName: driver.bankName || '',
+        accountHolderName: driver.accountHolderName || '',
+        routingNumber: driver.routingNumber || '',
+        accountNumber: driver.accountNumber ? '***' + driver.accountNumber.slice(-4) : '', // Mask account number
+        accountType: driver.accountType || 'checking',
+        payoutFrequency: driver.payoutFrequency || 'WEEKLY',
+        minimumPayout: driver.minimumPayout || 100,
+        minimumRatePerMile: driver.minimumRatePerMile || 0,
+        taxId: driver.taxId ? '***' + driver.taxId.slice(-4) : '', // Mask tax ID
+        taxIdType: driver.taxIdType || 'SSN',
+        w9Submitted: driver.w9Submitted || false,
+      },
+    })
   })(request)
 }
 
@@ -57,7 +86,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withErrorHandling(async (req: NextRequest) => {
-    // Apply rate limiting
     try {
       rateLimit(RATE_LIMITS.api)(req)
     } catch (error) {
@@ -65,40 +93,49 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const rawBody = await req.json()
-    
-    // Validate request body
-    const validation = await validateRequest(driverPaymentSettingsSchema, rawBody)
+    const rawData = await req.json()
+
+    // Validate request
+    const validation = paymentSettingsSchema.safeParse(rawData)
     if (!validation.success) {
-      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
         {
           error: 'ValidationError',
-          message: formatted.message,
-          errors: formatted.errors,
-          timestamp: new Date().toISOString(),
+          message: 'Invalid payment settings data',
+          errors: validation.error.errors,
         },
         { status: 400 }
       )
     }
 
-    const body = validation.data
+    const data = validation.data
 
+    // Check if driver exists
+    const driver = await prisma.driver.findUnique({
+      where: { id },
+    })
+
+    if (!driver) {
+      throw new NotFoundError('Driver')
+    }
+
+    // Build update data (only include provided fields)
     const updateData: any = {}
+    if (data.paymentMethod !== undefined) updateData.paymentMethod = data.paymentMethod
+    if (data.bankName !== undefined) updateData.bankName = data.bankName
+    if (data.accountHolderName !== undefined) updateData.accountHolderName = data.accountHolderName
+    if (data.routingNumber !== undefined) updateData.routingNumber = data.routingNumber
+    if (data.accountNumber !== undefined) updateData.accountNumber = data.accountNumber
+    if (data.accountType !== undefined) updateData.accountType = data.accountType
+    if (data.payoutFrequency !== undefined) updateData.payoutFrequency = data.payoutFrequency
+    if (data.minimumPayout !== undefined) updateData.minimumPayout = data.minimumPayout
+    if (data.minimumRatePerMile !== undefined) updateData.minimumRatePerMile = data.minimumRatePerMile
+    if (data.taxId !== undefined) updateData.taxId = data.taxId
+    if (data.taxIdType !== undefined) updateData.taxIdType = data.taxIdType
+    if (data.w9Submitted !== undefined) updateData.w9Submitted = data.w9Submitted
 
-    if (body.paymentMethod !== undefined) updateData.paymentMethod = body.paymentMethod || null
-    if (body.bankName !== undefined) updateData.bankName = body.bankName || null
-    if (body.accountHolderName !== undefined) updateData.accountHolderName = body.accountHolderName || null
-    if (body.routingNumber !== undefined) updateData.routingNumber = body.routingNumber || null
-    if (body.accountNumber !== undefined) updateData.accountNumber = body.accountNumber || null
-    if (body.accountType !== undefined) updateData.accountType = body.accountType || null
-    if (body.payoutFrequency !== undefined) updateData.payoutFrequency = body.payoutFrequency || null
-    if (body.minimumPayout !== undefined) updateData.minimumPayout = body.minimumPayout || null
-    if (body.taxId !== undefined) updateData.taxId = body.taxId || null
-    if (body.taxIdType !== undefined) updateData.taxIdType = body.taxIdType || null
-    if (body.w9Submitted !== undefined) updateData.w9Submitted = body.w9Submitted
-
-    const driver = await prisma.driver.update({
+    // Update driver
+    const updatedDriver = await prisma.driver.update({
       where: { id },
       data: updateData,
       select: {
@@ -117,7 +154,21 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json({ paymentSettings: driver })
+    return NextResponse.json({
+      success: true,
+      paymentSettings: {
+        paymentMethod: updatedDriver.paymentMethod || 'ACH',
+        bankName: updatedDriver.bankName || '',
+        accountHolderName: updatedDriver.accountHolderName || '',
+        routingNumber: updatedDriver.routingNumber || '',
+        accountNumber: updatedDriver.accountNumber ? '***' + updatedDriver.accountNumber.slice(-4) : '',
+        accountType: updatedDriver.accountType || 'checking',
+        payoutFrequency: updatedDriver.payoutFrequency || 'WEEKLY',
+        minimumPayout: updatedDriver.minimumPayout || 100,
+        taxId: updatedDriver.taxId ? '***' + updatedDriver.taxId.slice(-4) : '',
+        taxIdType: updatedDriver.taxIdType || 'SSN',
+        w9Submitted: updatedDriver.w9Submitted || false,
+      },
+    })
   })(request)
 }
-

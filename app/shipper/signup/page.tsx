@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -18,6 +18,24 @@ export default function ShipperSignupPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Handle email and tracking code from email links
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const email = params.get('email')
+      const tracking = params.get('tracking')
+      
+      if (email) {
+        setFormData(prev => ({ ...prev, email: decodeURIComponent(email) }))
+      }
+      
+      // Store tracking code for redirect after signup
+      if (tracking) {
+        sessionStorage.setItem('redirectAfterSignup', `/track/${tracking}`)
+      }
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -61,10 +79,15 @@ export default function ShipperSignupPage() {
         throw new Error(data.error || 'Signup failed')
       }
 
-      // Store shipper info and redirect
+      // Store shipper info
       localStorage.setItem('shipper', JSON.stringify(data.shipper))
+      
+      // Redirect to tracking page if came from email link, otherwise dashboard
+      const redirectPath = sessionStorage.getItem('redirectAfterSignup') || '/shipper/dashboard'
+      sessionStorage.removeItem('redirectAfterSignup')
+      
       // Use window.location for full page reload to ensure layout updates
-      window.location.href = '/shipper/dashboard'
+      window.location.href = redirectPath
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')

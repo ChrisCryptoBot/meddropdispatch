@@ -92,8 +92,55 @@ export default function ShipperDashboardPage() {
   }
 
 
+  const [isAccepting, setIsAccepting] = useState<string | null>(null)
+  const [isRejecting, setIsRejecting] = useState<string | null>(null)
+
+  const handleAcceptLoad = async (loadId: string) => {
+    if (!shipper) return
+    
+    setIsAccepting(loadId)
+    try {
+      const response = await fetch(`/api/load-requests/${loadId}/accept-shipper`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipperId: shipper.id }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to claim load')
+      }
+
+      await fetchLoads(shipper.id)
+      showToast.success('Load claimed in your portal! You can now track it here.')
+    } catch (error) {
+      showApiError(error, 'Failed to claim load')
+    } finally {
+      setIsAccepting(null)
+    }
+  }
+
+  const handleRejectLoad = async (loadId: string) => {
+    if (!shipper) return
+    if (!confirm('Dismiss this load from your portal? The load will continue normally, you just won\'t see it here.')) return
+    
+    setIsRejecting(loadId)
+    try {
+      // Just remove from view - don't change load status
+      // In the future, we could add a "dismissedByShipper" field
+      // For now, we'll just filter it out client-side
+      await fetchLoads(shipper.id)
+      showToast.success('Load dismissed from portal view')
+    } catch (error) {
+      showApiError(error, 'Failed to dismiss load')
+    } finally {
+      setIsRejecting(null)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
+      'QUOTE_REQUESTED': 'bg-orange-100 text-orange-800 border-orange-200',
       'REQUESTED': 'bg-blue-100 text-blue-800 border-blue-200',
       'NEW': 'bg-blue-100 text-blue-800 border-blue-200',
       'QUOTED': 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -112,6 +159,7 @@ export default function ShipperDashboardPage() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      'QUOTE_REQUESTED': 'Available to Claim',
       'REQUESTED': 'Scheduling Request',
       'NEW': 'New Request',
       'QUOTED': 'Quote Pending',
@@ -218,11 +266,16 @@ export default function ShipperDashboardPage() {
 
   const stats = {
     total: loads.length,
-    pending: loads.filter(l => ['REQUESTED', 'NEW', 'QUOTED'].includes(l.status)).length,
+    pending: loads.filter(l => ['QUOTE_REQUESTED', 'REQUESTED', 'NEW', 'QUOTED'].includes(l.status)).length,
     active: loads.filter(l => ['QUOTE_ACCEPTED', 'SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length,
     completed: loads.filter(l => ['DELIVERED', 'COMPLETED'].includes(l.status)).length,
     cancelled: loads.filter(l => ['CANCELLED', 'DENIED'].includes(l.status)).length,
   }
+
+  // Loads that are available for shipper to claim (created by drivers, not yet claimed)
+  // Note: We'll show SCHEDULED loads created via DRIVER_MANUAL that shipper hasn't claimed yet
+  // For now, showing all SCHEDULED loads as "available" - in future could add a "claimedByShipper" field
+  const pendingAcceptance = loads.filter(l => l.status === 'SCHEDULED' || l.status === 'QUOTE_REQUESTED')
 
   if (isLoading) {
     return (
@@ -271,12 +324,6 @@ export default function ShipperDashboardPage() {
                 className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all"
               >
                 Templates
-              </Link>
-              <Link
-                href="/shipper/request-load"
-                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl"
-              >
-                + New Load Request
               </Link>
             </div>
           </div>
@@ -334,7 +381,106 @@ export default function ShipperDashboardPage() {
           </div>
         </div>
 
-        {/* Loads List */}
+        {/* Pending Acceptance Section */}
+        {pendingAcceptance.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Available Loads ({pendingAcceptance.length})</h2>
+              <div className="group relative">
+                <svg className="w-5 h-5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-xl">
+                  <p className="mb-2 font-semibold">About Available Loads:</p>
+                  <p className="mb-2">These loads were created by drivers and are already active in the system. They're being tracked and managed by drivers.</p>
+                  <p className="mb-2"><strong>Claiming a load</strong> allows you to view and manage it in your portal, but it's completely optional.</p>
+                  <p><strong>Important:</strong> Loads continue normally even if you don't claim them. You'll still receive email updates.</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {pendingAcceptance.map((load) => (
+                <div
+                  key={load.id}
+                  className="glass rounded-xl p-6 border-2 border-orange-300"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-gray-900 text-lg font-mono">{load.publicTrackingCode}</h3>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                          Available to Claim
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Created by driver • {new Date(load.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{load.pickupFacility.name}</p>
+                        <p className="text-sm text-gray-600">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{load.dropoffFacility.name}</p>
+                        <p className="text-sm text-gray-600">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleAcceptLoad(load.id)
+                      }}
+                      disabled={isAccepting === load.id || isRejecting === load.id}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isAccepting === load.id ? 'Claiming...' : '✓ Claim in Portal'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleRejectLoad(load.id)
+                      }}
+                      disabled={isAccepting === load.id || isRejecting === load.id}
+                      className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRejecting === load.id ? 'Dismissing...' : '✗ Dismiss'}
+                    </button>
+                    <Link
+                      href={`/shipper/loads/${load.id}`}
+                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-all"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* All Loads List */}
         {filteredLoads.length === 0 ? (
           <div className="glass rounded-2xl p-12 text-center">
             <div className="w-16 h-16 mx-auto mb-4 text-gray-400">

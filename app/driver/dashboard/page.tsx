@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
+import RateCalculator from '@/components/features/RateCalculator'
 
 interface Driver {
   id: string
@@ -69,7 +70,7 @@ interface Load {
 }
 
 type SortOption = 'newest' | 'oldest' | 'readyTime' | 'deadline' | 'status' | 'amount' | 'cancelled'
-type FilterOption = 'all' | 'new' | 'quoted' | 'scheduled' | 'pickedUp' | 'inTransit' | 'cancelled'
+type FilterOption = 'all' | 'new' | 'quoted' | 'scheduled' | 'pickedUp' | 'inTransit' | 'delivered' | 'cancelled'
 
 export default function DriverDashboardPage() {
   const router = useRouter()
@@ -115,6 +116,35 @@ export default function DriverDashboardPage() {
       console.error('Error fetching loads:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDeleteLoad = async (loadId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!confirm('Are you sure you want to delete this load? This will permanently delete the load and all associated documents. This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/load-requests/${loadId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to delete load')
+      }
+
+      // Remove from local state
+      setAllLoads(prev => prev.filter(load => load.id !== loadId))
+      
+      // Show success message (you may need to import toast utility)
+      alert('Load deleted successfully')
+    } catch (error) {
+      console.error('Error deleting load:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete load')
     }
   }
 
@@ -254,6 +284,7 @@ export default function DriverDashboardPage() {
         scheduled: ['SCHEDULED', 'EN_ROUTE'],
         pickedUp: ['PICKED_UP'],
         inTransit: ['IN_TRANSIT'],
+        delivered: ['DELIVERED'],
         cancelled: ['CANCELLED', 'DENIED'],
       }
       filtered = filtered.filter(load => statusMap[filterBy].includes(load.status))
@@ -367,6 +398,23 @@ export default function DriverDashboardPage() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="glass p-6 rounded-2xl mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <Link
+          href="/driver/manual-load"
+          className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Record Manual Load & Upload Documents
+        </Link>
+        <p className="text-sm text-gray-600 mt-2">
+          Document loads that weren't created through the system (from emails, phone calls, etc.)
+        </p>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
@@ -420,6 +468,7 @@ export default function DriverDashboardPage() {
               <option value="scheduled">Scheduled / En Route</option>
               <option value="pickedUp">Picked Up</option>
               <option value="inTransit">In Transit</option>
+              <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled / Denied</option>
             </select>
           </div>
@@ -616,15 +665,19 @@ export default function DriverDashboardPage() {
                       {(load.documents && load.documents.length > 0) || (load.trackingEvents && load.trackingEvents.length > 0) ? (
                         <div className="flex items-center gap-3 text-xs">
                           {load.documents && load.documents.length > 0 && (
-                            <Link
-                              href={`/driver/loads/${load.id}#documents`}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                router.push(`/driver/loads/${load.id}#documents`)
+                              }}
                               className="text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
                             >
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
-                            </Link>
+                            </button>
                           )}
                           {load.trackingEvents && load.trackingEvents.length > 0 && (
                             <span className="text-gray-500">
@@ -654,28 +707,56 @@ export default function DriverDashboardPage() {
                 </div>
                 </Link>
 
-                {/* Action Buttons */}
-                {canAccept && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                    <button
-                      onClick={(e) => handleAcceptLoad(load.id, e)}
-                      className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 transition-all"
-                    >
-                      Accept Load
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setDenyLoadId(load.id)
-                        setShowDenyModal(true)
-                      }}
-                      className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all"
-                    >
-                      Deny Load
-                    </button>
+                {/* Rate Calculator & Actions */}
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                  {/* Rate Calculator - Always visible for drivers */}
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <RateCalculator
+                      loadId={load.id}
+                      pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                      dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                      serviceType={load.serviceType}
+                      showDeadhead={true}
+                      className="text-sm"
+                    />
                   </div>
-                )}
+
+                  {/* Action Buttons */}
+                  {canAccept && (
+                    <div className="space-y-2">
+                      <button
+                        onClick={(e) => handleAcceptLoad(load.id, e)}
+                        className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 transition-all"
+                      >
+                        Accept Load
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setDenyLoadId(load.id)
+                          setShowDenyModal(true)
+                        }}
+                        className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all"
+                      >
+                        Deny Load
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Delete Button - For scheduled, completed, cancelled, or delivered loads */}
+                  {(load.status === 'SCHEDULED' || load.status === 'COMPLETED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+                    <button
+                      onClick={(e) => handleDeleteLoad(load.id, e)}
+                      className="w-full px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Load
+                    </button>
+                  )}
+                </div>
                 
               </div>
             )})}

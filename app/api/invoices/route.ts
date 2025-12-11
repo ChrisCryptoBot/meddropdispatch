@@ -69,13 +69,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     })
-  } catch (error) {
-    console.error('Error fetching invoices:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch invoices' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**

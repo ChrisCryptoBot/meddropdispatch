@@ -353,14 +353,10 @@ export async function autoGenerateInvoiceForLoad(loadRequestId: string): Promise
       }
     )
 
-    // Auto-send invoice email
+    // Return invoice ID - the status update route will send the delivery congratulations email with invoice
     const invoice = await prisma.invoice.findUnique({
       where: { invoiceNumber: invoiceData.invoiceNumber },
     })
-
-    if (invoice) {
-      await sendInvoiceEmail(invoice.id)
-    }
 
     return invoice?.id || null
   } catch (error) {

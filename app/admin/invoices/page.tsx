@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface Invoice {
   id: string
@@ -44,11 +45,15 @@ const INVOICE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelled',
 }
 
+type SortField = 'newest' | 'oldest' | 'invoice_number' | 'due_date' | 'amount_high' | 'amount_low' | 'status' | 'company'
+
 export default function AdminInvoicesPage() {
   const router = useRouter()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<SortField>('newest')
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentData, setPaymentData] = useState({
@@ -80,11 +85,55 @@ export default function AdminInvoicesPage() {
     }
   }
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    if (filter === 'all') return true
-    if (filter === 'outstanding') return invoice.status === 'SENT' || invoice.status === 'OVERDUE'
-    return invoice.status === filter
-  })
+  // Filter and sort invoices
+  const filteredAndSortedInvoices = useMemo(() => {
+    let filtered = invoices
+
+    // Filter by status
+    if (filter === 'outstanding') {
+      filtered = filtered.filter((invoice) => invoice.status === 'SENT' || invoice.status === 'OVERDUE')
+    } else if (filter !== 'all') {
+      filtered = filtered.filter((invoice) => invoice.status === filter)
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (invoice) =>
+          invoice.invoiceNumber.toLowerCase().includes(query) ||
+          invoice.shipper.companyName.toLowerCase().includes(query) ||
+          invoice.shipper.email.toLowerCase().includes(query) ||
+          invoice.loadRequests.some((l) => l.publicTrackingCode.toLowerCase().includes(query))
+      )
+    }
+
+    // Sort invoices
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime()
+        case 'oldest':
+          return new Date(a.invoiceDate).getTime() - new Date(b.invoiceDate).getTime()
+        case 'invoice_number':
+          return a.invoiceNumber.localeCompare(b.invoiceNumber)
+        case 'due_date':
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+        case 'amount_high':
+          return b.total - a.total
+        case 'amount_low':
+          return a.total - b.total
+        case 'status':
+          return a.status.localeCompare(b.status)
+        case 'company':
+          return a.shipper.companyName.localeCompare(b.shipper.companyName)
+        default:
+          return 0
+      }
+    })
+
+    return sorted
+  }, [invoices, filter, searchQuery, sortBy])
 
   const markAsSent = async (invoiceId: string) => {
     try {
@@ -194,32 +243,85 @@ export default function AdminInvoicesPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'DRAFT', label: 'Draft' },
-          { key: 'SENT', label: 'Sent' },
-          { key: 'outstanding', label: 'Outstanding' },
-          { key: 'OVERDUE', label: 'Overdue' },
-          { key: 'PAID', label: 'Paid' },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-              filter === key
-                ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                : 'glass text-gray-700 hover:bg-white/60'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Filters, Search, and Sort */}
+      <div className="glass p-4 rounded-xl mb-6">
+        <div className="grid md:grid-cols-3 gap-4 mb-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input
+              type="text"
+              placeholder="Search by invoice number, company, tracking code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+            />
+          </div>
+
+          {/* Filter by Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+            >
+              <option value="all">All</option>
+              <option value="DRAFT">Draft</option>
+              <option value="SENT">Sent</option>
+              <option value="outstanding">Outstanding</option>
+              <option value="OVERDUE">Overdue</option>
+              <option value="PAID">Paid</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortField)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="invoice_number">Invoice Number</option>
+              <option value="due_date">Due Date</option>
+              <option value="amount_high">Amount (High to Low)</option>
+              <option value="amount_low">Amount (Low to High)</option>
+              <option value="status">Status</option>
+              <option value="company">Company Name</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Quick Filter Buttons */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'DRAFT', label: 'Draft' },
+            { key: 'SENT', label: 'Sent' },
+            { key: 'outstanding', label: 'Outstanding' },
+            { key: 'OVERDUE', label: 'Overdue' },
+            { key: 'PAID', label: 'Paid' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                filter === key
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                  : 'bg-white/40 text-gray-700 hover:bg-white/60'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Invoices List */}
-      {filteredInvoices.length === 0 ? (
+      {filteredAndSortedInvoices.length === 0 ? (
         <div className="glass rounded-2xl p-12 text-center">
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
@@ -234,12 +336,21 @@ export default function AdminInvoicesPage() {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No invoices found</h3>
-          <p className="text-gray-600">Invoices will appear here after they are created</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            {searchQuery || filter !== 'all' ? 'No invoices match your filters' : 'No invoices found'}
+          </h3>
+          <p className="text-gray-600">
+            {searchQuery || filter !== 'all'
+              ? 'Try adjusting your search or filter criteria'
+              : 'Invoices will appear here after they are created'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredInvoices.map((invoice) => (
+          <div className="text-sm text-gray-600 mb-2">
+            Showing {filteredAndSortedInvoices.length} of {invoices.length} invoices
+          </div>
+          {filteredAndSortedInvoices.map((invoice) => (
             <div key={invoice.id} className="glass rounded-xl p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">

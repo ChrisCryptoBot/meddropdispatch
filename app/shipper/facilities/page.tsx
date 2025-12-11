@@ -9,6 +9,7 @@ export default function SavedFacilitiesPage() {
   const [shipper, setShipper] = useState<any>(null)
   const [facilities, setFacilities] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedFacility, setSelectedFacility] = useState<string | null>(null)
 
   useEffect(() => {
     const shipperData = localStorage.getItem('shipper')
@@ -68,8 +69,31 @@ export default function SavedFacilitiesPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {facilities.map((facility) => (
-            <div key={facility.id} className="glass rounded-xl p-6 hover:shadow-lg transition-shadow">
+          {facilities.map((facility) => {
+            const handleUseFacility = (type: 'pickup' | 'dropoff') => {
+              const facilityData = {
+                id: facility.id,
+                name: facility.name,
+                facilityType: facility.facilityType,
+                addressLine1: facility.addressLine1,
+                addressLine2: facility.addressLine2,
+                city: facility.city,
+                state: facility.state,
+                postalCode: facility.postalCode,
+                contactName: facility.contactName,
+                contactPhone: facility.contactPhone,
+                defaultAccessNotes: facility.defaultAccessNotes,
+                type, // Add type so request-load knows which section to fill
+              }
+              sessionStorage.setItem('selectedFacility', JSON.stringify(facilityData))
+              router.push('/shipper/request-load')
+            }
+
+            return (
+              <div
+                key={facility.id}
+                className="glass rounded-xl p-6 hover:shadow-lg transition-all border-2 border-transparent hover:border-primary-300"
+              >
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-lg font-bold text-gray-900">{facility.name}</h3>
                 <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
@@ -96,8 +120,37 @@ export default function SavedFacilitiesPage() {
                   </p>
                 )}
               </div>
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUseFacility('pickup')
+                    }}
+                    className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Use as Pickup
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUseFacility('dropoff')
+                    }}
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Use as Dropoff
+                  </button>
+                </div>
+              </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

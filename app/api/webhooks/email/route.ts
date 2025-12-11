@@ -182,8 +182,8 @@ export async function POST(request: NextRequest) {
             autoCalculatedDistance = distanceResult.distance
             autoCalculatedTime = distanceResult.duration
 
-            // Calculate rate
-            const rateResult = calculateRate(distanceResult.distance, serviceType)
+            // Calculate rate (no timing info available from email, so no after-hours detection)
+            const rateResult = calculateRate(distanceResult.distance, serviceType, null, null)
             suggestedRateMin = rateResult.suggestedRateMin
             suggestedRateMax = rateResult.suggestedRateMax
 

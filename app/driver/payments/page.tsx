@@ -33,6 +33,7 @@ export default function DriverPaymentsPage() {
     accountType: 'checking', // checking or savings
     payoutFrequency: 'WEEKLY',
     minimumPayout: 100,
+    minimumRatePerMile: 0,
   })
 
   const [taxData, setTaxData] = useState({
@@ -88,6 +89,7 @@ export default function DriverPaymentsPage() {
           accountType: settings.accountType || 'checking',
           payoutFrequency: settings.payoutFrequency || 'WEEKLY',
           minimumPayout: settings.minimumPayout || 100,
+          minimumRatePerMile: settings.minimumRatePerMile || 0,
         })
         setTaxData({
           taxId: settings.taxId || '',
@@ -345,6 +347,28 @@ export default function DriverPaymentsPage() {
                 </div>
               </div>
 
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Rate Settings</h3>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Minimum Rate Per Mile ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentData.minimumRatePerMile}
+                    onChange={(e) => setPaymentData({ ...paymentData, minimumRatePerMile: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Set your minimum acceptable rate per mile. The rate calculator will warn you if a load's rate falls below this threshold. Leave blank or 0 to disable.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
@@ -487,10 +511,6 @@ export default function DriverPaymentsPage() {
                   </div>
                 ))
               )}
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>

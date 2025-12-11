@@ -92,7 +92,9 @@ export async function POST(
     }
 
     // POD LOCKING: Check if load is DELIVERED and require admin override for new uploads
-    const requiresOverride = loadRequest.status === 'DELIVERED' || loadRequest.status === 'COMPLETED'
+    // Exception: DRIVER_MANUAL loads allow drivers to upload documents even if status is COMPLETED
+    const isDriverManual = loadRequest.createdVia === 'DRIVER_MANUAL'
+    const requiresOverride = (loadRequest.status === 'DELIVERED' || loadRequest.status === 'COMPLETED') && !isDriverManual
     const adminOverride = formData.get('adminOverride') === 'true'
     const adminOverrideBy = formData.get('adminOverrideBy') as string | null
     const adminOverrideNotes = formData.get('adminOverrideNotes') as string | null
@@ -107,7 +109,7 @@ export async function POST(
       )
     }
 
-    // POD LOCKING: Lock documents if load is DELIVERED (except if admin override)
+    // POD LOCKING: Lock documents if load is DELIVERED (except if admin override or DRIVER_MANUAL)
     const isLocked = requiresOverride && !adminOverride
     const lockedAt = isLocked ? new Date() : null
 
@@ -229,14 +231,7 @@ Medical Courier Services
         createdAt: document.createdAt,
       }
     })
-
-  } catch (error) {
-    console.error('Error uploading document:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload document', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**

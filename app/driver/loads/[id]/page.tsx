@@ -9,9 +9,10 @@ import SignatureCapture from '@/components/features/SignatureCapture'
 import CameraCapture from '@/components/features/CameraCapture'
 import LoadNotes from '@/components/features/LoadNotes'
 import { showToast, showApiError } from '@/lib/toast'
-import CameraCapture from '@/components/features/CameraCapture'
 import { getCurrentLocation } from '@/lib/gps'
 import { storeOffline, isOnline } from '@/lib/offline-storage'
+import DocumentViewButton from '@/components/features/DocumentViewButton'
+import AddressAutocomplete from '@/components/features/AddressAutocomplete'
 
 interface Load {
   id: string
@@ -24,11 +25,19 @@ interface Load {
   readyTime?: string
   deliveryDeadline?: string
   pickupSignature?: string
-  pickupSignatureName?: string
+  pickupSignerName?: string
   deliverySignature?: string
-  deliverySignatureName?: string
+  deliverySignerName?: string
   pickupTemperature?: number
   deliveryTemperature?: number
+  quoteAmount?: number
+  autoCalculatedDistance?: number
+  deadheadDistance?: number
+  totalDistance?: number
+  ratePerMile?: number
+  suggestedRateMin?: number
+  suggestedRateMax?: number
+  deadheadStartingLocation?: string
   pickupFacility: {
     name: string
     addressLine1: string
@@ -68,8 +77,10 @@ export default function DriverLoadDetailPage() {
   const [load, setLoad] = useState<Load | null>(null)
   const [driver, setDriver] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [showSignatureCapture, setShowSignatureCapture] = useState<'pickup' | 'delivery' | null>(null)
+  const [showSignatureCapture, setShowSignatureCapture] = useState<'pickup' | null>(null)
+  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false)
   const [signerName, setSignerName] = useState('')
+  const [recipientName, setRecipientName] = useState('')
   const [temperature, setTemperature] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
@@ -79,6 +90,9 @@ export default function DriverLoadDetailPage() {
   const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
   const [isUploading, setIsUploading] = useState(false)
   const [showCamera, setShowCamera] = useState(false)
+  const [driverStartingLocation, setDriverStartingLocation] = useState('')
+  const [isCalculatingRate, setIsCalculatingRate] = useState(false)
+  const [rateCalculation, setRateCalculation] = useState<any>(null)
 
   useEffect(() => {
     // Get driver from localStorage
@@ -114,6 +128,52 @@ export default function DriverLoadDetailPage() {
       setDocuments(data.documents || [])
     } catch (error) {
       console.error('Error fetching documents:', error)
+    }
+  }
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/load-requests/${load.id}/documents/${documentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to delete document')
+      }
+
+      showToast.success('Document deleted successfully')
+      await fetchDocuments()
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      showToast.error('Failed to delete document', error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  const handleDeleteLoad = async () => {
+    if (!confirm('Are you sure you want to delete this load? This will permanently delete the load and all associated documents. This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/load-requests/${load.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to delete load')
+      }
+
+      showToast.success('Load deleted successfully')
+      router.push('/driver/dashboard')
+    } catch (error) {
+      console.error('Error deleting load:', error)
+      showToast.error('Failed to delete load', error instanceof Error ? error.message : 'Unknown error')
     }
   }
 
@@ -171,23 +231,35 @@ export default function DriverLoadDetailPage() {
 
     setIsUpdating(true)
     try {
+      // Build request body, filtering out undefined values
+      const requestBody: any = {
+        status: newStatus,
+        eventLabel: LOAD_STATUS_LABELS[newStatus as keyof typeof LOAD_STATUS_LABELS] || newStatus,
+      }
+
+      // Add location text only if applicable
+      if (newStatus === 'PICKED_UP') {
+        requestBody.locationText = `${load.pickupFacility.city}, ${load.pickupFacility.state}`
+      } else if (newStatus === 'DELIVERED') {
+        requestBody.locationText = `${load.dropoffFacility.city}, ${load.dropoffFacility.state}`
+      }
+
       const response = await fetch(`/api/load-requests/${load.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          eventLabel: LOAD_STATUS_LABELS[newStatus as keyof typeof LOAD_STATUS_LABELS],
-          locationText: newStatus === 'PICKED_UP' ? `${load.pickupFacility.city}, ${load.pickupFacility.state}`
-                      : newStatus === 'DELIVERED' ? `${load.dropoffFacility.city}, ${load.dropoffFacility.state}`
-                      : undefined,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
-      if (!response.ok) throw new Error('Failed to update status')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Status update error:', errorData)
+        throw new Error(errorData.message || errorData.error || 'Failed to update status')
+      }
 
       await fetchLoad()
       showToast.success('Status updated successfully!')
     } catch (error) {
+      console.error('Error updating status:', error)
       showApiError(error, 'Failed to update status')
     } finally {
       setIsUpdating(false)
@@ -202,25 +274,21 @@ export default function DriverLoadDetailPage() {
 
     setIsUpdating(true)
     try {
-      const isPickup = showSignatureCapture === 'pickup'
       const updateData: any = {
-        [isPickup ? 'pickupSignature' : 'deliverySignature']: signatureData,
-        [isPickup ? 'pickupSignatureName' : 'deliverySignatureName']: signerName,
-        [isPickup ? 'pickupSignatureDriverId' : 'deliverySignatureDriverId']: driver?.id || null,
+        pickupSignature: signatureData,
+        pickupSignerName: signerName,
+        pickupSignatureDriverId: driver?.id || null,
       }
 
       // Add temperature if provided
       if (temperature) {
-        updateData[isPickup ? 'pickupTemperature' : 'deliveryTemperature'] = parseFloat(temperature)
+        updateData.pickupTemperature = parseFloat(temperature)
       }
 
       // Auto-update status
-      if (isPickup && load.status === 'SCHEDULED') {
+      if (load.status === 'SCHEDULED') {
         updateData.status = 'PICKED_UP'
         updateData.actualPickupTime = new Date().toISOString()
-      } else if (!isPickup && load.status !== 'DELIVERED') {
-        updateData.status = 'DELIVERED'
-        updateData.actualDeliveryTime = new Date().toISOString()
       }
 
       const response = await fetch(`/api/load-requests/${load.id}`, {
@@ -239,9 +307,7 @@ export default function DriverLoadDetailPage() {
           body: JSON.stringify({
             status: updateData.status,
             eventLabel: LOAD_STATUS_LABELS[updateData.status as keyof typeof LOAD_STATUS_LABELS],
-            locationText: isPickup
-              ? `${load.pickupFacility.city}, ${load.pickupFacility.state}`
-              : `${load.dropoffFacility.city}, ${load.dropoffFacility.state}`,
+            locationText: `${load.pickupFacility.city}, ${load.pickupFacility.state}`,
             eventDescription: `Signed by ${signerName}`,
           }),
         })
@@ -254,6 +320,43 @@ export default function DriverLoadDetailPage() {
       showToast.success('Signature saved successfully!')
     } catch (error) {
       showApiError(error, 'Failed to save signature')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleConfirmDelivery = async () => {
+    if (!load) return
+
+    if (!recipientName.trim()) {
+      showToast.warning('Please enter the name of the person who received the delivery')
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      // Update load with recipient name
+      const updateResponse = await fetch(`/api/load-requests/${load.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deliverySignerName: recipientName,
+          deliverySignatureDriverId: driver?.id || null,
+          actualDeliveryTime: new Date().toISOString(),
+        }),
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({}))
+        throw new Error(errorData.message || errorData.error || 'Failed to save recipient name')
+      }
+
+      // Update status
+      await handleStatusUpdate('DELIVERED')
+      setShowDeliveryConfirm(false)
+      setRecipientName('')
+    } catch (error) {
+      showApiError(error, 'Failed to confirm delivery')
     } finally {
       setIsUpdating(false)
     }
@@ -283,14 +386,71 @@ export default function DriverLoadDetailPage() {
     )
   }
 
-  const canPickup = load.status === 'SCHEDULED' && !load.pickupSignature
-  const canDeliver = ['PICKED_UP', 'IN_TRANSIT'].includes(load.status) && !load.deliverySignature
+  // Delivery confirmation available when in transit
+  const canDeliver = ['PICKED_UP', 'IN_TRANSIT'].includes(load.status) && load.status !== 'DELIVERED'
+
+  const handleCalculateRateWithDeadhead = async () => {
+    if (!driverStartingLocation.trim()) {
+      showToast.error('Please enter your current location')
+      return
+    }
+
+    setIsCalculatingRate(true)
+    try {
+      const response = await fetch(`/api/load-requests/${load.id}/calculate-rate-with-deadhead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverStartingLocation }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to calculate rate')
+      }
+
+      const data = await response.json()
+      setRateCalculation(data.calculation)
+      await fetchLoad() // Refresh load data
+      showToast.success('Rate calculated successfully!')
+    } catch (error) {
+      showApiError(error, 'Failed to calculate rate')
+    } finally {
+      setIsCalculatingRate(false)
+    }
+  }
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      const location = await getCurrentLocation()
+      if (location) {
+        // Try to reverse geocode to get address
+        try {
+          const response = await fetch(`/api/geocoding/reverse?lat=${location.latitude}&lng=${location.longitude}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.address) {
+              setDriverStartingLocation(data.address)
+              showToast.success('Current location captured')
+              return
+            }
+          }
+        } catch (e) {
+          // Fall through to coordinates
+        }
+        // Fallback to coordinates if reverse geocoding fails
+        setDriverStartingLocation(`${location.latitude}, ${location.longitude}`)
+        showToast.success('Current location captured (coordinates)')
+      }
+    } catch (error) {
+      showToast.error('Could not get current location. Please enter manually.')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-20">
-      {/* Header */}
-      <header className="glass sticky top-0 z-40 border-b border-white/30">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+      {/* Fixed Load Header - positioned below main app header and sidebar */}
+      <header className="glass fixed top-[73px] left-0 md:left-64 right-0 z-40 border-b border-white/30 shadow-sm">
+        <div className="px-4 py-4">
           <div className="flex items-center gap-3">
             <Link
               href="/driver/dashboard"
@@ -305,32 +465,128 @@ export default function DriverLoadDetailPage() {
               <p className="text-xs text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
-              {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS]}
+              {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_COLORS]}
             </span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      {/* Main content with top padding to account for fixed headers */}
+      <main className="px-4 pt-24 md:pt-24 pb-6 space-y-6">
+        {/* Rate & Distance Calculation */}
+        <div className="glass p-6 rounded-2xl">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Rate & Distance Calculation</h2>
+          
+          {/* Driver Starting Location Input */}
+          <div className="mb-4">
+            <label htmlFor="driverStartingLocation" className="block text-sm font-semibold text-gray-700 mb-2">
+              Your Current Location (Deadhead Starting Point) *
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <AddressAutocomplete
+                  id="driverStartingLocation"
+                  value={driverStartingLocation}
+                  onChange={setDriverStartingLocation}
+                  placeholder="Enter address or use current location"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                />
+              </div>
+              <button
+                onClick={handleUseCurrentLocation}
+                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                title="Use GPS location"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Use GPS
+              </button>
+              <button
+                onClick={handleCalculateRateWithDeadhead}
+                disabled={isCalculatingRate || !driverStartingLocation.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isCalculatingRate ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Calculating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Calculate Rate
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Enter your current location to calculate deadhead miles and total rate
+            </p>
+          </div>
+
+          {/* Rate Display */}
+          {(rateCalculation || load.totalDistance) && (
+            <div className="mt-6 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+              <h3 className="font-semibold text-gray-900 mb-3">Rate Calculation</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Deadhead Distance</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {rateCalculation?.deadheadDistance?.toFixed(1) || load.deadheadDistance?.toFixed(1) || '0.0'} miles
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Your location → Pickup</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Load Distance</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {rateCalculation?.loadDistance?.toFixed(1) || load.autoCalculatedDistance?.toFixed(1) || '0.0'} miles
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Pickup → Delivery</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Total Distance</p>
+                  <p className="text-lg font-bold text-primary-700">
+                    {rateCalculation?.totalDistance?.toFixed(1) || load.totalDistance?.toFixed(1) || '0.0'} miles
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Rate Per Mile</p>
+                  <p className="text-lg font-bold text-primary-700">
+                    ${rateCalculation?.ratePerMile?.toFixed(2) || load.ratePerMile?.toFixed(2) || '0.00'}/mile
+                  </p>
+                </div>
+              </div>
+              {(rateCalculation?.suggestedRateMin || load.suggestedRateMin) && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <p className="text-xs text-gray-600 mb-1">Suggested Rate Range</p>
+                  <p className="text-2xl font-bold text-primary-700">
+                    ${(rateCalculation?.suggestedRateMin || load.suggestedRateMin)?.toFixed(2)} - ${(rateCalculation?.suggestedRateMax || load.suggestedRateMax)?.toFixed(2)}
+                  </p>
+                  {rateCalculation?.breakdown && (
+                    <div className="mt-2 text-xs text-gray-600 space-y-1">
+                      <p>Base: ${rateCalculation.breakdown.baseRate.toFixed(2)}</p>
+                      <p>Distance: ${rateCalculation.breakdown.distanceRate.toFixed(2)} ({rateCalculation.totalDistance.toFixed(1)} mi × ${(rateCalculation.breakdown.distanceRate / rateCalculation.totalDistance).toFixed(2)}/mi)</p>
+                      <p>Service Multiplier: {rateCalculation.breakdown.serviceMultiplier}x</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Quick Actions */}
         <div className="glass p-6 rounded-2xl">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
-            {canPickup && (
-              <button
-                onClick={() => setShowSignatureCapture('pickup')}
-                disabled={isUpdating}
-                className="px-4 py-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 transition-base flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Confirm Pickup
-              </button>
-            )}
+            {/* Delivery confirmation - only for actual delivery POD */}
             {canDeliver && (
               <button
-                onClick={() => setShowSignatureCapture('delivery')}
+                onClick={() => setShowDeliveryConfirm(true)}
                 disabled={isUpdating}
                 className="px-4 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-base flex items-center justify-center gap-2"
               >
@@ -340,6 +596,7 @@ export default function DriverLoadDetailPage() {
                 Confirm Delivery
               </button>
             )}
+            {/* Simple status update buttons - no signature required */}
             {load.status === 'SCHEDULED' && (
               <button
                 onClick={() => handleStatusUpdate('PICKED_UP')}
@@ -358,7 +615,32 @@ export default function DriverLoadDetailPage() {
                 Start Transit
               </button>
             )}
+            {load.status === 'IN_TRANSIT' && (
+              <button
+                onClick={() => handleStatusUpdate('DELIVERED')}
+                disabled={isUpdating}
+                className="px-4 py-3 rounded-xl bg-white/60 hover:bg-white/80 border border-gray-300 font-semibold transition-base"
+              >
+                Mark Delivered
+              </button>
+            )}
           </div>
+          
+          {/* Delete Load Button - Only for scheduled, completed, cancelled, or delivered loads */}
+          {(load.status === 'SCHEDULED' || load.status === 'COMPLETED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={handleDeleteLoad}
+                className="w-full px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold transition-base flex items-center justify-center gap-2"
+                title="Delete this load"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Load
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Pickup Location */}
@@ -474,13 +756,13 @@ export default function DriverLoadDetailPage() {
             <div className="space-y-4">
               {load.pickupSignature && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Pickup Signature - {load.pickupSignatureName}</p>
+                  <p className="text-sm text-gray-600 mb-2">Pickup Signature - {load.pickupSignerName}</p>
                   <img src={load.pickupSignature} alt="Pickup signature" className="w-full h-32 object-contain bg-white rounded-lg border border-gray-200" />
                 </div>
               )}
               {load.deliverySignature && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-2">Delivery Signature - {load.deliverySignatureName}</p>
+                  <p className="text-sm text-gray-600 mb-2">Delivery Signature - {load.deliverySignerName}</p>
                   <img src={load.deliverySignature} alt="Delivery signature" className="w-full h-32 object-contain bg-white rounded-lg border border-gray-200" />
                 </div>
               )}
@@ -523,14 +805,23 @@ export default function DriverLoadDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
-                  >
-                    View
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <DocumentViewButton 
+                      url={doc.url}
+                      title={doc.title}
+                    />
+                    {!doc.isLocked && (
+                      <button
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete document"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -668,12 +959,12 @@ export default function DriverLoadDetailPage() {
         </div>
       )}
 
-      {/* Signature Capture Modal */}
+      {/* Signature Capture Modal - Only for Pickup */}
       {showSignatureCapture && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass max-w-2xl w-full rounded-3xl p-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              {showSignatureCapture === 'pickup' ? 'Pickup' : 'Delivery'} Confirmation
+              Pickup Confirmation
             </h3>
 
             {/* Signer Name */}
@@ -714,7 +1005,57 @@ export default function DriverLoadDetailPage() {
                 setSignerName('')
                 setTemperature('')
               }}
+              signerName={signerName}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Confirmation Modal */}
+      {showDeliveryConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass max-w-md w-full rounded-3xl p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Confirm Delivery
+            </h3>
+            <p className="text-gray-700 mb-4">
+              Are you sure you have delivered this load to {load?.dropoffFacility.name}?
+            </p>
+            
+            {/* Recipient Name Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Name of Person Who Received *
+              </label>
+              <input
+                type="text"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                placeholder="Enter recipient name"
+                required
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeliveryConfirm(false)
+                  setRecipientName('')
+                }}
+                disabled={isUpdating}
+                className="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 disabled:opacity-50 transition-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelivery}
+                disabled={isUpdating}
+                className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-base"
+              >
+                {isUpdating ? 'Confirming...' : 'Yes, Confirm Delivery'}
+              </button>
+            </div>
           </div>
         </div>
       )}

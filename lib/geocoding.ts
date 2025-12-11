@@ -109,3 +109,65 @@ export async function getCoordinates(
   }
 }
 
+/**
+ * Reverse geocode coordinates to get address
+ * Converts lat/lng to formatted address
+ */
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number
+): Promise<GeocodedAddress | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+
+  if (!apiKey) {
+    console.warn('⚠️  GOOGLE_MAPS_API_KEY not configured - reverse geocoding disabled')
+    return null
+  }
+
+  try {
+    const response = await client.reverseGeocode({
+      params: {
+        latlng: { lat: latitude, lng: longitude },
+        key: apiKey,
+      },
+      timeout: 10000,
+    })
+
+    if (response.data.status !== 'OK' || response.data.results.length === 0) {
+      console.warn(`Reverse geocoding failed for coordinates: ${latitude}, ${longitude}`, {
+        status: response.data.status,
+      })
+      return null
+    }
+
+    const result = response.data.results[0]
+    const location = result.geometry.location
+
+    // Extract address components
+    const addressComponents = result.address_components
+    const city =
+      addressComponents.find((c) => c.types.includes('locality' as any))?.long_name ||
+      addressComponents.find((c) => c.types.includes('sublocality' as any))?.long_name ||
+      ''
+
+    const state =
+      addressComponents.find((c) => c.types.includes('administrative_area_level_1' as any))
+        ?.short_name || ''
+
+    const postalCode =
+      addressComponents.find((c) => c.types.includes('postal_code' as any))?.long_name || ''
+
+    return {
+      formattedAddress: result.formatted_address,
+      latitude: location.lat,
+      longitude: location.lng,
+      city,
+      state,
+      postalCode,
+    }
+  } catch (error) {
+    console.error('Error reverse geocoding coordinates:', error)
+    return null
+  }
+}
+

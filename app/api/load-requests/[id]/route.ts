@@ -179,3 +179,78 @@ export async function PATCH(
     })
   })(request)
 }
+
+/**
+ * DELETE /api/load-requests/[id]
+ * Delete a load request (soft delete by setting status to CANCELLED, or hard delete)
+ * Only allow deletion of completed or cancelled loads
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+
+    // Get the load to check its status
+    const loadRequest = await prisma.loadRequest.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        publicTrackingCode: true,
+        status: true,
+      }
+    })
+
+    if (!loadRequest) {
+      throw new NotFoundError('Load request')
+    }
+
+    // Allow deletion of scheduled, completed, cancelled, or delivered loads
+    // Drivers can delete their own scheduled loads (especially manual loads)
+    // Completed/cancelled/delivered loads can also be deleted for cleanup
+    const deletableStatuses = ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'DELIVERED']
+    if (!deletableStatuses.includes(loadRequest.status)) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete load',
+          message: `Only scheduled, completed, cancelled, or delivered loads can be deleted. Current status: ${loadRequest.status}`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete the load (Prisma will cascade delete related records if foreign keys are set up)
+    // If cascade is not set up, we need to delete related records first
+    await prisma.$transaction(async (tx) => {
+      // Delete related records first
+      await tx.trackingEvent.deleteMany({
+        where: { loadRequestId: id }
+      })
+      await tx.document.deleteMany({
+        where: { loadRequestId: id }
+      })
+      // Then delete the load
+      await tx.loadRequest.delete({
+        where: { id }
+      })
+    })
+
+    logger.info('Load request deleted', {
+      loadId: id,
+      trackingCode: loadRequest.publicTrackingCode,
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Load deleted successfully',
+    })
+  })(request)
+}

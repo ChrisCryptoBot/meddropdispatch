@@ -159,23 +159,26 @@ model LoadRequest {
   dropoffFacilityId String
 
   // Service Details
-  serviceType            String // ServiceType enum
+  serviceType            String // ServiceType enum: STAT, CRITICAL_STAT, ROUTINE, SAME_DAY, SCHEDULED_ROUTE, OVERFLOW, GOVERNMENT, OTHER
   commodityDescription   String // What's being shipped
-  specimenCategory       String // SpecimenCategory enum
-  temperatureRequirement String // TemperatureRequirement enum
+  specimenCategory       String // SpecimenCategory enum: UN3373_CATEGORY_B, NON_SPECIMEN_MEDICAL, PHARMACEUTICAL, SUPPLIES, EQUIPMENT, PAPERWORK, OTHER
+  temperatureRequirement String // TemperatureRequirement enum: AMBIENT, REFRIGERATED, FROZEN, OTHER
 
   // Load Specifications (optional)
   estimatedContainers Int?
   estimatedWeightKg   Float?
   declaredValue       Float?
 
-  // Timing
+  // Scheduling
   readyTime        DateTime? // When ready for pickup
   deliveryDeadline DateTime? // Must deliver by
+  isRecurring      Boolean  @default(false) // ONE_TIME vs RECURRING
+  directDriveRequired Boolean @default(false) // No other stops allowed
 
   // Instructions & Contact
   accessNotes            String? // Pickup/delivery access notes
   preferredContactMethod String  @default("EMAIL") // PreferredContactMethod enum
+  driverInstructions     String? // Specific instructions for driver
 
   // Status & Workflow
   status String @default("NEW") // LoadStatus enum
@@ -192,6 +195,12 @@ model LoadRequest {
   lastDeniedByDriverId String? // ID of driver who last denied this load
 
   // Signatures & Compliance
+  chainOfCustodyRequired    Boolean @default(false) // Chain-of-custody required?
+  signatureRequiredAtPickup  Boolean @default(true) // Signature required at pickup?
+  signatureRequiredAtDelivery Boolean @default(true) // Signature required at delivery?
+  electronicPodAcceptable    Boolean @default(true) // Electronic POD acceptable?
+  temperatureLoggingRequired  Boolean @default(false) // Temperature logging required?
+  
   pickupSignature    String? // Base64 signature image
   pickupSignerName   String? // Who signed at pickup
   pickupSignatureDriverId String? // Driver ID who captured pickup signature (explicit for legal coverage)
@@ -228,6 +237,11 @@ model LoadRequest {
   quoteNotes      String? // Internal notes about the quote
   quoteAcceptedAt DateTime? // When shipper accepted quote
   
+  // Billing
+  poNumber        String? // PO or reference number
+  priorityLevel   String   @default("NORMAL") // Priority level: NORMAL, HIGH, CRITICAL
+  tags            String? // JSON array of tags/labels (e.g., ["urgent", "fragile"])
+  
   // Driver Quote/Negotiation (when driver accepts load and provides quote)
   driverQuoteAmount       Float? // Driver's proposed rate
   driverQuoteNotes        String? // Driver's terms/notes for the quote
@@ -251,10 +265,14 @@ model LoadRequest {
   rawEmailContent        String? // Original email body content
   emailSubject           String? // Email subject line
   emailFrom              String? // Sender email address
-  autoCalculatedDistance Float?  // Auto-calculated distance in miles
+  autoCalculatedDistance Float?  // Auto-calculated distance in miles (pickup to dropoff)
   autoCalculatedTime     Int?    // Auto-calculated time in minutes
   suggestedRateMin       Float?  // Minimum suggested rate (USD)
   suggestedRateMax       Float?  // Maximum suggested rate (USD)
+  deadheadStartingLocation String? // Driver's starting location for deadhead calculation
+  deadheadDistance Float? // Distance from driver location to pickup (miles)
+  totalDistance Float? // Total distance including deadhead (deadhead + pickup to dropoff)
+  ratePerMile Float? // Calculated rate per mile based on total distance
 
   // Metadata
   createdVia String   @default("WEB_FORM") // CreatedVia enum
@@ -407,6 +425,9 @@ model Driver {
   taxId              String? // Encrypted in production
   taxIdType          String? // SSN, EIN
   w9Submitted        Boolean @default(false)
+  
+  // Rate Settings
+  minimumRatePerMile  Float?  // Driver's minimum acceptable rate per mile (for profit estimation)
 
   // Relations
   loadRequests LoadRequest[]

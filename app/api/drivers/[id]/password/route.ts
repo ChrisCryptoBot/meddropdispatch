@@ -1,39 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPassword, hashPassword } from '@/lib/auth'
-import { createErrorResponse, withErrorHandling, NotFoundError, AuthenticationError, ValidationError } from '@/lib/errors'
-import { changePasswordSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { compare, hash } from 'bcryptjs'
+import { z } from 'zod'
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+})
 
 /**
  * PATCH /api/drivers/[id]/password
- * Update driver password
+ * Change driver password
  */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   return withErrorHandling(async (req: NextRequest) => {
-    // Apply stricter rate limiting for password changes
     try {
-      rateLimit(RATE_LIMITS.auth)(req)
+      rateLimit(RATE_LIMITS.api)(req)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
-    const rawBody = await req.json()
-    
-    // Validate request body
-    const validation = await validateRequest(changePasswordSchema, rawBody)
+    const rawData = await req.json()
+
+    // Validate request
+    const validation = changePasswordSchema.safeParse(rawData)
     if (!validation.success) {
-      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
         {
           error: 'ValidationError',
-          message: formatted.message,
-          errors: formatted.errors,
-          timestamp: new Date().toISOString(),
+          message: 'Invalid password data',
+          errors: validation.error.errors,
         },
         { status: 400 }
       )
@@ -41,25 +43,27 @@ export async function PATCH(
 
     const { currentPassword, newPassword } = validation.data
 
-    // Get driver with password hash
+    // Get driver
     const driver = await prisma.driver.findUnique({
       where: { id },
-      select: { passwordHash: true },
+      select: {
+        id: true,
+        passwordHash: true,
+      },
     })
 
-    if (!driver || !driver.passwordHash) {
+    if (!driver) {
       throw new NotFoundError('Driver')
     }
 
     // Verify current password
-    const isValid = await verifyPassword(currentPassword, driver.passwordHash)
-
+    const isValid = await compare(currentPassword, driver.passwordHash)
     if (!isValid) {
-      throw new AuthenticationError('Current password is incorrect')
+      throw new ValidationError('Current password is incorrect')
     }
 
     // Hash new password
-    const newPasswordHash = await hashPassword(newPassword)
+    const newPasswordHash = await hash(newPassword, 10)
 
     // Update password
     await prisma.driver.update({
@@ -69,7 +73,9 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: 'Password changed successfully',
+    })
   })(request)
 }
-

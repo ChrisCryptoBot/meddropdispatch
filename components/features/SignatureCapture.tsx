@@ -5,9 +5,10 @@ import { useRef, useState, useEffect } from 'react'
 interface SignatureCaptureProps {
   onSave: (signatureData: string) => void
   onCancel: () => void
+  signerName?: string
 }
 
-export default function SignatureCapture({ onSave, onCancel }: SignatureCaptureProps) {
+export default function SignatureCapture({ onSave, onCancel, signerName = '' }: SignatureCaptureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
@@ -105,52 +106,48 @@ export default function SignatureCapture({ onSave, onCancel }: SignatureCaptureP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass max-w-2xl w-full rounded-3xl p-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">Capture Signature</h3>
+    <div>
+      {/* Canvas */}
+      <div className="bg-white rounded-xl border-2 border-gray-300 mb-4 touch-none">
+        <canvas
+          ref={canvasRef}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          className="w-full h-64 cursor-crosshair touch-none"
+          style={{ touchAction: 'none' }}
+        />
+      </div>
 
-        {/* Canvas */}
-        <div className="bg-white rounded-xl border-2 border-gray-300 mb-4 touch-none">
-          <canvas
-            ref={canvasRef}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-            className="w-full h-64 cursor-crosshair touch-none"
-            style={{ touchAction: 'none' }}
-          />
-        </div>
+      <p className="text-sm text-gray-600 mb-4 text-center">
+        Sign above using your finger or mouse
+      </p>
 
-        <p className="text-sm text-gray-600 mb-4 text-center">
-          Sign above using your finger or mouse
-        </p>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            onClick={clearSignature}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/60 hover:bg-white/80 border border-gray-300 font-semibold transition-base"
-          >
-            Clear
-          </button>
-          <button
-            onClick={onCancel}
-            className="flex-1 px-4 py-3 rounded-xl bg-white/60 hover:bg-white/80 border border-gray-300 font-semibold transition-base"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={saveSignature}
-            disabled={!hasSignature}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
-          >
-            Save
-          </button>
-        </div>
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={clearSignature}
+          className="flex-1 px-4 py-3 rounded-xl bg-white/60 hover:bg-white/80 border border-gray-300 font-semibold transition-base"
+        >
+          Clear
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-3 rounded-xl bg-white/60 hover:bg-white/80 border border-gray-300 font-semibold transition-base"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={saveSignature}
+          disabled={!hasSignature || !signerName.trim()}
+          className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
+        >
+          Save
+        </button>
       </div>
     </div>
   )

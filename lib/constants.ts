@@ -87,10 +87,13 @@ export const FACILITY_TYPE_LABELS: Record<string, string> = {
 // Service type labels
 export const SERVICE_TYPE_LABELS: Record<string, string> = {
   STAT: 'STAT (Urgent)',
+  CRITICAL_STAT: 'Critical STAT (Immediate)',
+  ROUTINE: 'Routine',
   SAME_DAY: 'Same Day',
   SCHEDULED_ROUTE: 'Scheduled Route',
   OVERFLOW: 'Overflow',
   GOVERNMENT: 'Government',
+  OTHER: 'Other',
 }
 
 // Vehicle type labels
@@ -141,10 +144,94 @@ export const AUTH_ROUTES = [
   '/admin/login',
 ]
 
-// Rate calculation constants for email-based quote requests
+// Rate calculation constants - DFW Market Rates
+// Based on target rates per mile (Total Miles = Deadhead + Loaded)
 export const RATE_CONFIG = {
+  // Base rate per mile by service type (DFW market rates)
+  RATE_PER_MILE: {
+    ROUTINE: {
+      min: 1.75,
+      target: 2.00, // Standard rate for routine loads
+      max: 2.25,
+      minimumThreshold: 1.60, // Below this, losing money long-term
+    },
+    STAT: {
+      min: 2.50,
+      target: 3.00, // Premium for urgent, time-sensitive
+      max: 3.50,
+    },
+    CRITICAL_STAT: {
+      min: 3.75,
+      target: 4.50, // Highest rate for immediate, no-stops
+      max: 5.00,
+    },
+    SAME_DAY: {
+      min: 1.75,
+      target: 2.00, // Same as routine
+      max: 2.25,
+    },
+    SCHEDULED_ROUTE: {
+      min: 1.75,
+      target: 2.00, // Same as routine
+      max: 2.25,
+    },
+    OVERFLOW: {
+      min: 1.75,
+      target: 2.00, // Same as routine
+      max: 2.25,
+    },
+    GOVERNMENT: {
+      min: 1.75,
+      target: 2.00, // Same as routine
+      max: 2.25,
+    },
+    OTHER: {
+      min: 1.75,
+      target: 2.00, // Default to routine
+      max: 2.25,
+    },
+  },
+  
+  // After-hours/weekend/holiday surcharges
+  AFTER_HOURS_SURCHARGE: {
+    perMile: {
+      min: 0.25,
+      target: 0.50,
+      max: 0.75,
+    },
+    flatFee: {
+      min: 20,
+      target: 30,
+      max: 40,
+    },
+    // Use flat fee for shorter distances, per-mile for longer
+    flatFeeThreshold: 50, // Use flat fee if distance < 50 miles
+  },
+  
+  // Business hours (for after-hours detection)
+  BUSINESS_HOURS: {
+    start: 8, // 8 AM
+    end: 18, // 6 PM
+    days: [1, 2, 3, 4, 5], // Monday-Friday (0 = Sunday, 6 = Saturday)
+  },
+  
+  // US Federal Holidays (for holiday detection)
+  FEDERAL_HOLIDAYS: [
+    '01-01', // New Year's Day
+    '07-04', // Independence Day
+    '12-25', // Christmas
+    '11-11', // Veterans Day
+    '10-12', // Columbus Day
+    '09-01', // Labor Day (first Monday, simplified)
+    '05-31', // Memorial Day (last Monday, simplified)
+    '02-15', // Presidents Day (third Monday, simplified)
+    '01-19', // Martin Luther King Jr. Day (third Monday, simplified)
+    '11-26', // Thanksgiving (fourth Thursday, simplified)
+  ],
+  
+  // Legacy support (for backward compatibility)
   BASE_RATE: parseFloat(process.env.BASE_RATE || '25.00'),
-  PER_MILE_RATE: parseFloat(process.env.PER_MILE_RATE || '1.50'),
+  PER_MILE_RATE: parseFloat(process.env.PER_MILE_RATE || '2.00'), // Default to routine rate
   MINIMUM_RATE: parseFloat(process.env.MINIMUM_RATE || '30.00'),
   SERVICE_MULTIPLIERS: {
     STAT: 1.5,

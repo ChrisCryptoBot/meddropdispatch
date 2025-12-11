@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -10,6 +10,24 @@ export default function ShipperLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Handle email and tracking code from email links
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const emailParam = params.get('email')
+      const tracking = params.get('tracking')
+      
+      if (emailParam) {
+        setEmail(decodeURIComponent(emailParam))
+      }
+      
+      // Store tracking code for redirect after login
+      if (tracking) {
+        sessionStorage.setItem('redirectAfterLogin', `/track/${tracking}`)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,8 +80,12 @@ export default function ShipperLoginPage() {
       // Store shipper data in localStorage (temporary - should use httpOnly cookies)
       localStorage.setItem('shipper', JSON.stringify(data.shipper))
 
-      // Redirect to shipper dashboard (full page reload to ensure layout picks up auth)
-      window.location.href = '/shipper/dashboard'
+      // Redirect to tracking page if came from email link, otherwise dashboard
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/shipper/dashboard'
+      sessionStorage.removeItem('redirectAfterLogin')
+      
+      // Redirect (full page reload to ensure layout picks up auth)
+      window.location.href = redirectPath
 
     } catch (error) {
       console.error('Login network error:', error)

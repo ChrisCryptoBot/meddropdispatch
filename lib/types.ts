@@ -156,7 +156,9 @@ export interface CalculatedRate {
     baseRate: number
     distanceRate: number
     serviceMultiplier: number
+    afterHoursSurcharge?: number
     total: number
+    ratePerMile?: number
   }
 }
 

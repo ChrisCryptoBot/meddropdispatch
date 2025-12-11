@@ -53,9 +53,20 @@ export default async function AdminLoadsPage() {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Load Requests</h1>
-        <p className="text-gray-600">Manage and track all courier requests</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Load Requests</h1>
+          <p className="text-gray-600">Manage and track all courier requests</p>
+        </div>
+        <Link
+          href="/admin/loads/create"
+          className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Create Load (Phone Request)
+        </Link>
       </div>
 
       {/* Stats */}

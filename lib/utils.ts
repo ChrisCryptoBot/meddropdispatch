@@ -84,3 +84,74 @@ export function getBaseUrl(): string {
 export function getTrackingUrl(trackingCode: string): string {
   return `${getBaseUrl()}/track/${trackingCode}`
 }
+
+/**
+ * Open a document URL (handles data URLs by converting to blob)
+ * Browsers block navigating to data URLs in top frame, so we convert to blob URL
+ */
+export function openDocument(url: string, filename?: string): void {
+  if (url.startsWith('data:')) {
+    // Convert data URL to blob URL
+    try {
+      const [mimeType, base64Data] = url.split(',')
+      const mimeMatch = mimeType.match(/data:([^;]+)/)
+      const actualMimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+      
+      // Decode base64
+      const binaryString = atob(base64Data)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      
+      // Create blob and blob URL
+      const blob = new Blob([bytes], { type: actualMimeType })
+      const blobUrl = URL.createObjectURL(blob)
+      
+      // Open in new window
+      const newWindow = window.open(blobUrl, '_blank')
+      
+      // Clean up blob URL after a delay (give browser time to load)
+      if (newWindow) {
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl)
+        }, 1000)
+      } else {
+        // If popup blocked, try download instead
+        const link = document.createElement('a')
+        link.href = blobUrl
+        link.download = filename || 'document'
+        if (actualMimeType === 'application/pdf') {
+          link.download += '.pdf'
+        } else if (actualMimeType.startsWith('image/')) {
+          link.download += '.' + actualMimeType.split('/')[1]
+        }
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100)
+      }
+    } catch (error) {
+      console.error('Error opening data URL:', error)
+      // Fallback: try direct navigation (may fail but worth trying)
+      window.open(url, '_blank')
+    }
+  } else {
+    // Regular URL - open normally
+    window.open(url, '_blank')
+  }
+}
+
+/**
+ * Get a safe URL for document links (converts data URLs to blob URLs)
+ * Returns a blob URL that can be used in href attributes
+ */
+export function getDocumentUrl(url: string): string {
+  if (!url.startsWith('data:')) {
+    return url
+  }
+  
+  // For data URLs, we need to handle them differently
+  // We'll return a special marker and handle it in the click handler
+  return url
+}

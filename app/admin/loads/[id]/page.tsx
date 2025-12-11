@@ -8,6 +8,7 @@ import type { LoadStatus } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
 import LoadNotes from '@/components/features/LoadNotes'
 import { showToast, showApiError } from '@/lib/toast'
+import DocumentViewButton from '@/components/features/DocumentViewButton'
 
 type LoadData = any // We'll get this from the API
 
@@ -718,16 +719,20 @@ export default function AdminLoadDetailPage() {
             ) : (
               <div className="space-y-2">
                 {load.documents.map((doc: any) => (
-                  <a
+                  <div
                     key={doc.id}
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-3 bg-white/40 rounded-lg hover:bg-white/60 border border-gray-200 transition-base"
+                    className="flex items-center justify-between p-3 bg-white/40 rounded-lg hover:bg-white/60 border border-gray-200 transition-base"
                   >
-                    <p className="text-sm font-semibold text-gray-800 truncate">{doc.title}</p>
-                    <p className="text-xs text-gray-500">{doc.type.replace(/_/g, ' ')}</p>
-                  </a>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{doc.title}</p>
+                      <p className="text-xs text-gray-500">{doc.type.replace(/_/g, ' ')}</p>
+                    </div>
+                    <DocumentViewButton 
+                      url={doc.url}
+                      title={doc.title}
+                      className="ml-3 px-3 py-1 text-sm"
+                    />
+                  </div>
                 ))}
               </div>
             )}

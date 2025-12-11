@@ -42,17 +42,36 @@ export const createLoadRequestSchema = z.object({
   dropoffAccessNotes: z.string().optional(),
 
   // Load Details
-  serviceType: z.enum(['STAT', 'SAME_DAY', 'SCHEDULED_ROUTE', 'OVERFLOW', 'GOVERNMENT']),
+  serviceType: z.enum(['STAT', 'CRITICAL_STAT', 'ROUTINE', 'SAME_DAY', 'SCHEDULED_ROUTE', 'OVERFLOW', 'GOVERNMENT', 'OTHER']),
   commodityDescription: nonEmptyStringSchema,
-  specimenCategory: z.enum(['UN3373', 'NON_SPECIMEN', 'PHARMACEUTICAL', 'OTHER']),
+  specimenCategory: z.enum(['UN3373_CATEGORY_B', 'UN3373', 'NON_SPECIMEN', 'PHARMACEUTICAL', 'SUPPLIES', 'EQUIPMENT', 'PAPERWORK', 'OTHER']),
   temperatureRequirement: z.enum(['AMBIENT', 'REFRIGERATED', 'FROZEN', 'OTHER']),
   estimatedContainers: z.number().int().positive().optional(),
   estimatedWeightKg: positiveNumberSchema.optional(),
   declaredValue: positiveNumberSchema.optional(),
+  
+  // Scheduling
   readyTime: dateSchema.optional(),
   deliveryDeadline: dateSchema.optional(),
+  isRecurring: z.boolean().optional(),
+  directDriveRequired: z.boolean().optional(),
+  
+  // Instructions & Contact
   accessNotes: z.string().optional(),
+  driverInstructions: z.string().optional(),
   preferredContactMethod: z.enum(['PHONE', 'EMAIL', 'TEXT']).optional(),
+  
+  // Compliance & Handling
+  chainOfCustodyRequired: z.boolean().optional(),
+  signatureRequiredAtPickup: z.boolean().optional(),
+  signatureRequiredAtDelivery: z.boolean().optional(),
+  electronicPodAcceptable: z.boolean().optional(),
+  temperatureLoggingRequired: z.boolean().optional(),
+  
+  // Billing
+  poNumber: z.string().optional(),
+  priorityLevel: z.enum(['NORMAL', 'HIGH', 'CRITICAL']).optional(),
+  tags: z.array(z.string()).or(z.string()).optional(), // Accept array or JSON string
 })
 
 export const updateLoadRequestSchema = z.object({
@@ -77,11 +96,15 @@ export const updateLoadRequestSchema = z.object({
     'DENIED',
   ]).optional(),
   pickupSignature: z.string().optional(),
-  pickupSignatureName: z.string().optional(),
+  pickupSignerName: z.string().optional(),
+  pickupSignatureDriverId: z.string().optional(),
   deliverySignature: z.string().optional(),
-  deliverySignatureName: z.string().optional(),
+  deliverySignerName: z.string().optional(),
+  deliverySignatureDriverId: z.string().optional(),
   pickupTemperature: z.number().optional(),
   deliveryTemperature: z.number().optional(),
+  actualPickupTime: dateSchema.optional(),
+  actualDeliveryTime: dateSchema.optional(),
   locationText: z.string().optional(),
   driverId: z.string().optional(),
 })
@@ -113,6 +136,24 @@ export const driverSignupSchema = signupSchema.extend({
 export const shipperSignupSchema = signupSchema.extend({
   companyName: nonEmptyStringSchema,
   clientType: z.enum(['CLINIC', 'LAB', 'HOSPITAL', 'PHARMACY', 'OTHER']).optional(),
+})
+
+// Create Shipper Schema (for admin use)
+export const createShipperSchema = z.object({
+  companyName: nonEmptyStringSchema,
+  clientType: z.enum([
+    'INDEPENDENT_PHARMACY',
+    'CLINIC',
+    'LAB',
+    'DIALYSIS_CENTER',
+    'IMAGING_CENTER',
+    'HOSPITAL',
+    'GOVERNMENT',
+    'OTHER',
+  ]),
+  contactName: nonEmptyStringSchema,
+  phone: phoneSchema,
+  email: emailSchema,
 })
 
 // Driver Validation

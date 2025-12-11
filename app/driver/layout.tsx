@@ -101,15 +101,24 @@ export default function DriverLayout({
         </svg>
       ),
     },
+    {
+      name: 'Shippers',
+      href: '/driver/shippers',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-3-3h-4a3 3 0 00-3 3v2zM9 10a3 3 0 100-6 3 3 0 000 6zm0 0v8a2 2 0 002 2h6a2 2 0 002-2v-8M9 10h6" />
+        </svg>
+      ),
+    },
   ]
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header - Same as Homepage */}
       <header className="glass sticky top-0 z-50 border-b border-white/30 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 pl-4 md:pl-4">
               <div className="w-10 h-10 flex items-center justify-center">
                 <Image
                   src="/logo-icon.png"
@@ -125,7 +134,7 @@ export default function DriverLayout({
                 <p className="text-xs text-gray-600">Medical Courier Services</p>
               </div>
             </div>
-            <nav className="flex items-center space-x-3">
+            <nav className="flex items-center space-x-3 pr-4">
               <Link
                 href="/driver/notifications"
                 className={`p-2 rounded-lg transition-base relative ${
@@ -261,6 +270,7 @@ export default function DriverLayout({
                 (item.href === '/driver/profile' && pathname.startsWith('/driver/profile')) ||
                 (item.href === '/driver/documents' && pathname.startsWith('/driver/documents')) ||
                 (item.href === '/driver/earnings' && pathname.startsWith('/driver/earnings')) ||
+                (item.href === '/driver/shippers' && pathname.startsWith('/driver/shippers')) ||
                 (item.href === '/driver/support' && pathname.startsWith('/driver/support')) ||
                 (item.href === '/driver/loads' && pathname.startsWith('/driver/loads'))
 

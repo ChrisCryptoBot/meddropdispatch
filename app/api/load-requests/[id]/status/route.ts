@@ -70,9 +70,10 @@ export async function PATCH(
     }
 
     // CHAIN-OF-CUSTODY: Enforce linear status transitions (scheduling system)
+    // Allow flexible transitions - drivers can skip EN_ROUTE if already at pickup location
     const validTransitions: Record<string, string[]> = {
       'REQUESTED': ['SCHEDULED', 'DENIED'], // Phone call → Schedule or Deny
-      'SCHEDULED': ['EN_ROUTE'], // Start driving (tracking active)
+      'SCHEDULED': ['EN_ROUTE', 'PICKED_UP'], // Can go directly to PICKED_UP or start EN_ROUTE first
       'EN_ROUTE': ['PICKED_UP'], // Arrive at pickup
       'PICKED_UP': ['IN_TRANSIT', 'DELIVERED'], // Can skip IN_TRANSIT
       'IN_TRANSIT': ['DELIVERED'],
@@ -126,13 +127,63 @@ export async function PATCH(
       })
     }
 
-    // AUTO-INVOICE: Generate invoice when load is marked as COMPLETED
-    if (data.status === 'COMPLETED' && !loadRequest.invoiceId) {
+    // AUTO-INVOICE: Generate invoice when load is marked as DELIVERED or COMPLETED
+    // Send delivery congratulations email with invoice attached
+    if ((data.status === 'DELIVERED' || data.status === 'COMPLETED') && !loadRequest.invoiceId) {
       // Run asynchronously to avoid blocking the status update
-      autoGenerateInvoiceForLoad(id).catch((error) => {
-        console.error('Error auto-generating invoice:', error)
-        // Don't fail the status update if invoice generation fails
-      })
+      autoGenerateInvoiceForLoad(id)
+        .then(async (invoiceId) => {
+          if (invoiceId) {
+            try {
+              const { sendDeliveryCongratulationsEmail } = await import('@/lib/email')
+              const { generateInvoicePDF } = await import('@/lib/invoicing')
+              
+              // Get invoice details
+              const invoice = await prisma.invoice.findUnique({
+                where: { id: invoiceId },
+                select: {
+                  invoiceNumber: true,
+                  total: true,
+                },
+              })
+
+              if (invoice) {
+                // Fetch the updated load to get recipient name
+                const loadWithRecipient = await prisma.loadRequest.findUnique({
+                  where: { id },
+                  select: {
+                    deliverySignerName: true,
+                    actualDeliveryTime: true,
+                  },
+                })
+
+                // Generate PDF
+                const pdfBuffer = await generateInvoicePDF(invoiceId)
+                
+                // Send delivery congratulations email with invoice
+                await sendDeliveryCongratulationsEmail({
+                  to: loadRequest.shipper.email,
+                  companyName: loadRequest.shipper.companyName,
+                  trackingCode: loadRequest.publicTrackingCode,
+                  deliveryTime: loadWithRecipient?.actualDeliveryTime || updatedLoad.actualDeliveryTime || new Date(),
+                  recipientName: loadWithRecipient?.deliverySignerName || null,
+                  invoicePdfBuffer: pdfBuffer,
+                  invoiceNumber: invoice.invoiceNumber,
+                  invoiceTotal: invoice.total,
+                  trackingUrl,
+                  baseUrl,
+                })
+              }
+            } catch (emailError) {
+              console.error('Error sending delivery congratulations email:', emailError)
+              // Don't fail if email fails - invoice is still generated
+            }
+          }
+        })
+        .catch((error) => {
+          console.error('Error auto-generating invoice:', error)
+          // Don't fail the status update if invoice generation fails
+        })
     }
 
     // Determine tracking event code based on status
@@ -164,7 +215,36 @@ export async function PATCH(
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
     const driverPortalUrl = `${baseUrl}/driver/loads/${id}`
 
-    // Always notify shipper of status changes
+    // Calculate ETA based on status and delivery deadline
+    let eta: string | null = null
+    if (loadRequest.deliveryDeadline) {
+      const deadline = new Date(loadRequest.deliveryDeadline)
+      const now = new Date()
+      const hoursUntilDeadline = Math.max(0, Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60)))
+      
+      if (data.status === 'PICKED_UP' || data.status === 'IN_TRANSIT') {
+        if (hoursUntilDeadline < 24) {
+          eta = `Within ${hoursUntilDeadline} hour${hoursUntilDeadline !== 1 ? 's' : ''}`
+        } else {
+          const days = Math.floor(hoursUntilDeadline / 24)
+          const hours = hoursUntilDeadline % 24
+          eta = `${days} day${days !== 1 ? 's' : ''}${hours > 0 ? ` and ${hours} hour${hours !== 1 ? 's' : ''}` : ''}`
+        }
+      } else if (data.status === 'EN_ROUTE') {
+        eta = `Expected delivery by ${deadline.toLocaleString()}`
+      }
+    }
+
+    // Get driver name for email
+    const driverName = loadRequest.driver 
+      ? `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() 
+      : null
+
+    // Get addresses for email
+    const pickupAddress = `${loadRequest.pickupFacility.addressLine1}, ${loadRequest.pickupFacility.city}, ${loadRequest.pickupFacility.state}`
+    const dropoffAddress = `${loadRequest.dropoffFacility.addressLine1}, ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}`
+
+    // Always notify shipper of status changes with enhanced email (ETA, status-specific content)
     await sendLoadStatusEmail({
       to: loadRequest.shipper.email,
       trackingCode: loadRequest.publicTrackingCode,
@@ -172,8 +252,12 @@ export async function PATCH(
       status: data.status,
       statusLabel: eventLabel,
       trackingUrl,
-      quoteAmount: data.quoteAmount,
+      quoteAmount: data.quoteAmount || loadRequest.quoteAmount,
       quoteCurrency: updatedLoad.quoteCurrency,
+      eta,
+      driverName,
+      pickupAddress,
+      dropoffAddress,
     })
 
     // Notify driver at key workflow points (EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED)
@@ -248,14 +332,7 @@ export async function PATCH(
       success: true,
       loadRequest: updatedLoad,
     })
-
-  } catch (error) {
-    console.error('Error updating load status:', error)
-    return NextResponse.json(
-      { error: 'Failed to update status', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**
