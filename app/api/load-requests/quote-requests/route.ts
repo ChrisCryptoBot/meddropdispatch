@@ -3,15 +3,24 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/load-requests/quote-requests
  * List all loads with QUOTE_REQUESTED status
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     // Get query parameters
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     const sortBy = searchParams.get('sortBy') || 'createdAt'
@@ -108,12 +117,6 @@ export async function GET(request: NextRequest) {
         hasMore: offset + limit < totalCount,
       },
     })
-  } catch (error) {
-    console.error('Error fetching quote requests:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch quote requests' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

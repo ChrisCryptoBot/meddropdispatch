@@ -11,6 +11,9 @@ import {
   sendDeliveryCompleteSMS,
 } from '@/lib/sms'
 import { autoGenerateInvoiceForLoad } from '@/lib/invoicing'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { updateLoadStatusSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * PATCH /api/load-requests/[id]/status
@@ -20,9 +23,33 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const data: StatusUpdateData & { driverId?: string; actorType?: string; latitude?: number; longitude?: number } = await request.json()
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(updateLoadStatusSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = validation.data as StatusUpdateData & { driverId?: string; actorType?: string; latitude?: number; longitude?: number }
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({

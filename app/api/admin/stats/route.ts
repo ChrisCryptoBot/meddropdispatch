@@ -3,13 +3,22 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/admin/stats
  * Get comprehensive dashboard statistics for admin
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     // Get today's date range (start and end of today)
     const now = new Date()
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -330,12 +339,6 @@ export async function GET(request: NextRequest) {
       // Timestamp
       generatedAt: new Date().toISOString(),
     })
-  } catch (error) {
-    console.error('Error fetching admin stats:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard statistics' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

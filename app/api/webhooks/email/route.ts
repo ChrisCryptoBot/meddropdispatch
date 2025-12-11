@@ -16,15 +16,25 @@ import {
   sendNewQuoteRequestSMS,
 } from '@/lib/sms'
 import crypto from 'crypto'
+import { createErrorResponse, withErrorHandling, ValidationError, AuthenticationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/webhooks/email
  * Handle incoming email webhooks from Resend
  */
 export async function POST(request: NextRequest) {
-  try {
-    // Parse webhook payload
-    const webhookData = await request.json()
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply more lenient rate limiting for webhooks
+    try {
+      rateLimit(RATE_LIMITS.webhook)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    // Get raw body for signature verification before parsing JSON
+    const rawBody = await req.text()
+    const webhookData = JSON.parse(rawBody)
 
     console.log('📧 Email webhook received:', {
       from: webhookData.from,

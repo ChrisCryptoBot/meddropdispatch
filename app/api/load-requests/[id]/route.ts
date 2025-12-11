@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/load-requests/[id]
@@ -9,7 +11,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
 
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -28,21 +37,11 @@ export async function GET(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     return NextResponse.json(loadRequest)
-
-  } catch (error) {
-    console.error('Error fetching load request:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch load request', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**

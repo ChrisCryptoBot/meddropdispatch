@@ -3,22 +3,41 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, ValidationError } from '@/lib/errors'
+import { bulkActionSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/load-requests/bulk
  * Perform bulk operations on load requests
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { action, loadRequestIds } = body
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
 
-    if (!action || !Array.isArray(loadRequestIds) || loadRequestIds.length === 0) {
+    const rawBody = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(bulkActionSchema, rawBody)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Missing required fields: action, loadRequestIds' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
+
+    const { action, loadRequestIds, status, driverId, eventLabel, eventDescription } = validation.data
 
     let result: any = {}
 

@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, ValidationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/notifications
@@ -11,8 +13,15 @@ import { prisma } from '@/lib/prisma'
  * Also returns unread count for NotificationBell component
  */
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { searchParams } = new URL(req.url)
     const limit = parseInt(searchParams.get('limit') || '20')
     const userId = searchParams.get('userId') // Optional: filter by user
 
@@ -50,13 +59,7 @@ export async function GET(request: NextRequest) {
       unreadCount,
       notifications,
     })
-  } catch (error) {
-    console.error('Error fetching notifications:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**
@@ -64,16 +67,20 @@ export async function GET(request: NextRequest) {
  * Create a new notification (for internal use by system)
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const body = await req.json()
     const { userId, type, title, message, link } = body
 
     // Validate required fields
     if (!type || !title || !message) {
-      return NextResponse.json(
-        { error: 'Missing required fields: type, title, message' },
-        { status: 400 }
-      )
+      throw new ValidationError('Missing required fields: type, title, message')
     }
 
     // Create notification
@@ -88,12 +95,6 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(notification, { status: 201 })
-  } catch (error) {
-    console.error('Error creating notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to create notification' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

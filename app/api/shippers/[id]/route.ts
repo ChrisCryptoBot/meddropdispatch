@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { updateShipperSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/shippers/[id]
@@ -9,7 +12,14 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
 
     const shipper = await prisma.shipper.findUnique({
@@ -37,20 +47,11 @@ export async function GET(
     })
 
     if (!shipper) {
-      return NextResponse.json(
-        { error: 'Shipper not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Shipper')
     }
 
     return NextResponse.json({ shipper })
-  } catch (error) {
-    console.error('Error fetching shipper:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch shipper', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**
@@ -61,9 +62,33 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const body = await request.json()
+    const rawBody = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(updateShipperSchema, rawBody)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const body = validation.data
 
     // Only allow updating specific fields
     const {
@@ -122,12 +147,6 @@ export async function PATCH(
     })
 
     return NextResponse.json({ shipper })
-  } catch (error) {
-    console.error('Error updating shipper:', error)
-    return NextResponse.json(
-      { error: 'Failed to update shipper', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

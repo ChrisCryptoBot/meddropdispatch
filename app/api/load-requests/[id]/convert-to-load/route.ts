@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/load-requests/[id]/convert-to-load
@@ -13,7 +15,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
 
     // Get the load request
@@ -28,26 +37,17 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Verify it's a quote request
     if (loadRequest.status !== 'QUOTE_REQUESTED') {
-      return NextResponse.json(
-        { error: `Can only convert QUOTE_REQUESTED loads. Current status: ${loadRequest.status}` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Can only convert QUOTE_REQUESTED loads. Current status: ${loadRequest.status}`)
     }
 
     // Optionally verify that rate has been calculated
     if (!loadRequest.quoteAmount && (!loadRequest.suggestedRateMin || !loadRequest.suggestedRateMax)) {
-      return NextResponse.json(
-        { error: 'Please calculate rate before converting to load' },
-        { status: 400 }
-      )
+      throw new ValidationError('Please calculate rate before converting to load')
     }
 
     // Set quote amount from suggested rate if not already set
@@ -93,12 +93,6 @@ export async function POST(
       loadRequest: updatedLoad,
       message: 'Quote successfully converted to scheduled load',
     })
-  } catch (error) {
-    console.error('Error converting quote to load:', error)
-    return NextResponse.json(
-      { error: 'Failed to convert quote to load' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

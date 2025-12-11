@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { submitQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/load-requests/[id]/submit-quote
@@ -9,23 +12,33 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const { driverId, quoteAmount, notes } = await request.json()
-
-    if (!driverId) {
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(submitQuoteSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Driver ID is required' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
 
-    if (!quoteAmount || quoteAmount <= 0) {
-      return NextResponse.json(
-        { error: 'Valid quote amount is required' },
-        { status: 400 }
-      )
-    }
+    const { driverId, quoteAmount, notes } = validation.data
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -39,26 +52,17 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Verify driver is assigned to this load
     if (loadRequest.driverId !== driverId) {
-      return NextResponse.json(
-        { error: 'You are not assigned to this load' },
-        { status: 403 }
-      )
+      throw new AuthorizationError('You are not assigned to this load')
     }
 
     // Check if load is in correct status for quote submission
     if (loadRequest.status !== 'DRIVER_QUOTE_PENDING') {
-      return NextResponse.json(
-        { error: `Cannot submit quote for load with status: ${loadRequest.status}. Load must be in DRIVER_QUOTE_PENDING status.` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Cannot submit quote for load with status: ${loadRequest.status}. Load must be in DRIVER_QUOTE_PENDING status.`)
     }
 
     // Calculate expiry time (48 hours from now)
@@ -133,14 +137,7 @@ export async function POST(
       loadRequest: updatedLoad,
       message: 'Quote submitted successfully. Awaiting shipper approval.',
     })
-
-  } catch (error) {
-    console.error('Error submitting quote:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit quote', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 

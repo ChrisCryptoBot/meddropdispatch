@@ -5,14 +5,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createInvoice } from '@/lib/invoicing'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { createInvoiceSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/invoices
  * List invoices with filters
  */
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { searchParams } = new URL(req.url)
     const shipperId = searchParams.get('shipperId')
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') || '50')
