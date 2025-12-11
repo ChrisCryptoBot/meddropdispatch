@@ -6,6 +6,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import SignatureCapture from '@/components/features/SignatureCapture'
+import CameraCapture from '@/components/features/CameraCapture'
+import CameraCapture from '@/components/features/CameraCapture'
+import { getCurrentLocation } from '@/lib/gps'
+import { storeOffline, isOnline } from '@/lib/offline-storage'
 
 interface Load {
   id: string
@@ -72,6 +76,7 @@ export default function DriverLoadDetailPage() {
   const [uploadTitle, setUploadTitle] = useState('')
   const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
   const [isUploading, setIsUploading] = useState(false)
+  const [showCamera, setShowCamera] = useState(false)
 
   useEffect(() => {
     // Get driver from localStorage
@@ -531,6 +536,18 @@ export default function DriverLoadDetailPage() {
         </div>
       </main>
 
+      {/* Camera Capture */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={(file) => {
+            setUploadFile(file)
+            setShowCamera(false)
+          }}
+          onCancel={() => setShowCamera(false)}
+          label="Take Photo"
+        />
+      )}
+
       {/* Document Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -573,38 +590,54 @@ export default function DriverLoadDetailPage() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   File (PDF, Image) *
                 </label>
-                <input
-                  type="file"
-                  accept=".pdf,application/pdf,.jpg,.jpeg,.png,image/jpeg,image/png,image/heic"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null
-                    if (file) {
-                      // Validate file type
-                      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic']
-                      const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
-                      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
-                      
-                      if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-                        alert(`Invalid file type. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`)
-                        e.target.value = '' // Clear the input
-                        setUploadFile(null)
-                        return
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf,.jpg,.jpeg,.png,image/jpeg,image/png,image/heic"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      if (file) {
+                        // Validate file type
+                        const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic']
+                        const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
+                        const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+                        
+                        if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+                          alert(`Invalid file type. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`)
+                          e.target.value = '' // Clear the input
+                          setUploadFile(null)
+                          return
+                        }
+                        
+                        // Validate file size (10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert(`File size is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
+                          e.target.value = ''
+                          setUploadFile(null)
+                          return
+                        }
                       }
-                      
-                      // Validate file size (10MB)
-                      if (file.size > 10 * 1024 * 1024) {
-                        alert(`File size is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
-                        e.target.value = ''
-                        setUploadFile(null)
-                        return
-                      }
-                    }
-                    setUploadFile(file)
-                  }}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
+                      setUploadFile(file)
+                    }}
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                    required={!uploadFile}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCamera(true)}
+                    className="px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Camera
+                  </button>
+                </div>
+                {uploadFile && (
+                  <p className="text-sm text-green-600 mb-1">✓ {uploadFile.name} selected</p>
+                )}
+                <p className="text-xs text-gray-500">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
               </div>
 
               <div className="flex gap-4">

@@ -265,12 +265,20 @@ export default function ShipperDashboardPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold text-gray-900">My Loads</h1>
-            <Link
-              href="/shipper/request-load"
-              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl"
-            >
-              + New Load Request
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/shipper/templates"
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all"
+              >
+                Templates
+              </Link>
+              <Link
+                href="/shipper/request-load"
+                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl"
+              >
+                + New Load Request
+              </Link>
+            </div>
           </div>
           <p className="text-gray-600">Manage and track all your shipment requests</p>
         </div>

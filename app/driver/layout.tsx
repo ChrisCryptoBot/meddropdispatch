@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import MobileBottomNav from '@/components/features/MobileBottomNav'
 
 export default function DriverLayout({
   children,
@@ -246,8 +247,8 @@ export default function DriverLayout({
         </div>
       </header>
 
-      {/* Sidebar - Fixed full height */}
-      <aside className="fixed left-0 top-[73px] w-64 glass border-r border-white/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
+      {/* Sidebar - Fixed full height - Hidden on mobile */}
+      <aside className="hidden md:block fixed left-0 top-[73px] w-64 glass border-r border-white/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
@@ -298,10 +299,72 @@ export default function DriverLayout({
         </div>
       </aside>
 
-      {/* Main Content - Offset for fixed sidebar */}
-      <main className="ml-64 bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 min-h-screen" style={{ marginTop: '73px' }}>
+      {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
+      <main className="md:ml-64 bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 min-h-screen pb-16 md:pb-0" style={{ marginTop: '73px' }}>
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        items={[
+          {
+            name: 'Dashboard',
+            href: '/driver/dashboard',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            ),
+            activeIcon: (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            ),
+          },
+          {
+            name: 'My Loads',
+            href: '/driver/my-loads',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            ),
+            activeIcon: (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Earnings',
+            href: '/driver/earnings',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+            activeIcon: (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Profile',
+            href: '/driver/profile',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            ),
+            activeIcon: (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

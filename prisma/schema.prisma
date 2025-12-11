@@ -72,9 +72,36 @@ model Shipper {
   facilities   Facility[]
   loadRequests LoadRequest[]
   invoices     Invoice[]
+  loadTemplates LoadTemplate[]
 
   @@index([email])
   @@index([companyName])
+}
+
+// LoadTemplate: Recurring load templates for shippers (Phase 2.2)
+model LoadTemplate {
+  id                 String   @id @default(cuid())
+  shipperId          String
+  name               String   // e.g., "Daily Lab Run to Memorial"
+  serviceType        String
+  commodityDescription String
+  specimenCategory   String
+  temperatureRequirement String
+  pickupFacilityId   String
+  dropoffFacilityId  String
+  readyTime          String?  // Time of day (e.g., "09:00")
+  deliveryDeadline   String?  // Time of day (e.g., "17:00")
+  accessNotes        String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  shipper            Shipper  @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  pickupFacility     Facility @relation("TemplatePickupFacility", fields: [pickupFacilityId], references: [id])
+  dropoffFacility    Facility @relation("TemplateDropoffFacility", fields: [dropoffFacilityId], references: [id])
+
+  @@index([shipperId])
+  @@index([isActive])
 }
 
 // Notification: In-app notifications for admin users (Phase 1.1)
@@ -115,6 +142,8 @@ model Facility {
   shipper             Shipper       @relation(fields: [shipperId], references: [id], onDelete: Cascade)
   pickupLoadRequests  LoadRequest[] @relation("PickupFacility")
   dropoffLoadRequests LoadRequest[] @relation("DropoffFacility")
+  templatePickupLoads LoadTemplate[] @relation("TemplatePickupFacility")
+  templateDropoffLoads LoadTemplate[] @relation("TemplateDropoffFacility")
 
   @@index([shipperId])
 }

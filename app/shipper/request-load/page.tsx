@@ -9,6 +9,7 @@ export default function ShipperRequestLoadPage() {
   const [shipper, setShipper] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
 
   useEffect(() => {
     const shipperData = localStorage.getItem('shipper')
@@ -91,6 +92,87 @@ export default function ShipperRequestLoadPage() {
       
       // Log full error for debugging
       console.error('Load request submission error:', err)
+    }
+  }
+
+  const handleSaveAsTemplate = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsSavingTemplate(true)
+    setError(null)
+
+    const form = document.querySelector('form') as HTMLFormElement
+    if (!form) {
+      setError('Form not found')
+      setIsSavingTemplate(false)
+      return
+    }
+
+    const formData = new FormData(form)
+    const data = Object.fromEntries(formData.entries())
+
+    // Get template name from user
+    const templateName = prompt('Enter a name for this template (e.g., "Daily Lab Run to Memorial"):')
+    if (!templateName || !templateName.trim()) {
+      setIsSavingTemplate(false)
+      return
+    }
+
+    try {
+      // Create template with facility data - API will handle facility creation
+      const templateResponse = await fetch('/api/load-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipperId: shipper.id,
+          name: templateName.trim(),
+          serviceType: data.serviceType as string,
+          commodityDescription: data.commodityDescription as string,
+          specimenCategory: data.specimenCategory as string,
+          temperatureRequirement: data.temperatureRequirement as string,
+          // Facility data - API will create or find facilities
+          pickupFacilityData: {
+            name: data.pickupFacilityName as string,
+            facilityType: data.pickupFacilityType as string,
+            addressLine1: data.pickupAddressLine1 as string,
+            addressLine2: data.pickupAddressLine2 as string || undefined,
+            city: data.pickupCity as string,
+            state: data.pickupState as string,
+            postalCode: data.pickupPostalCode as string,
+            contactName: data.pickupContactName as string,
+            contactPhone: data.pickupContactPhone as string,
+            defaultAccessNotes: data.pickupAccessNotes as string || undefined,
+          },
+          dropoffFacilityData: {
+            name: data.dropoffFacilityName as string,
+            facilityType: data.dropoffFacilityType as string,
+            addressLine1: data.dropoffAddressLine1 as string,
+            addressLine2: data.dropoffAddressLine2 as string || undefined,
+            city: data.dropoffCity as string,
+            state: data.dropoffState as string,
+            postalCode: data.dropoffPostalCode as string,
+            contactName: data.dropoffContactName as string,
+            contactPhone: data.dropoffContactPhone as string,
+            defaultAccessNotes: data.dropoffAccessNotes as string || undefined,
+          },
+          readyTime: data.readyTime ? new Date(data.readyTime as string).toTimeString().slice(0, 5) : undefined,
+          deliveryDeadline: data.deliveryDeadline ? new Date(data.deliveryDeadline as string).toTimeString().slice(0, 5) : undefined,
+          accessNotes: data.accessNotes as string || undefined,
+        }),
+      })
+
+      if (!templateResponse.ok) {
+        const errorData = await templateResponse.json()
+        throw new Error(errorData.error || 'Failed to save template')
+      }
+
+      alert('Template saved successfully!')
+      router.push('/shipper/templates')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save template'
+      setError(errorMessage)
+      console.error('Error saving template:', err)
+    } finally {
+      setIsSavingTemplate(false)
     }
   }
 
@@ -715,6 +797,14 @@ export default function ShipperRequestLoadPage() {
             >
               Cancel
             </Link>
+            <button
+              type="button"
+              onClick={handleSaveAsTemplate}
+              disabled={isSubmitting}
+              className="px-8 py-4 rounded-xl bg-gray-600 text-white font-semibold hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
+            >
+              Save as Template
+            </button>
             <button
               type="submit"
               disabled={isSubmitting}

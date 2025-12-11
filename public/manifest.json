@@ -1,0 +1,43 @@
+{
+  "name": "MED DROP - Driver Portal",
+  "short_name": "MED DROP",
+  "description": "Medical courier driver portal for managing loads and deliveries",
+  "start_url": "/driver/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View available loads",
+      "url": "/driver/dashboard",
+      "icons": [{ "src": "/logo-icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Loads",
+      "short_name": "My Loads",
+      "description": "View my assigned loads",
+      "url": "/driver/my-loads",
+      "icons": [{ "src": "/logo-icon.png", "sizes": "192x192" }]
+    }
+  ]
+}
+
