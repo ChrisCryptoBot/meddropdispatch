@@ -165,7 +165,7 @@ export default async function AdminLoadsPage() {
                   </td>
                 </tr>
               ) : (
-                loads.map((load) => (
+                filteredLoads.map((load) => (
                   <tr key={load.id} className="hover:bg-white/40 transition-base">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link

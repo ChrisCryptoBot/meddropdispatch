@@ -186,7 +186,7 @@ export async function sendNewLoadNotification({
   pickupCity: string
   dropoffCity: string
 }) {
-  // TODO: Configure internal notification email
+  // Internal notification email (configured via INTERNAL_NOTIFICATION_EMAIL env var)
   const internalEmail = process.env.INTERNAL_NOTIFICATION_EMAIL || 'dispatch@meddrop.com'
 
   const subject = `🚨 New Load Request: ${trackingCode} - ${serviceType}`
