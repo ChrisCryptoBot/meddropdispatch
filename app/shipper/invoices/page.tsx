@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface Invoice {
   id: string
@@ -77,7 +78,7 @@ export default function ShipperInvoicesPage() {
       }
     } catch (error) {
       console.error('Error downloading invoice:', error)
-      alert('Failed to download invoice')
+      showToast.error('Failed to download invoice')
     }
   }
 

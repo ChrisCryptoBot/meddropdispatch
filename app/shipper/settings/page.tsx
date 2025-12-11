@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast, showApiError } from '@/lib/toast'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -66,14 +67,14 @@ export default function SettingsPage() {
         const data = await response.json()
         setShipper(data.shipper)
         localStorage.setItem('shipper', JSON.stringify(data.shipper))
-        alert('Settings updated successfully!')
+        showToast.success('Settings updated successfully!')
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to update settings')
+        showToast.error(error.error || 'Failed to update settings')
       }
     } catch (error) {
       console.error('Error updating settings:', error)
-      alert('An error occurred while updating settings')
+      showToast.error('An error occurred while updating settings')
     } finally {
       setIsSaving(false)
     }

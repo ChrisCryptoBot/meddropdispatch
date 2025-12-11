@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface PayoutHistoryItem {
   id: string
@@ -101,9 +102,9 @@ export default function DriverPaymentsPage() {
         throw new Error(error.error || 'Failed to update payment settings')
       }
 
-      alert('Payment settings updated successfully!')
+      showToast.success('Payment settings updated successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update payment settings')
+      showApiError(error, 'Failed to update payment settings')
     } finally {
       setIsSaving(false)
     }
@@ -132,9 +133,9 @@ export default function DriverPaymentsPage() {
       }
 
       setTaxData({ ...taxData, w9Submitted: true })
-      alert('Tax information submitted successfully!')
+      showToast.success('Tax information submitted successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update tax information')
+      showApiError(error, 'Failed to update tax information')
     } finally {
       setIsSaving(false)
     }

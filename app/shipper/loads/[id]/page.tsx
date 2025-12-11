@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface LoadRequest {
   id: string
@@ -159,11 +160,11 @@ export default function ShipperLoadDetailPage() {
       setUploadTitle('')
       setUploadType('OTHER')
       
-      alert('Document uploaded successfully!')
+      showToast.success('Document uploaded successfully!')
     } catch (error) {
       console.error('Error uploading document:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload document'
-      alert(`Upload failed: ${errorMessage}\n\nPlease ensure:\n- File is PDF, JPG, PNG, or HEIC\n- File size is under 10MB\n- All required fields are filled`)
+      showToast.error('Upload failed', `${errorMessage}\n\nPlease ensure:\n- File is PDF, JPG, PNG, or HEIC\n- File size is under 10MB\n- All required fields are filled`)
     } finally {
       setIsUploading(false)
     }
@@ -182,10 +183,10 @@ export default function ShipperLoadDetailPage() {
         })
         if (!response.ok) throw new Error('Failed to accept quote')
         await fetchLoad()
-        alert('Quote accepted successfully! Your shipment is now scheduled.')
+        showToast.success('Quote accepted successfully!', 'Your shipment is now scheduled.')
       } catch (error) {
         console.error('Error accepting quote:', error)
-        alert('Failed to accept quote. Please try again.')
+        showToast.error('Failed to accept quote. Please try again.')
       } finally {
         setIsAccepting(false)
       }
@@ -208,10 +209,10 @@ export default function ShipperLoadDetailPage() {
           throw new Error(error.error || 'Failed to approve quote')
         }
         await fetchLoad()
-        alert('Driver quote approved! Your shipment is now scheduled.')
+        showToast.success('Driver quote approved!', 'Your shipment is now scheduled.')
       } catch (error) {
         console.error('Error approving quote:', error)
-        alert(error instanceof Error ? error.message : 'Failed to approve quote. Please try again.')
+        showApiError(error, 'Failed to approve quote. Please try again.')
       } finally {
         setIsApprovingQuote(false)
       }
@@ -240,10 +241,10 @@ export default function ShipperLoadDetailPage() {
       await fetchLoad()
       setShowRejectQuoteModal(false)
       setRejectQuoteNotes('')
-      alert('Quote rejected. Load is now available for other drivers.')
+      showToast.success('Quote rejected', 'Load is now available for other drivers.')
     } catch (error) {
       console.error('Error rejecting quote:', error)
-      alert(error instanceof Error ? error.message : 'Failed to reject quote. Please try again.')
+      showApiError(error, 'Failed to reject quote. Please try again.')
     } finally {
       setIsRejectingQuote(false)
     }
@@ -276,11 +277,11 @@ export default function ShipperLoadDetailPage() {
       setCancelReason('CLIENT_CANCELLED')
       setCancelBillingRule('NOT_BILLABLE')
       setCancelNotes('')
-      alert('Load cancelled successfully.')
+      showToast.success('Load cancelled successfully.')
       router.push('/shipper/dashboard')
     } catch (error) {
       console.error('Error cancelling load:', error)
-      alert(error instanceof Error ? error.message : 'Failed to cancel load. Please try again.')
+      showApiError(error, 'Failed to cancel load. Please try again.')
     } finally {
       setIsCancelling(false)
     }
@@ -880,7 +881,7 @@ export default function ShipperLoadDetailPage() {
                       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
                       
                       if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-                        alert(`Invalid file type. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`)
+                        showToast.error('Invalid file type', 'Please upload a PDF or image file (PDF, JPG, PNG, HEIC).')
                         e.target.value = '' // Clear the input
                         setUploadFile(null)
                         return
@@ -888,7 +889,7 @@ export default function ShipperLoadDetailPage() {
                       
                       // Validate file size (10MB)
                       if (file.size > 10 * 1024 * 1024) {
-                        alert(`File size is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
+                        showToast.error('File too large', `Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
                         e.target.value = ''
                         setUploadFile(null)
                         return

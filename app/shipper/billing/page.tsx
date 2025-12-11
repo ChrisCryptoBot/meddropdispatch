@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast, showApiError } from '@/lib/toast'
 
 export default function ShipperBillingPage() {
   const router = useRouter()
@@ -74,14 +75,14 @@ export default function ShipperBillingPage() {
         const data = await response.json()
         setShipper(data.shipper)
         localStorage.setItem('shipper', JSON.stringify(data.shipper))
-        alert('Billing settings updated successfully!')
+        showToast.success('Billing settings updated successfully!')
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to update billing settings')
+        showToast.error(error.error || 'Failed to update billing settings')
       }
     } catch (error) {
       console.error('Error updating billing settings:', error)
-      alert('An error occurred while updating billing settings')
+      showToast.error('An error occurred while updating billing settings')
     } finally {
       setIsSaving(false)
     }

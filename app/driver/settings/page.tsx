@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast, showApiError } from '@/lib/toast'
 
 export default function DriverSettingsPage() {
   const router = useRouter()
@@ -78,9 +79,9 @@ export default function DriverSettingsPage() {
       const data = await response.json()
       setDriver(data.driver)
       localStorage.setItem('driver', JSON.stringify(data.driver))
-      alert('Profile updated successfully!')
+      showToast.success('Profile updated successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update profile')
+      showApiError(error, 'Failed to update profile')
     } finally {
       setIsSaving(false)
     }

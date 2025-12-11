@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast, showApiError } from '@/lib/toast'
 
 export default function DriverVehiclePage() {
   const router = useRouter()
@@ -77,9 +78,9 @@ export default function DriverVehiclePage() {
       const data = await response.json()
       setDriver(data.driver)
       localStorage.setItem('driver', JSON.stringify(data.driver))
-      alert('Vehicle information updated successfully!')
+      showToast.success('Vehicle information updated successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update vehicle information')
+      showApiError(error, 'Failed to update vehicle information')
     } finally {
       setIsSaving(false)
     }
