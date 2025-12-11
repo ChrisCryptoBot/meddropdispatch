@@ -140,7 +140,7 @@ export default function AdminInvoicesPage() {
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error)
-      alert('Failed to update invoice')
+      showApiError(error, 'Failed to update invoice')
     }
   }
 
