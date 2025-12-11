@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendLoadCancelledNotification } from '@/lib/email'
+import { getTrackingUrl } from '@/lib/utils'
 
 /**
  * POST /api/load-requests/[id]/cancel
@@ -46,10 +48,20 @@ export async function POST(
       )
     }
 
-    // Get current load
+    // Get current load with related data for notifications
     const load = await prisma.loadRequest.findUnique({
       where: { id },
-      select: { status: true }
+      include: {
+        shipper: true,
+        driver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
     })
 
     if (!load) {
@@ -83,7 +95,18 @@ export async function POST(
         cancelledById: cancelledById || null,
         cancelledAt: new Date(),
         cancellationBillingRule: cancellationBillingRule || null,
-      }
+      },
+      include: {
+        shipper: true,
+        driver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
     })
 
     // Create tracking event
@@ -97,6 +120,28 @@ export async function POST(
         actorType: cancelledBy === 'SYSTEM' ? 'SYSTEM' : cancelledBy === 'SHIPPER' ? 'SHIPPER' : cancelledBy === 'DRIVER' ? 'DRIVER' : 'ADMIN',
         locationText: null,
       }
+    })
+
+    // Send cancellation notifications to both shipper and driver
+    const trackingUrl = getTrackingUrl(cancelledLoad.publicTrackingCode)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const driverPortalUrl = `${baseUrl}/driver/loads`
+
+    const driverName = cancelledLoad.driver 
+      ? `${cancelledLoad.driver.firstName || ''} ${cancelledLoad.driver.lastName || ''}`.trim() 
+      : null
+
+    await sendLoadCancelledNotification({
+      shipperEmail: cancelledLoad.shipper.email,
+      driverEmail: cancelledLoad.driver?.email || null,
+      companyName: cancelledLoad.shipper.companyName,
+      driverName: driverName || undefined,
+      trackingCode: cancelledLoad.publicTrackingCode,
+      cancellationReason,
+      cancelledBy,
+      notes: notes || null,
+      trackingUrl,
+      driverPortalUrl,
     })
 
     return NextResponse.json({

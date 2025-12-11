@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendLoadStatusEmail } from '@/lib/email'
+import { sendLoadStatusEmail, sendDriverLoadStatusEmail } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
-import { LOAD_STATUS_LABELS, TRACKING_EVENT_LABELS } from '@/lib/types'
+import { LOAD_STATUS_LABELS, TRACKING_EVENT_LABELS } from '@/lib/constants'
 import type { StatusUpdateData } from '@/lib/types'
 import type { LoadStatus, TrackingEventCode } from '@/lib/types'
 
@@ -117,8 +117,12 @@ export async function PATCH(
       }
     })
 
-    // Send notification email to shipper
+    // Send notification emails to both shipper and driver at key workflow points
     const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const driverPortalUrl = `${baseUrl}/driver/loads/${id}`
+
+    // Always notify shipper of status changes
     await sendLoadStatusEmail({
       to: loadRequest.shipper.email,
       trackingCode: loadRequest.publicTrackingCode,
@@ -129,6 +133,25 @@ export async function PATCH(
       quoteAmount: data.quoteAmount,
       quoteCurrency: updatedLoad.quoteCurrency,
     })
+
+    // Notify driver at key workflow points (EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED)
+    const driverNotificationStatuses: LoadStatus[] = ['EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED']
+    if (loadRequest.driver && loadRequest.driver.email && driverNotificationStatuses.includes(data.status)) {
+      const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
+      await sendDriverLoadStatusEmail({
+        to: loadRequest.driver.email,
+        driverName,
+        trackingCode: loadRequest.publicTrackingCode,
+        status: data.status,
+        statusLabel: eventLabel,
+        companyName: loadRequest.shipper.companyName,
+        pickupAddress: `${loadRequest.pickupFacility.addressLine1}, ${loadRequest.pickupFacility.city}, ${loadRequest.pickupFacility.state}`,
+        dropoffAddress: `${loadRequest.dropoffFacility.addressLine1}, ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}`,
+        readyTime: loadRequest.readyTime,
+        deliveryDeadline: loadRequest.deliveryDeadline,
+        driverPortalUrl,
+      })
+    }
 
     return NextResponse.json({
       success: true,

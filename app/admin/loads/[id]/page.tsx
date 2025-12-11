@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS, type LoadStatus } from '@/lib/types'
+import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS } from '@/lib/constants'
+import type { LoadStatus } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
 
 type LoadData = any // We'll get this from the API

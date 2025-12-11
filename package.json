@@ -13,7 +13,8 @@
     "prisma:seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
     "create:admin": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/create-admin.ts",
     "create:shipper": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/create-shipper.ts",
-    "create:driver": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/create-driver.ts"
+    "create:driver": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/create-driver.ts",
+    "generate:secret": "node scripts/generate-secret.js"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
@@ -26,6 +27,7 @@
     "next-auth": "^4.24.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "resend": "^6.6.0",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.22.4"
   },

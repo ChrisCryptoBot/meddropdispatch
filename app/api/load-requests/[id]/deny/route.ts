@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendLoadDeniedNotification } from '@/lib/email'
+import { getTrackingUrl } from '@/lib/utils'
 import type { DriverDenialReason } from '@/lib/types'
 
 /**
@@ -104,6 +106,17 @@ export async function POST(
         actorType: 'DRIVER',
         actorId: driverId,
       },
+    })
+
+    // Send notification to shipper
+    const trackingUrl = getTrackingUrl(updatedLoad.publicTrackingCode)
+    await sendLoadDeniedNotification({
+      to: updatedLoad.shipper.email,
+      companyName: updatedLoad.shipper.companyName,
+      trackingCode: updatedLoad.publicTrackingCode,
+      reason,
+      notes: notes || null,
+      trackingUrl,
     })
 
     return NextResponse.json({

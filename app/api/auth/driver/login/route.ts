@@ -49,8 +49,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Driver login error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorDetails = error instanceof Error ? error.stack : String(error)
+    console.error('Error details:', errorDetails)
+    
     return NextResponse.json(
-      { error: 'Login failed', message: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Login failed', 
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      },
       { status: 500 }
     )
   }

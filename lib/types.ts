@@ -55,51 +55,8 @@ export type LoadRequestWithBasicRelations = LoadRequest & {
   dropoffFacility: Facility
 }
 
-// Status display configurations
-export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
-  REQUESTED: 'Scheduling Request',
-  SCHEDULED: 'Scheduled',
-  EN_ROUTE: 'En Route to Pickup',
-  PICKED_UP: 'Picked Up',
-  IN_TRANSIT: 'In Transit',
-  DELIVERED: 'Delivered',
-  COMPLETED: 'Completed',
-  DENIED: 'Not Scheduled',
-}
-
-export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
-  REQUESTED: 'bg-blue-100 text-blue-800',
-  SCHEDULED: 'bg-cyan-100 text-cyan-800',
-  EN_ROUTE: 'bg-purple-100 text-purple-800',
-  PICKED_UP: 'bg-orange-100 text-orange-800',
-  IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
-  DELIVERED: 'bg-emerald-100 text-emerald-800',
-  COMPLETED: 'bg-gray-100 text-gray-800',
-  DENIED: 'bg-red-100 text-red-800',
-}
-
-// Tracking event configurations
-export const TRACKING_EVENT_LABELS: Record<TrackingEventCode, string> = {
-  REQUEST_RECEIVED: 'Scheduling Request Received',
-  SCHEDULED: 'Scheduled',
-  EN_ROUTE_PICKUP: 'En Route to Pickup',
-  PICKED_UP: 'Picked Up',
-  IN_TRANSIT: 'In Transit',
-  ARRIVED_AT_DESTINATION: 'Arrived at Destination',
-  DELIVERED: 'Delivered',
-  COMPLETED: 'Completed',
-  DENIED: 'Not Scheduled',
-}
-
-export const DRIVER_DENIAL_REASON_LABELS: Record<DriverDenialReason, string> = {
-  PRICE_TOO_LOW: 'Price Too Low',
-  ROUTE_NOT_FEASIBLE: 'Route Not Feasible',
-  TIMING_NOT_WORKABLE: 'Timing Not Workable',
-  TOO_FAR: 'Too Far / Distance Issue',
-  EQUIPMENT_REQUIRED: 'Equipment Required (Not Available)',
-  ALREADY_BOOKED: 'Already Booked / Schedule Conflict',
-  OTHER: 'Other Reason',
-}
+// Status display configurations moved to lib/constants.ts
+// Import from '@/lib/constants' instead
 
 // Form submission types
 export interface LoadRequestFormData {

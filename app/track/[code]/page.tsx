@@ -3,7 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { formatDateTime, formatDate } from '@/lib/utils'
-import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/types'
+import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 
 async function getLoadByTrackingCode(code: string) {
   const load = await prisma.loadRequest.findUnique({

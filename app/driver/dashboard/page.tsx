@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { formatDateTime, formatDate } from '@/lib/utils'
-import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/types'
+import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
 
 interface Driver {
   id: string

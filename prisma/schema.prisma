@@ -1,5 +1,5 @@
 // Prisma Schema for MED DROP - Medical Courier Portal
-// Database: SQLite for development (swap to PostgreSQL for production)
+// Database: PostgreSQL (production-ready for Vercel)
 
 generator client {
   provider = "prisma-client-js"

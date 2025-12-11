@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendDriverAcceptedNotification, sendLoadScheduledNotification } from '@/lib/email'
+import { getTrackingUrl } from '@/lib/utils'
 
 /**
  * POST /api/load-requests/[id]/accept
@@ -68,6 +70,7 @@ export async function POST(
             firstName: true,
             lastName: true,
             phone: true,
+            email: true,
           },
         },
         shipper: true,
@@ -106,6 +109,36 @@ export async function POST(
         actorType: 'DRIVER',
         actorId: driverId,
       },
+    })
+
+    // Send email notifications
+    const trackingUrl = getTrackingUrl(updatedLoad.publicTrackingCode)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const driverPortalUrl = `${baseUrl}/driver/loads`
+
+    // Notify shipper that driver has accepted (driver will call)
+    await sendDriverAcceptedNotification({
+      to: updatedLoad.shipper.email,
+      companyName: updatedLoad.shipper.companyName,
+      trackingCode: updatedLoad.publicTrackingCode,
+      driverName: `${updatedLoad.driver?.firstName || ''} ${updatedLoad.driver?.lastName || ''}`.trim(),
+      driverPhone: updatedLoad.driver?.phone || 'Not provided',
+      trackingUrl,
+    })
+
+    // Notify both parties that load is scheduled
+    await sendLoadScheduledNotification({
+      shipperEmail: updatedLoad.shipper.email,
+      driverEmail: updatedLoad.driver?.email || null,
+      companyName: updatedLoad.shipper.companyName,
+      driverName: `${updatedLoad.driver?.firstName || ''} ${updatedLoad.driver?.lastName || ''}`.trim(),
+      trackingCode: updatedLoad.publicTrackingCode,
+      trackingUrl,
+      driverPortalUrl,
+      pickupAddress: `${updatedLoad.pickupFacility.addressLine1}, ${updatedLoad.pickupFacility.city}, ${updatedLoad.pickupFacility.state}`,
+      dropoffAddress: `${updatedLoad.dropoffFacility.addressLine1}, ${updatedLoad.dropoffFacility.city}, ${updatedLoad.dropoffFacility.state}`,
+      readyTime: updatedLoad.readyTime,
+      deliveryDeadline: updatedLoad.deliveryDeadline,
     })
 
     return NextResponse.json({

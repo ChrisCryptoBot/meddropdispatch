@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatDateTime } from '@/lib/utils'
-import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, type LoadStatus } from '@/lib/types'
+import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
+import type { LoadStatus } from '@/lib/types'
 
 async function getLoads() {
   const loads = await prisma.loadRequest.findMany({

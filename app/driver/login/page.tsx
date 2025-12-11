@@ -24,18 +24,42 @@ export default function DriverLoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Login failed')
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError)
+        setError('Invalid response from server')
+        setIsLoading(false)
+        return
       }
 
-      const { driver } = await response.json()
+      if (!response.ok) {
+        console.error('Login API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+          errorMessage: data?.error || data?.message,
+          errorDetails: JSON.stringify(data, null, 2)
+        })
+        setError(data?.error || data?.message || `Login failed (${response.status})`)
+        setIsLoading(false)
+        return
+      }
+
+      if (!data.driver) {
+        console.error('No driver data in response:', data)
+        setError('Invalid response from server')
+        setIsLoading(false)
+        return
+      }
 
       // Store driver info in localStorage (in production, use httpOnly cookies/sessions)
-      localStorage.setItem('driver', JSON.stringify(driver))
+      localStorage.setItem('driver', JSON.stringify(data.driver))
 
       router.push('/driver/dashboard')
     } catch (err) {
+      console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')
       setIsLoading(false)
     }
@@ -129,7 +153,7 @@ export default function DriverLoginPage() {
         <div className="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
           <p className="font-semibold text-slate-900 mb-2">Test Credentials:</p>
           <div className="text-slate-800 space-y-1">
-            <p>Email: <code className="bg-slate-100 px-2 py-0.5 rounded">driver@meddrop.com</code></p>
+            <p>Email: <code className="bg-slate-100 px-2 py-0.5 rounded">driver@test.com</code></p>
             <p>Password: <code className="bg-slate-100 px-2 py-0.5 rounded">driver123</code></p>
           </div>
         </div>

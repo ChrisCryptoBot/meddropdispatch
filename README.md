@@ -190,12 +190,19 @@ export async function sendEmail(options: EmailOptions) {
 
 ### Vercel (Recommended)
 
-1. Push code to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Update `DATABASE_URL` to PostgreSQL (Vercel Postgres, Supabase, etc.)
-5. Run migration: `npx prisma migrate deploy`
+**🚀 Ready to deploy! See `DEPLOY_NOW.md` for complete step-by-step guide.**
+
+Quick steps:
+1. ✅ Code is already configured for PostgreSQL
+2. Set up PostgreSQL database (Supabase recommended - free tier)
+3. Push code to GitHub
+4. Import project in Vercel
+5. Add environment variables (see `VERCEL_ENV_VARS.md`)
 6. Deploy!
+7. Run migrations: `npx prisma migrate deploy`
+8. Create admin user
+
+**Full guide:** See `DEPLOY_NOW.md` for detailed instructions.
 
 ### Environment Variables for Production
 
