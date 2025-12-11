@@ -15,6 +15,7 @@ import {
 import {
   sendNewQuoteRequestSMS,
 } from '@/lib/sms'
+import crypto from 'crypto'
 
 /**
  * POST /api/webhooks/email
@@ -33,9 +34,40 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature (if configured)
     const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
     if (webhookSecret) {
-      const signature = request.headers.get('resend-signature')
-      // TODO: Implement signature verification
-      // For now, we'll accept all webhooks
+      const signature = request.headers.get('resend-signature') || request.headers.get('x-resend-signature')
+      
+      if (!signature) {
+        console.error('Webhook signature missing')
+        return NextResponse.json(
+          { error: 'Missing webhook signature' },
+          { status: 401 }
+        )
+      }
+
+      // Get raw body for signature verification
+      const rawBody = JSON.stringify(webhookData)
+      
+      // Resend uses HMAC SHA-256
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex')
+      
+      // Compare signatures (constant-time comparison to prevent timing attacks)
+      const providedSignature = signature.replace('sha256=', '')
+      
+      if (!crypto.timingSafeEqual(
+        Buffer.from(expectedSignature),
+        Buffer.from(providedSignature)
+      )) {
+        console.error('Invalid webhook signature')
+        return NextResponse.json(
+          { error: 'Invalid webhook signature' },
+          { status: 401 }
+        )
+      }
+      
+      console.log('✅ Webhook signature verified')
     }
 
     // Parse email data from webhook

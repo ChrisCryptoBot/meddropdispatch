@@ -91,6 +91,42 @@ export default function AdminLoadDetailPage() {
     }
   }
 
+  const handleDocumentUpload = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!uploadFile || !uploadTitle || !load) return
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('type', uploadType)
+      formData.append('title', uploadTitle)
+      formData.append('uploadedBy', 'admin')
+
+      const response = await fetch(`/api/load-requests/${load.id}/documents`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to upload document')
+      }
+
+      alert('Document uploaded successfully!')
+      setShowUploadModal(false)
+      setUploadFile(null)
+      setUploadTitle('')
+      setUploadType('PROOF_OF_PICKUP')
+      await fetchLoad()
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload document')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const handleQuoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmittingQuote(true)
@@ -694,9 +730,12 @@ export default function AdminLoadDetailPage() {
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-4 text-center">
-              Document upload coming soon
-            </p>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="mt-4 w-full px-4 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 transition-base"
+            >
+              Upload Document
+            </button>
           </div>
         </div>
       </div>

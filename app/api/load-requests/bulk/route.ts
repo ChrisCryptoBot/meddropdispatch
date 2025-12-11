@@ -134,18 +134,60 @@ export async function POST(request: NextRequest) {
               select: {
                 city: true,
                 state: true,
+                addressLine1: true,
               },
             },
             dropoffFacility: {
               select: {
                 city: true,
                 state: true,
+                addressLine1: true,
               },
             },
           },
         })
 
-        result = { loads, csvReady: true }
+        // Generate CSV
+        const csvHeaders = [
+          'Tracking Code',
+          'Shipper',
+          'Driver',
+          'Status',
+          'Service Type',
+          'Pickup Address',
+          'Dropoff Address',
+          'Quote Amount',
+          'Created At',
+          'Delivered At',
+        ]
+
+        const csvRows = loads.map((load) => [
+          load.publicTrackingCode,
+          load.shipper?.companyName || '',
+          load.driver ? `${load.driver.firstName} ${load.driver.lastName}` : '',
+          load.status,
+          load.serviceType,
+          `${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`,
+          `${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`,
+          load.quoteAmount?.toString() || '',
+          load.createdAt.toISOString(),
+          load.actualDeliveryTime?.toISOString() || '',
+        ])
+
+        // Escape CSV values
+        const escapeCsv = (value: string) => {
+          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            return `"${value.replace(/"/g, '""')}"`
+          }
+          return value
+        }
+
+        const csvContent = [
+          csvHeaders.map(escapeCsv).join(','),
+          ...csvRows.map((row) => row.map((cell) => escapeCsv(String(cell || ''))).join(',')),
+        ].join('\n')
+
+        result = { csvContent, filename: `loads-export-${new Date().toISOString().split('T')[0]}.csv` }
         break
 
       default:

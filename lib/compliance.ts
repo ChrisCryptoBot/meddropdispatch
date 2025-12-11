@@ -30,12 +30,80 @@ export async function checkDriverCertifications(driverId: string): Promise<Compl
   const criticalDays = 7
   const warningDays = 30
 
-  // Check UN3373 certification (if stored)
-  // Note: This assumes you add certification fields to Driver model
-  // For now, this is a placeholder structure
+  // Check UN3373 certification expiry
+  if (driver.un3373ExpiryDate) {
+    const expiryDate = new Date(driver.un3373ExpiryDate)
+    const daysUntilExpiry = calculateDaysUntilExpiry(expiryDate)
+    
+    if (daysUntilExpiry <= warningDays) {
+      reminders.push({
+        id: `un3373-${driver.id}`,
+        type: 'DRIVER_CERTIFICATION',
+        entityId: driver.id,
+        entityType: 'DRIVER',
+        title: 'UN3373 Certification Expiring',
+        description: `Driver ${driver.firstName} ${driver.lastName}'s UN3373 certification expires in ${daysUntilExpiry} days`,
+        expiryDate,
+        daysUntilExpiry,
+        severity: getSeverity(daysUntilExpiry),
+      })
+    }
+  } else if (driver.un3373Certified) {
+    // Certified but no expiry date - flag as needing update
+    reminders.push({
+      id: `un3373-missing-date-${driver.id}`,
+      type: 'DRIVER_CERTIFICATION',
+      entityId: driver.id,
+      entityType: 'DRIVER',
+      title: 'UN3373 Certification Missing Expiry Date',
+      description: `Driver ${driver.firstName} ${driver.lastName} is marked as UN3373 certified but expiry date is missing`,
+      expiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // Placeholder
+      daysUntilExpiry: 30,
+      severity: 'INFO',
+    })
+  }
 
-  // Check HIPAA certification
-  // Note: This assumes you add certification fields to Driver model
+  // Check HIPAA training date (if older than 1 year, recommend renewal)
+  if (driver.hipaaTrainingDate) {
+    const trainingDate = new Date(driver.hipaaTrainingDate)
+    const daysSinceTraining = Math.floor((now.getTime() - trainingDate.getTime()) / (1000 * 60 * 60 * 24))
+    const oneYearInDays = 365
+    
+    if (daysSinceTraining > oneYearInDays) {
+      const daysOverdue = daysSinceTraining - oneYearInDays
+      reminders.push({
+        id: `hipaa-${driver.id}`,
+        type: 'DRIVER_CERTIFICATION',
+        entityId: driver.id,
+        entityType: 'DRIVER',
+        title: 'HIPAA Training Overdue',
+        description: `Driver ${driver.firstName} ${driver.lastName}'s HIPAA training is ${daysOverdue} days overdue (recommended annual renewal)`,
+        expiryDate: new Date(trainingDate.getTime() + oneYearInDays * 24 * 60 * 60 * 1000),
+        daysUntilExpiry: -daysOverdue,
+        severity: daysOverdue > 90 ? 'CRITICAL' : daysOverdue > 30 ? 'WARNING' : 'INFO',
+      })
+    }
+  }
+
+  // Check driver license expiry
+  if (driver.licenseExpiry) {
+    const expiryDate = new Date(driver.licenseExpiry)
+    const daysUntilExpiry = calculateDaysUntilExpiry(expiryDate)
+    
+    if (daysUntilExpiry <= warningDays) {
+      reminders.push({
+        id: `license-${driver.id}`,
+        type: 'DRIVER_CERTIFICATION',
+        entityId: driver.id,
+        entityType: 'DRIVER',
+        title: 'Driver License Expiring',
+        description: `Driver ${driver.firstName} ${driver.lastName}'s license expires in ${daysUntilExpiry} days`,
+        expiryDate,
+        daysUntilExpiry,
+        severity: getSeverity(daysUntilExpiry),
+      })
+    }
+  }
 
   return reminders
 }

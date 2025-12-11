@@ -88,6 +88,7 @@ export default function AdminInvoicesPage() {
 
   const markAsSent = async (invoiceId: string) => {
     try {
+      // First update status, then send email
       const response = await fetch(`/api/invoices/${invoiceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -95,8 +96,20 @@ export default function AdminInvoicesPage() {
       })
 
       if (response.ok) {
-        await fetchInvoices()
-        alert('Invoice marked as sent!')
+        // Send invoice email
+        const sendResponse = await fetch(`/api/invoices/${invoiceId}/send`, {
+          method: 'POST',
+        })
+
+        if (sendResponse.ok) {
+          await fetchInvoices()
+          alert('Invoice marked as sent and email sent to shipper!')
+        } else {
+          await fetchInvoices()
+          alert('Invoice marked as sent, but email failed to send. Please send manually.')
+        }
+      } else {
+        alert('Failed to update invoice')
       }
     } catch (error) {
       console.error('Error marking invoice as sent:', error)

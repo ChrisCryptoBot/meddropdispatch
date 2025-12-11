@@ -8,6 +8,15 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import QuoteRequestCard from '@/components/features/QuoteRequestCard'
 
+interface ComplianceReminder {
+  id: string
+  type: string
+  title: string
+  description: string
+  severity: 'CRITICAL' | 'WARNING' | 'INFO'
+  daysUntilExpiry: number
+}
+
 interface DashboardStats {
   todayLoads: number
   todayLoadsChange: number
@@ -78,6 +87,13 @@ export default function AdminPage() {
       if (quoteResponse.ok) {
         const quoteData = await quoteResponse.json()
         setQuoteRequests(quoteData.quoteRequests || [])
+      }
+
+      // Fetch compliance reminders
+      const complianceResponse = await fetch('/api/compliance/reminders')
+      if (complianceResponse.ok) {
+        const complianceData = await complianceResponse.json()
+        setComplianceReminders(complianceData.reminders || [])
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)

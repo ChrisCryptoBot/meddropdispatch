@@ -1,8 +1,12 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { prisma } from '@/lib/prisma'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import type { LoadStatus } from '@/lib/types'
+import SearchBar from '@/components/features/SearchBar'
+import BulkActions from '@/components/features/BulkActions'
 
 async function getLoads() {
   const loads = await prisma.loadRequest.findMany({
@@ -29,9 +33,22 @@ export default async function AdminLoadsPage() {
 
   // Group loads by status
   const activeStatuses = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED', 'PICKED_UP', 'IN_TRANSIT']
-  const activeLoads = loads.filter((load) => activeStatuses.includes(load.status))
-  const completedLoads = loads.filter((load) => ['DELIVERED', 'COMPLETED'].includes(load.status))
-  const cancelledLoads = loads.filter((load) => load.status === 'CANCELLED')
+  const activeLoads = filteredLoads.filter((load) => activeStatuses.includes(load.status))
+  const completedLoads = filteredLoads.filter((load) => ['DELIVERED', 'COMPLETED'].includes(load.status))
+  const cancelledLoads = filteredLoads.filter((load) => load.status === 'CANCELLED')
+
+  if (isLoading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading loads...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
@@ -135,7 +152,7 @@ export default async function AdminLoadsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {loads.length === 0 ? (
+              {filteredLoads.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-500">
