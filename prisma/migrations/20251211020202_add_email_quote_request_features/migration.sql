@@ -7,3 +7,4 @@ ALTER TABLE "LoadRequest" ADD COLUMN "rawEmailContent" TEXT;
 ALTER TABLE "LoadRequest" ADD COLUMN "suggestedRateMax" REAL;
 ALTER TABLE "LoadRequest" ADD COLUMN "suggestedRateMin" REAL;
 
+

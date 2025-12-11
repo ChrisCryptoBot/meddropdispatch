@@ -166,3 +166,4 @@ Suggested Range: ${formatRateRange(rate.suggestedRateMin, rate.suggestedRateMax)
   `.trim()
 }
 
+

@@ -364,3 +364,4 @@ hooks/                # Custom hooks
 
 **Next Steps:** Focus on the critical improvements (logging, pagination, indexes) to bring this to an **A- (90+)** grade.
 
+

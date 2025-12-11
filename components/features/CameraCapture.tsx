@@ -125,3 +125,4 @@ export default function CameraCapture({ onCapture, onCancel, label = 'Take Photo
   )
 }
 
+

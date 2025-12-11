@@ -108,3 +108,4 @@ export async function getAddressFromCoordinates(
   return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
 }
 
+

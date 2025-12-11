@@ -369,3 +369,4 @@ export async function autoGenerateInvoiceForLoad(loadRequestId: string): Promise
   }
 }
 
+

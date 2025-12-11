@@ -94,3 +94,4 @@ export async function requireAuth(request: NextRequest): Promise<string> {
   return userId
 }
 
+
