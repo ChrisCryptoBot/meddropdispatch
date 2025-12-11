@@ -2,7 +2,7 @@
 // GET: List all quote-requested loads
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/load-requests/quote-requests
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Transform data for response
-    const transformedRequests = quoteRequests.map((request) => ({
+    const transformedRequests = quoteRequests.map((request: any) => ({
       id: request.id,
       trackingCode: request.publicTrackingCode,
       shipper: {

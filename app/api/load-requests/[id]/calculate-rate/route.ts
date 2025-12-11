@@ -2,7 +2,7 @@
 // POST: Calculate or recalculate rate for a load request
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { calculateDistance } from '@/lib/distance-calculator'
 import { calculateRate } from '@/lib/rate-calculator'
 import { geocodeAddress } from '@/lib/geocoding'

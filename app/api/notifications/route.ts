@@ -2,7 +2,7 @@
 // GET: Fetch notifications for admin dashboard
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/notifications
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Transform for notification display
-    const notifications = recentQuoteRequests.map((request) => ({
+    const notifications = recentQuoteRequests.map((request: any) => ({
       id: request.id,
       type: 'QUOTE_REQUEST',
       trackingCode: request.publicTrackingCode,
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       totalCount,
-      newCount: since ? notifications.filter(n => n.isNew).length : totalCount,
+      newCount: since ? notifications.filter((n: any) => n.isNew).length : totalCount,
       notifications,
     })
   } catch (error) {

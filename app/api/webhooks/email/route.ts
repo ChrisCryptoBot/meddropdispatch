@@ -2,7 +2,7 @@
 // Receives incoming emails from Resend and creates quote requests
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { parseEmailContent, detectServiceType, sanitizeEmailContent } from '@/lib/email-parser'
 import { geocodeAddress } from '@/lib/geocoding'
 import { calculateDistance } from '@/lib/distance-calculator'
