@@ -29,21 +29,32 @@
 
 **VERIFICATION COMMANDS:**
 ```bash
-# Check current branch
+# 1. First, fetch all remote branches
+git fetch origin
+
+# 2. Check current branch
 git branch
 
-# Should output:
-# * claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+# 3. Check if correct branch exists remotely
+git branch -r | grep claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
 
-# If not on correct branch, switch:
+# 4. If you're on a different branch (e.g., with session ID), switch to correct one:
 git checkout claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
 
-# Pull latest changes
+# 5. If branch doesn't exist locally, create it from remote:
+git checkout -b claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF origin/claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# 6. Verify you're on correct branch (should show * claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF)
+git branch
+
+# 7. Pull latest changes
 git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
 
-# After making changes, push to correct branch:
+# 8. After making changes, push to correct branch:
 git push origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
 ```
+
+**IMPORTANT:** If you see a branch with a different session ID (like `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXo-01HMh6fh15rv8s2hWAAK7GtG`), that is NOT the correct branch. You MUST switch to `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF` (without the extra session ID).
 
 **IF YOU PUSH TO THE WRONG BRANCH, IT WILL CAUSE CORRUPTION AND DATA LOSS.**
 
@@ -753,9 +764,14 @@ model LoadNote {
 ## 🚨 FINAL REMINDER: BRANCH SAFETY
 
 **BEFORE YOU START CODING:**
-1. ✅ Run `git branch` - verify you're on `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
-2. ✅ Run `git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF` - get latest code
-3. ✅ Verify you can see this file: `IMPLEMENTATION_BRIEF_WORKFLOW_OPTIMIZATIONS.md`
+1. ✅ Run `git fetch origin` - get all remote branches
+2. ✅ Run `git branch` - verify you're on `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+   - If you see a branch with extra session ID (like `-01HMh6fh15rv8s2hWAAK7GtG`), that's WRONG
+   - The correct branch ends with: `01Y9eA9nJsDkqCrrkAk8CXoF` (no extra characters)
+3. ✅ If not on correct branch, run: `git checkout claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+4. ✅ Run `git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF` - get latest code
+5. ✅ Verify you can see this file: `IMPLEMENTATION_BRIEF_WORKFLOW_OPTIMIZATIONS.md`
+6. ✅ Verify you can see: `IMPLEMENTATION_BRIEF_EMAIL_NOTIFICATIONS.md` (from previous work)
 
 **BEFORE YOU PUSH:**
 1. ✅ Run `git branch` - verify you're still on `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
