@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendDriverAcceptedNotification, sendLoadScheduledNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { acceptLoadSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/load-requests/[id]/accept
@@ -11,16 +15,33 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params
-    const { driverId } = await request.json()
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
 
-    if (!driverId) {
+    const { id } = await params
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(acceptLoadSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Driver ID is required' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
+
+    const { driverId } = validation.data
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -31,26 +52,17 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Check if load is already assigned to another driver
     if (loadRequest.driverId && loadRequest.driverId !== driverId) {
-      return NextResponse.json(
-        { error: 'This load has already been accepted by another driver' },
-        { status: 400 }
-      )
+      throw new ValidationError('This load has already been accepted by another driver')
     }
 
     // Check if load can be accepted (must be REQUESTED)
     if (loadRequest.status !== 'REQUESTED') {
-      return NextResponse.json(
-        { error: `Cannot accept load with status: ${loadRequest.status}. Load must be REQUESTED.` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Cannot accept load with status: ${loadRequest.status}. Load must be REQUESTED.`)
     }
 
     // Update load with driver assignment - set to SCHEDULED (tracking starts here)
@@ -141,17 +153,15 @@ export async function POST(
       deliveryDeadline: updatedLoad.deliveryDeadline,
     })
 
+    logger.info('Load accepted by driver', {
+      loadId: id,
+      driverId,
+      trackingCode: updatedLoad.publicTrackingCode,
+    })
+
     return NextResponse.json({
       success: true,
       loadRequest: updatedLoad,
     })
-
-  } catch (error) {
-    console.error('Error accepting load:', error)
-    return NextResponse.json(
-      { error: 'Failed to accept load', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
-

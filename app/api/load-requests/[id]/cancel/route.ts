@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendLoadCancelledNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { cancelLoadSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/load-requests/[id]/cancel
@@ -11,9 +15,31 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const data = await request.json()
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(cancelLoadSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
 
     const { 
       cancellationReason, 
@@ -21,32 +47,7 @@ export async function POST(
       cancelledById, 
       cancellationBillingRule,
       notes 
-    } = data
-
-    if (!cancellationReason || !cancelledBy) {
-      return NextResponse.json(
-        { error: 'Cancellation reason and cancelledBy are required' },
-        { status: 400 }
-      )
-    }
-
-    // Valid cancellation reasons
-    const validReasons = ['CLIENT_CANCELLED', 'DRIVER_NO_SHOW', 'VEHICLE_BREAKDOWN', 'FACILITY_CLOSED', 'WEATHER', 'OTHER']
-    if (!validReasons.includes(cancellationReason)) {
-      return NextResponse.json(
-        { error: 'Invalid cancellation reason' },
-        { status: 400 }
-      )
-    }
-
-    // Valid billing rules
-    const validBillingRules = ['BILLABLE', 'PARTIAL', 'NOT_BILLABLE']
-    if (cancellationBillingRule && !validBillingRules.includes(cancellationBillingRule)) {
-      return NextResponse.json(
-        { error: 'Invalid cancellation billing rule' },
-        { status: 400 }
-      )
-    }
+    } = validation.data
 
     // Get current load with related data for notifications
     const load = await prisma.loadRequest.findUnique({
@@ -65,24 +66,15 @@ export async function POST(
     })
 
     if (!load) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     if (load.status === 'CANCELLED') {
-      return NextResponse.json(
-        { error: 'Load is already cancelled' },
-        { status: 400 }
-      )
+      throw new ValidationError('Load is already cancelled')
     }
 
     if (load.status === 'DELIVERED' || load.status === 'COMPLETED') {
-      return NextResponse.json(
-        { error: 'Cannot cancel a delivered or completed load' },
-        { status: 400 }
-      )
+      throw new ValidationError('Cannot cancel a delivered or completed load')
     }
 
     // Update load with cancellation info
@@ -144,17 +136,16 @@ export async function POST(
       driverPortalUrl,
     })
 
+    logger.info('Load cancelled', {
+      loadId: id,
+      cancelledBy,
+      cancellationReason,
+      trackingCode: cancelledLoad.publicTrackingCode,
+    })
+
     return NextResponse.json({
       success: true,
       loadRequest: cancelledLoad,
     })
-
-  } catch (error) {
-    console.error('Error cancelling load request:', error)
-    return NextResponse.json(
-      { error: 'Failed to cancel load request', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
-

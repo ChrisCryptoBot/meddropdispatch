@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendLoadStatusEmail } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { approveDriverQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/load-requests/[id]/approve-driver-quote
@@ -11,9 +15,33 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const { shipperId } = await request.json()
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(approveDriverQuoteSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const { shipperId } = validation.data
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -27,41 +55,26 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Verify shipper owns this load
     if (loadRequest.shipperId !== shipperId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - you do not own this load' },
-        { status: 403 }
-      )
+      throw new AuthorizationError('Unauthorized - you do not own this load')
     }
 
     // Check if load is in correct status for quote approval
     if (loadRequest.status !== 'DRIVER_QUOTE_SUBMITTED') {
-      return NextResponse.json(
-        { error: `Cannot approve quote for load with status: ${loadRequest.status}. Load must have a submitted driver quote.` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Cannot approve quote for load with status: ${loadRequest.status}. Load must have a submitted driver quote.`)
     }
 
     if (!loadRequest.driverQuoteAmount) {
-      return NextResponse.json(
-        { error: 'No driver quote found to approve' },
-        { status: 400 }
-      )
+      throw new ValidationError('No driver quote found to approve')
     }
 
     // Check if quote has expired
     if (loadRequest.driverQuoteExpiresAt && new Date(loadRequest.driverQuoteExpiresAt) < new Date()) {
-      return NextResponse.json(
-        { error: 'Driver quote has expired. Please request a new quote.' },
-        { status: 400 }
-      )
+      throw new ValidationError('Driver quote has expired. Please request a new quote.')
     }
 
     // Update load: approve quote and schedule
@@ -116,27 +129,25 @@ export async function POST(
         quoteCurrency: 'USD',
       })
     } catch (emailError) {
-      console.error('Failed to send email notification:', emailError)
+      logger.warn('Failed to send email notification', { 
+        loadId: id,
+        error: emailError instanceof Error ? emailError : new Error('Unknown email error')
+      })
       // Don't fail the request if email fails
     }
+
+    logger.info('Driver quote approved by shipper', {
+      loadId: id,
+      shipperId,
+      driverId: loadRequest.driverId,
+      quoteAmount: loadRequest.driverQuoteAmount,
+      trackingCode: updatedLoad.publicTrackingCode,
+    })
 
     return NextResponse.json({
       success: true,
       loadRequest: updatedLoad,
       message: 'Quote approved successfully. Load is now scheduled.',
     })
-
-  } catch (error) {
-    console.error('Error approving driver quote:', error)
-    return NextResponse.json(
-      { error: 'Failed to approve quote', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
-
-
-
-
-
-

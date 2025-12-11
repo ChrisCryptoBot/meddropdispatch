@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { rejectDriverQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * POST /api/load-requests/[id]/reject-driver-quote
@@ -9,9 +13,33 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const { shipperId, rejectionNotes } = await request.json()
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(rejectDriverQuoteSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const { shipperId, rejectionNotes } = validation.data
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -25,26 +53,17 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Verify shipper owns this load
     if (loadRequest.shipperId !== shipperId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - you do not own this load' },
-        { status: 403 }
-      )
+      throw new AuthorizationError('Unauthorized - you do not own this load')
     }
 
     // Check if load is in correct status for quote rejection
     if (loadRequest.status !== 'DRIVER_QUOTE_SUBMITTED') {
-      return NextResponse.json(
-        { error: `Cannot reject quote for load with status: ${loadRequest.status}. Load must have a submitted driver quote.` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Cannot reject quote for load with status: ${loadRequest.status}. Load must have a submitted driver quote.`)
     }
 
     // Update load: reject quote, clear driver assignment, reset to NEW
@@ -101,6 +120,13 @@ export async function POST(
       },
     })
 
+    logger.info('Driver quote rejected by shipper', {
+      loadId: id,
+      shipperId,
+      driverId: loadRequest.driverId,
+      trackingCode: updatedLoad.publicTrackingCode,
+    })
+
     return NextResponse.json({
       success: true,
       loadRequest: {
@@ -109,18 +135,5 @@ export async function POST(
       },
       message: 'Quote rejected. Load is now available for other drivers.',
     })
-
-  } catch (error) {
-    console.error('Error rejecting driver quote:', error)
-    return NextResponse.json(
-      { error: 'Failed to reject quote', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
-
-
-
-
-
-

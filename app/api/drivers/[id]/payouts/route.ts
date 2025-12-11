@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { requireAdmin } from '@/lib/middleware'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/drivers/[id]/payouts
@@ -108,8 +110,16 @@ export async function POST(
       throw new NotFoundError('Driver')
     }
 
-    // TODO: Add admin authentication check here
-    // For now, allowing any authenticated user (will be restricted in production)
+    // Require admin authentication
+    try {
+      await requireAdmin(req)
+    } catch (error) {
+      logger.warn('Unauthorized payout creation attempt', {
+        driverId: id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw new AuthorizationError('Admin access required to create payouts')
+    }
 
     // Create payout
     const payout = await prisma.payout.create({

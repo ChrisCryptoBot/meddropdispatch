@@ -269,6 +269,40 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'New password must be at least 6 characters'),
 })
 
+// Load Action Schemas
+export const denyLoadSchema = z.object({
+  driverId: z.string().min(1, 'Driver ID is required'),
+  reason: z.enum(['PRICE_TOO_LOW', 'ROUTE_NOT_FEASIBLE', 'TIMING_NOT_WORKABLE', 'TOO_FAR', 'EQUIPMENT_REQUIRED', 'ALREADY_BOOKED', 'OTHER']),
+  notes: z.string().optional(),
+})
+
+export const cancelLoadSchema = z.object({
+  cancellationReason: z.enum(['CLIENT_CANCELLED', 'DRIVER_NO_SHOW', 'VEHICLE_BREAKDOWN', 'FACILITY_CLOSED', 'WEATHER', 'OTHER']),
+  cancelledBy: z.enum(['SHIPPER', 'DRIVER', 'ADMIN', 'SYSTEM']),
+  cancelledById: z.string().optional(),
+  cancellationBillingRule: z.enum(['BILLABLE', 'PARTIAL', 'NOT_BILLABLE']).optional(),
+  notes: z.string().optional(),
+})
+
+export const acceptLoadSchema = z.object({
+  driverId: z.string().min(1, 'Driver ID is required'),
+})
+
+export const acceptQuoteSchema = z.object({})
+
+export const rejectDriverQuoteSchema = z.object({
+  shipperId: z.string().min(1, 'Shipper ID is required'),
+  rejectionNotes: z.string().optional(),
+})
+
+export const approveDriverQuoteSchema = z.object({
+  shipperId: z.string().min(1, 'Shipper ID is required'),
+})
+
+export const assignDriverSchema = z.object({
+  driverId: z.string().min(1, 'Driver ID is required'),
+})
+
 // Helper function to validate request body
 export async function validateRequest<T>(
   schema: z.ZodSchema<T>,

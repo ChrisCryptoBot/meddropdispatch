@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { updateLoadRequestSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 /**
  * GET /api/load-requests/[id]
@@ -52,9 +54,33 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const data = await request.json()
+    const rawData = await req.json()
+    
+    // Validate request body (updateLoadRequestSchema is flexible for partial updates)
+    const validation = await validateRequest(updateLoadRequestSchema.partial(), rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = validation.data
 
     // Get current load to check temperature ranges
     const currentLoad = await prisma.loadRequest.findUnique({
@@ -63,8 +89,13 @@ export async function PATCH(
         temperatureMin: true,
         temperatureMax: true,
         status: true,
+        deliveryDeadline: true,
       }
     })
+
+    if (!currentLoad) {
+      throw new NotFoundError('Load request')
+    }
 
     // TEMPERATURE EXCEPTION HANDLING
     const updateData: any = { ...data }
@@ -116,13 +147,8 @@ export async function PATCH(
     // Check for late delivery when actualDeliveryTime is set
     if (data.actualDeliveryTime) {
       const deliveryTime = new Date(data.actualDeliveryTime)
-      // Need to get deadline from current load
-      const loadWithDeadline = await prisma.loadRequest.findUnique({
-        where: { id },
-        select: { deliveryDeadline: true }
-      })
       
-      if (loadWithDeadline?.deliveryDeadline && deliveryTime > loadWithDeadline.deliveryDeadline) {
+      if (currentLoad.deliveryDeadline && deliveryTime > currentLoad.deliveryDeadline) {
         updateData.lateDeliveryFlag = true
         // Note: lateDeliveryReasonNotes should be provided separately or admin can add later
       }
@@ -141,16 +167,15 @@ export async function PATCH(
       }
     })
 
+    logger.info('Load request updated', {
+      loadId: id,
+      updatedFields: Object.keys(data),
+      trackingCode: updatedLoad.publicTrackingCode,
+    })
+
     return NextResponse.json({
       success: true,
       loadRequest: updatedLoad,
     })
-
-  } catch (error) {
-    console.error('Error updating load request:', error)
-    return NextResponse.json(
-      { error: 'Failed to update load request', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }

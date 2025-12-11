@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { sendLoadDeniedNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
 import type { DriverDenialReason } from '@/lib/types'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
+import { denyLoadSchema } from '@/lib/validation'
 
 /**
  * POST /api/load-requests/[id]/deny
@@ -12,23 +17,33 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const { driverId, reason, notes } = await request.json()
-
-    if (!driverId) {
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(denyLoadSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Driver ID is required' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
 
-    if (!reason) {
-      return NextResponse.json(
-        { error: 'Denial reason is required' },
-        { status: 400 }
-      )
-    }
+    const { driverId, reason, notes } = validation.data
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -42,19 +57,13 @@ export async function POST(
     })
 
     if (!loadRequest) {
-      return NextResponse.json(
-        { error: 'Load request not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load request')
     }
 
     // Check if load is in a state that can be denied
     // Driver can only deny loads that are REQUESTED (before acceptance)
     if (loadRequest.status !== 'REQUESTED') {
-      return NextResponse.json(
-        { error: `Cannot deny load with status: ${loadRequest.status}. Load must be REQUESTED.` },
-        { status: 400 }
-      )
+      throw new ValidationError(`Cannot deny load with status: ${loadRequest.status}. Load must be REQUESTED.`)
     }
 
     // Update load with denial information - set to DENIED status
@@ -119,18 +128,18 @@ export async function POST(
       trackingUrl,
     })
 
+    logger.info('Load denied by driver', {
+      loadId: id,
+      driverId,
+      reason,
+      trackingCode: updatedLoad.publicTrackingCode,
+    })
+
     return NextResponse.json({
       success: true,
       loadRequest: updatedLoad,
       message: 'Load denied. Status set to DENIED.',
     })
-
-  } catch (error) {
-    console.error('Error denying load:', error)
-    return NextResponse.json(
-      { error: 'Failed to deny load', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
