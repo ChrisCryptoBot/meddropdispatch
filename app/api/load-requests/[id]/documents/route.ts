@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { createHash } from 'crypto'
+import { createErrorResponse, withErrorHandling, ValidationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/load-requests/[id]/documents
@@ -11,9 +13,16 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply stricter rate limiting for upload routes
+    try {
+      rateLimit(RATE_LIMITS.upload)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const formData = await request.formData()
+    const formData = await req.formData()
     
     const file = formData.get('file') as File
     const documentType = formData.get('type') as string
@@ -21,10 +30,7 @@ export async function POST(
     const uploadedBy = formData.get('uploadedBy') as string // 'driver' or 'shipper'
 
     if (!file || !documentType || !title) {
-      return NextResponse.json(
-        { error: 'File, type, and title are required' },
-        { status: 400 }
-      )
+      throw new ValidationError('File, type, and title are required')
     }
 
     // Validate file size (max 10MB)

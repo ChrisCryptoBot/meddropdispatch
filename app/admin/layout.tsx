@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import NotificationBell from '@/components/features/NotificationBell'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function AdminLayout({
   children,

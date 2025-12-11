@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import MobileBottomNav from '@/components/features/MobileBottomNav'
 
 export default function DriverLayout({

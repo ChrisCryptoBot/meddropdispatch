@@ -4,14 +4,41 @@ import { generateTrackingCode } from '@/lib/tracking'
 import { sendLoadStatusEmail, sendNewLoadNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
 import type { LoadRequestFormData } from '@/lib/types'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { createLoadRequestSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/load-requests
  * Create a new load request from the public form
  */
 export async function POST(request: NextRequest) {
-  try {
-    const data: LoadRequestFormData & { shipperId?: string } = await request.json()
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const rawData = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(createLoadRequestSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = validation.data
 
     // VALIDATE REQUIRED FIELDS - Return specific errors for missing fields
     const missingFields: string[] = []
