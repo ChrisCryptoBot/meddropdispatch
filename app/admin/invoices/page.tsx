@@ -103,17 +103,17 @@ export default function AdminInvoicesPage() {
 
         if (sendResponse.ok) {
           await fetchInvoices()
-          alert('Invoice marked as sent and email sent to shipper!')
+          showToast.success('Invoice marked as sent and email sent to shipper!')
         } else {
           await fetchInvoices()
-          alert('Invoice marked as sent, but email failed to send. Please send manually.')
+          showToast.warning('Invoice marked as sent', 'But email failed to send. Please send manually.')
         }
       } else {
-        alert('Failed to update invoice')
+        showToast.error('Failed to update invoice')
       }
     } catch (error) {
       console.error('Error marking invoice as sent:', error)
-      alert('Failed to update invoice')
+      showApiError(error, 'Failed to update invoice')
     }
   }
 

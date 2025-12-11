@@ -43,6 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo-icon.png" />
       </head>
       <body className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 antialiased">
+        <ToastProvider />
         {children}
       </body>
     </html>

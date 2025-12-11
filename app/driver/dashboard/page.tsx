@@ -142,9 +142,9 @@ export default function DriverDashboardPage() {
 
       // Refresh loads
       await fetchLoads(driver.id)
-      alert('Load scheduled! Tracking is now active.')
+      showToast.success('Load scheduled!', 'Tracking is now active.')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to accept load')
+      showApiError(error, 'Failed to accept load')
     }
   }
 

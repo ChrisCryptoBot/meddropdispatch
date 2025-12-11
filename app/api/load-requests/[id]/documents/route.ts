@@ -60,12 +60,8 @@ export async function POST(
     const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension)
     
     if (!isValidType) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid file type',
-          message: `File type "${file.type || 'unknown'}" is not supported. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`
-        },
-        { status: 400 }
+      throw new ValidationError(
+        `File type "${file.type || 'unknown'}" is not supported. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`
       )
     }
 
