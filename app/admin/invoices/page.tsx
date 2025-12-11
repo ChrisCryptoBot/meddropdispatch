@@ -136,7 +136,7 @@ export default function AdminInvoicesPage() {
         setShowPaymentModal(false)
         setSelectedInvoice(null)
         setPaymentData({ paymentMethod: '', paymentReference: '' })
-        alert('Invoice marked as paid!')
+        showToast.success('Invoice marked as paid!')
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error)

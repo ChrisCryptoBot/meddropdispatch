@@ -114,7 +114,7 @@ export default function AdminLoadDetailPage() {
         throw new Error(errorData.error || 'Failed to upload document')
       }
 
-      alert('Document uploaded successfully!')
+      showToast.success('Document uploaded successfully!')
       setShowUploadModal(false)
       setUploadFile(null)
       setUploadTitle('')
@@ -122,7 +122,7 @@ export default function AdminLoadDetailPage() {
       await fetchLoad()
     } catch (error) {
       console.error('Error uploading document:', error)
-      alert(error instanceof Error ? error.message : 'Failed to upload document')
+      showApiError(error, 'Failed to upload document')
     } finally {
       setIsUploading(false)
     }
@@ -149,9 +149,9 @@ export default function AdminLoadDetailPage() {
       if (!response.ok) throw new Error('Failed to update quote')
 
       await fetchLoad()
-      alert('Quote submitted successfully!')
+      showToast.success('Quote submitted successfully!')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to submit quote')
+      showApiError(err, 'Failed to submit quote')
     } finally {
       setIsSubmittingQuote(false)
     }
@@ -182,9 +182,9 @@ export default function AdminLoadDetailPage() {
       setEventLabel('')
       setEventDescription('')
       setLocationText('')
-      alert('Status updated successfully!')
+      showToast.success('Status updated successfully!')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update status')
+      showApiError(err, 'Failed to update status')
     } finally {
       setIsUpdatingStatus(false)
     }
@@ -192,7 +192,7 @@ export default function AdminLoadDetailPage() {
 
   const handleGenerateInvoice = async () => {
     if (!load || !load.quoteAmount) {
-      alert('Load must have a quote amount to generate an invoice')
+      showToast.warning('Load must have a quote amount to generate an invoice')
       return
     }
 
@@ -220,9 +220,9 @@ export default function AdminLoadDetailPage() {
       // Refresh load data to get invoice ID
       await fetchLoad()
       
-      alert(`Invoice ${data.invoice.invoiceNumber} created successfully!`)
+      showToast.success(`Invoice ${data.invoice.invoiceNumber} created successfully!`)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to generate invoice')
+      showApiError(err, 'Failed to generate invoice')
       console.error('Error generating invoice:', err)
     } finally {
       setIsGeneratingInvoice(false)
@@ -244,9 +244,9 @@ export default function AdminLoadDetailPage() {
       if (!response.ok) throw new Error('Failed to assign driver')
 
       await fetchLoad()
-      alert('Driver assigned successfully!')
+      showToast.success('Driver assigned successfully!')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to assign driver')
+      showApiError(err, 'Failed to assign driver')
     } finally {
       setIsAssigningDriver(false)
     }

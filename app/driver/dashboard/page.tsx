@@ -174,9 +174,9 @@ export default function DriverDashboardPage() {
       setDenyLoadId(null)
       setDenyReason('OTHER')
       setDenyNotes('')
-      alert('Load denied. Load is now available for other drivers.')
+      showToast.success('Load denied', 'Load is now available for other drivers.')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to deny load')
+      showApiError(error, 'Failed to deny load')
     } finally {
       setIsSubmitting(false)
     }
@@ -184,13 +184,13 @@ export default function DriverDashboardPage() {
 
   const handleSubmitQuote = async () => {
     if (!driver || !quoteLoadId || !quoteAmount) {
-      alert('Please enter a quote amount')
+      showToast.warning('Please enter a quote amount')
       return
     }
 
     const amount = parseFloat(quoteAmount)
     if (isNaN(amount) || amount <= 0) {
-      alert('Please enter a valid quote amount')
+      showToast.warning('Please enter a valid quote amount')
       return
     }
 
@@ -217,9 +217,9 @@ export default function DriverDashboardPage() {
       setQuoteLoadId(null)
       setQuoteAmount('')
       setQuoteNotes('')
-      alert('Quote submitted successfully! Waiting for shipper approval.')
+      showToast.success('Quote submitted successfully!', 'Waiting for shipper approval.')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to submit quote')
+      showApiError(error, 'Failed to submit quote')
     } finally {
       setIsSubmitting(false)
     }

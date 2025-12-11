@@ -75,15 +75,15 @@ export default function ShipperTemplatesPage() {
 
       if (response.ok) {
         const data = await response.json()
-        alert('Load created successfully!')
+        showToast.success('Load created successfully!')
         router.push(`/shipper/loads/${data.loadRequest.id}`)
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to create load')
+        showToast.error(error.error || 'Failed to create load')
       }
     } catch (error) {
       console.error('Error creating load from template:', error)
-      alert('Failed to create load')
+      showToast.error('Failed to create load')
     }
   }
 
@@ -97,13 +97,13 @@ export default function ShipperTemplatesPage() {
 
       if (response.ok) {
         fetchTemplates()
-        alert('Template deleted successfully')
+        showToast.success('Template deleted successfully')
       } else {
-        alert('Failed to delete template')
+        showToast.error('Failed to delete template')
       }
     } catch (error) {
       console.error('Error deleting template:', error)
-      alert('Failed to delete template')
+      showToast.error('Failed to delete template')
     }
   }
 

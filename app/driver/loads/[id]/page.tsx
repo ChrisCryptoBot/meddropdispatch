@@ -156,11 +156,11 @@ export default function DriverLoadDetailPage() {
       setUploadTitle('')
       setUploadType('PROOF_OF_PICKUP')
       
-      alert('Document uploaded successfully! Shipper has been notified via email.')
+      showToast.success('Document uploaded successfully!', 'Shipper has been notified via email.')
     } catch (error) {
       console.error('Error uploading document:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload document'
-      alert(`Upload failed: ${errorMessage}\n\nPlease ensure:\n- File is PDF, JPG, PNG, or HEIC\n- File size is under 10MB\n- All required fields are filled`)
+      showToast.error('Upload failed', `${errorMessage}\n\nPlease ensure:\n- File is PDF, JPG, PNG, or HEIC\n- File size is under 10MB\n- All required fields are filled`)
     } finally {
       setIsUploading(false)
     }
@@ -186,9 +186,9 @@ export default function DriverLoadDetailPage() {
       if (!response.ok) throw new Error('Failed to update status')
 
       await fetchLoad()
-      alert('Status updated successfully!')
+      showToast.success('Status updated successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update status')
+      showApiError(error, 'Failed to update status')
     } finally {
       setIsUpdating(false)
     }
@@ -196,7 +196,7 @@ export default function DriverLoadDetailPage() {
 
   const handleSignatureSave = async (signatureData: string) => {
     if (!load || !signerName.trim()) {
-      alert('Please enter the name of the person signing')
+      showToast.warning('Please enter the name of the person signing')
       return
     }
 
@@ -251,9 +251,9 @@ export default function DriverLoadDetailPage() {
       setShowSignatureCapture(null)
       setSignerName('')
       setTemperature('')
-      alert('Signature saved successfully!')
+      showToast.success('Signature saved successfully!')
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to save signature')
+      showApiError(error, 'Failed to save signature')
     } finally {
       setIsUpdating(false)
     }
@@ -605,7 +605,7 @@ export default function DriverLoadDetailPage() {
                         const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
                         
                         if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-                          alert(`Invalid file type. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`)
+                          showToast.error('Invalid file type', 'Please upload a PDF or image file (PDF, JPG, PNG, HEIC).')
                           e.target.value = '' // Clear the input
                           setUploadFile(null)
                           return
@@ -613,7 +613,7 @@ export default function DriverLoadDetailPage() {
                         
                         // Validate file size (10MB)
                         if (file.size > 10 * 1024 * 1024) {
-                          alert(`File size is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
+                          showToast.error('File too large', `Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`)
                           e.target.value = ''
                           setUploadFile(null)
                           return

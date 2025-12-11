@@ -165,7 +165,7 @@ export default function ShipperRequestLoadPage() {
         throw new Error(errorData.error || 'Failed to save template')
       }
 
-      alert('Template saved successfully!')
+      showToast.success('Template saved successfully!')
       router.push('/shipper/templates')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save template'
