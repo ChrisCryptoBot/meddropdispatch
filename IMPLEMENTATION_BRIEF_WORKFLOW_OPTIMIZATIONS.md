@@ -2,8 +2,50 @@
 ## MED DROP - Small Team Workflow Enhancement
 
 **Date:** December 11, 2025  
-**Branch:** `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`  
+**CRITICAL: BRANCH INFORMATION**  
+**⚠️ REQUIRED BRANCH:** `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`  
+**🚨 DO NOT USE ANY OTHER BRANCH**  
+**🚨 DO NOT CREATE NEW BRANCHES**  
+**🚨 DO NOT PUSH TO MAIN/MASTER**  
+
 **Goal:** Optimize and polish workflow for ease of use for existing small team (admin + drivers + shippers)
+
+---
+
+## ⚠️ CRITICAL BRANCH REQUIREMENTS
+
+**YOU MUST:**
+1. ✅ Work ONLY on branch: `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+2. ✅ Verify branch before starting: `git branch` (should show `* claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`)
+3. ✅ Pull latest changes first: `git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+4. ✅ Push ONLY to: `git push origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+
+**YOU MUST NOT:**
+1. ❌ Create new branches
+2. ❌ Switch to other branches
+3. ❌ Push to `main` or `master`
+4. ❌ Push to any branch other than `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+5. ❌ Work on any branch without verifying first
+
+**VERIFICATION COMMANDS:**
+```bash
+# Check current branch
+git branch
+
+# Should output:
+# * claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# If not on correct branch, switch:
+git checkout claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# Pull latest changes
+git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# After making changes, push to correct branch:
+git push origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+```
+
+**IF YOU PUSH TO THE WRONG BRANCH, IT WILL CAUSE CORRUPTION AND DATA LOSS.**
 
 ---
 
@@ -13,6 +55,47 @@ This implementation focuses on optimizing the existing workflow for a small team
 - **Admin:** Faster response to quote requests, better visibility, less manual work
 - **Drivers:** Better mobile experience, clearer workflow, easier status updates
 - **Shippers:** Self-service capabilities, better communication, easier re-booking
+
+---
+
+## 🔄 Git Workflow (MANDATORY)
+
+**Before starting ANY work:**
+```bash
+# 1. Verify you're on the correct branch
+git branch
+# Must show: * claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# 2. If not, switch to correct branch
+git checkout claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# 3. Pull latest changes
+git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# 4. Verify you have latest code
+git log --oneline -5
+```
+
+**After making changes:**
+```bash
+# 1. Stage all changes
+git add -A
+
+# 2. Commit with descriptive message
+git commit -m "Implement [Feature Name] - Phase [X]"
+
+# 3. Push to CORRECT branch ONLY
+git push origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF
+
+# 4. Verify push succeeded
+git log --oneline -1
+```
+
+**NEVER run:**
+- `git push origin main`
+- `git push origin master`
+- `git checkout -b new-branch-name`
+- `git push origin any-other-branch`
 
 ---
 
@@ -662,6 +745,31 @@ model LoadNote {
 - Keep UI simple and intuitive
 - Focus on speed and efficiency
 - Test thoroughly before pushing to main branch
+
+---
+
+---
+
+## 🚨 FINAL REMINDER: BRANCH SAFETY
+
+**BEFORE YOU START CODING:**
+1. ✅ Run `git branch` - verify you're on `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+2. ✅ Run `git pull origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF` - get latest code
+3. ✅ Verify you can see this file: `IMPLEMENTATION_BRIEF_WORKFLOW_OPTIMIZATIONS.md`
+
+**BEFORE YOU PUSH:**
+1. ✅ Run `git branch` - verify you're still on `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+2. ✅ Run `git status` - review what you're about to push
+3. ✅ Run `git push origin claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF` - ONLY this command
+
+**IF YOU'RE UNSURE:**
+- STOP
+- Check `git branch` output
+- Verify branch name matches exactly: `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`
+- Do NOT proceed until you're 100% certain
+
+**CORRECT BRANCH:** `claude/build-shipperbridge-portal-01Y9eA9nJsDkqCrrkAk8CXoF`  
+**NO OTHER BRANCH IS ACCEPTABLE.**
 
 ---
 
