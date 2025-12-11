@@ -1,9 +1,11 @@
 'use client'
 
+// Shipper Invoices Page
+// View and manage invoices
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatDate, formatCurrency } from '@/lib/utils'
 
 interface Invoice {
   id: string
@@ -14,31 +16,17 @@ interface Invoice {
   tax: number
   total: number
   status: string
+  sentAt: string | null
   paidAt: string | null
-  paymentMethod: string | null
   loadRequests: Array<{
+    id: string
     publicTrackingCode: string
   }>
 }
 
-const INVOICE_STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700 border-gray-300',
-  SENT: 'bg-blue-100 text-blue-700 border-blue-300',
-  PAID: 'bg-green-100 text-green-700 border-green-300',
-  OVERDUE: 'bg-red-100 text-red-700 border-red-300',
-  CANCELLED: 'bg-gray-100 text-gray-500 border-gray-300',
-}
-
-const INVOICE_STATUS_LABELS: Record<string, string> = {
-  DRAFT: 'Draft',
-  SENT: 'Sent',
-  PAID: 'Paid',
-  OVERDUE: 'Overdue',
-  CANCELLED: 'Cancelled',
-}
-
 export default function ShipperInvoicesPage() {
   const router = useRouter()
+  const [shipper, setShipper] = useState<any>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
@@ -49,18 +37,23 @@ export default function ShipperInvoicesPage() {
       router.push('/shipper/login')
       return
     }
+    setShipper(JSON.parse(shipperData))
+    fetchInvoices()
+  }, [router, filter])
 
-    const parsedShipper = JSON.parse(shipperData)
-    fetchInvoices(parsedShipper.id)
-  }, [router])
-
-  const fetchInvoices = async (shipperId: string) => {
+  const fetchInvoices = async () => {
     try {
-      const response = await fetch(`/api/invoices?shipperId=${shipperId}`)
-      if (!response.ok) throw new Error('Failed to fetch invoices')
+      setIsLoading(true)
+      const shipperData = localStorage.getItem('shipper')
+      if (!shipperData) return
 
-      const data = await response.json()
-      setInvoices(data.invoices || [])
+      const shipper = JSON.parse(shipperData)
+      const statusParam = filter !== 'all' ? `&status=${filter}` : ''
+      const response = await fetch(`/api/invoices?shipperId=${shipper.id}${statusParam}`)
+      if (response.ok) {
+        const data = await response.json()
+        setInvoices(data.invoices || [])
+      }
     } catch (error) {
       console.error('Error fetching invoices:', error)
     } finally {
@@ -68,163 +61,173 @@ export default function ShipperInvoicesPage() {
     }
   }
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    if (filter === 'all') return true
-    if (filter === 'outstanding') return invoice.status === 'SENT' || invoice.status === 'OVERDUE'
-    if (filter === 'paid') return invoice.status === 'PAID'
-    return invoice.status === filter
-  })
-
-  const stats = {
-    total: invoices.length,
-    outstanding: invoices.filter((i) => i.status === 'SENT' || i.status === 'OVERDUE').length,
-    paid: invoices.filter((i) => i.status === 'PAID').length,
-    overdue: invoices.filter((i) => i.status === 'OVERDUE').length,
-    totalOutstanding: invoices
-      .filter((i) => i.status === 'SENT' || i.status === 'OVERDUE')
-      .reduce((sum, i) => sum + i.total, 0),
+  const downloadPDF = async (invoiceId: string, invoiceNumber: string) => {
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/pdf`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `invoice-${invoiceNumber}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error)
+      alert('Failed to download invoice')
+    }
   }
 
-  const downloadPDF = (invoiceId: string, invoiceNumber: string) => {
-    window.open(`/api/invoices/${invoiceId}/pdf`, '_blank')
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'SENT':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'OVERDUE':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'DRAFT':
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
   }
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading invoices...</p>
-          </div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading invoices...</p>
         </div>
       </div>
     )
   }
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    if (filter === 'all') return true
+    return invoice.status === filter
+  })
+
+  const stats = {
+    total: invoices.length,
+    paid: invoices.filter((i) => i.status === 'PAID').length,
+    pending: invoices.filter((i) => ['DRAFT', 'SENT'].includes(i.status)).length,
+    overdue: invoices.filter((i) => i.status === 'OVERDUE').length,
+    totalAmount: invoices.reduce((sum, i) => sum + i.total, 0),
+    paidAmount: invoices.filter((i) => i.status === 'PAID').reduce((sum, i) => sum + i.total, 0),
+  }
+
   return (
     <div className="p-8">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Invoices</h1>
         <p className="text-gray-600">View and download your invoices</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="glass rounded-xl p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="glass p-6 rounded-xl">
           <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</div>
           <div className="text-sm text-gray-600">Total Invoices</div>
         </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-blue-600 mb-1">{stats.outstanding}</div>
-          <div className="text-sm text-gray-600">Outstanding</div>
-        </div>
-        <div className="glass rounded-xl p-6">
+        <div className="glass p-6 rounded-xl">
           <div className="text-3xl font-bold text-green-600 mb-1">{stats.paid}</div>
           <div className="text-sm text-gray-600">Paid</div>
         </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-red-600 mb-1">{formatCurrency(stats.totalOutstanding)}</div>
-          <div className="text-sm text-gray-600">Outstanding Amount</div>
+        <div className="glass p-6 rounded-xl">
+          <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pending}</div>
+          <div className="text-sm text-gray-600">Pending</div>
+        </div>
+        <div className="glass p-6 rounded-xl">
+          <div className="text-3xl font-bold text-red-600 mb-1">{stats.overdue}</div>
+          <div className="text-sm text-gray-600">Overdue</div>
+        </div>
+        <div className="glass p-6 rounded-xl">
+          <div className="text-3xl font-bold text-blue-600 mb-1">
+            ${stats.totalAmount.toFixed(2)}
+          </div>
+          <div className="text-sm text-gray-600">Total Amount</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'outstanding', label: 'Outstanding' },
-          { key: 'paid', label: 'Paid' },
-          { key: 'SENT', label: 'Sent' },
-          { key: 'OVERDUE', label: 'Overdue' },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-              filter === key
-                ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                : 'glass text-gray-700 hover:bg-white/60'
-            }`}
+      <div className="glass p-4 rounded-xl mb-6">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">Filter:</label>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            {label}
-          </button>
-        ))}
+            <option value="all">All</option>
+            <option value="DRAFT">Draft</option>
+            <option value="SENT">Sent</option>
+            <option value="PAID">Paid</option>
+            <option value="OVERDUE">Overdue</option>
+          </select>
+        </div>
       </div>
 
       {/* Invoices List */}
       {filteredInvoices.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
+        <div className="glass p-12 rounded-2xl text-center">
           <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
+            className="w-16 h-16 mx-auto mb-4 text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No invoices found</h3>
-          <p className="text-gray-600">
-            {filter === 'all'
-              ? 'Invoices will appear here after loads are delivered and invoiced'
-              : 'No invoices match this filter'}
-          </p>
+          <p className="text-gray-600 text-lg mb-2">No invoices found</p>
+          <p className="text-gray-500 text-sm">Invoices will appear here once loads are completed</p>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredInvoices.map((invoice) => (
-            <div key={invoice.id} className="glass rounded-xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg">{invoice.invoiceNumber}</h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                        INVOICE_STATUS_COLORS[invoice.status] || INVOICE_STATUS_COLORS.DRAFT
-                      }`}
-                    >
-                      {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
+            <div key={invoice.id} className="glass p-6 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-2">
+                    <h3 className="text-xl font-bold text-gray-900">{invoice.invoiceNumber}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(invoice.status)}`}>
+                      {invoice.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Invoice Date: {formatDate(invoice.invoiceDate)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Due Date: {formatDate(invoice.dueDate)}
-                  </p>
-                  {invoice.paidAt && (
-                    <p className="text-sm text-green-600 mt-1">
-                      Paid: {formatDate(invoice.paidAt)}
-                      {invoice.paymentMethod && ` via ${invoice.paymentMethod}`}
-                    </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Date:</span> {new Date(invoice.invoiceDate).toLocaleDateString()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Due:</span> {new Date(invoice.dueDate).toLocaleDateString()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Loads:</span> {invoice.loadRequests.length}
+                    </div>
+                    <div>
+                      <span className="font-medium">Total:</span> <span className="font-bold text-gray-900">${invoice.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  {invoice.loadRequests.length > 0 && (
+                    <div className="mt-3 text-sm text-gray-500">
+                      Tracking Codes: {invoice.loadRequests.map((l) => l.publicTrackingCode).join(', ')}
+                    </div>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    {formatCurrency(invoice.total)}
-                  </div>
+                <div className="flex items-center gap-3 ml-6">
                   <button
                     onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
-                    className="text-sm text-slate-600 hover:text-slate-700 font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   >
                     Download PDF
                   </button>
                 </div>
               </div>
-
-              {/* Loads included in invoice */}
-              {invoice.loadRequests.length > 0 && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
-                    Loads: {invoice.loadRequests.map((l) => l.publicTrackingCode).join(', ')}
-                  </p>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -232,4 +235,3 @@ export default function ShipperInvoicesPage() {
     </div>
   )
 }
-

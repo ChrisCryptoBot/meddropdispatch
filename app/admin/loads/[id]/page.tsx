@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS } from '@/lib/constants'
 import type { LoadStatus } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
+import LoadNotes from '@/components/features/LoadNotes'
 
 type LoadData = any // We'll get this from the API
 
@@ -42,6 +43,11 @@ export default function AdminLoadDetailPage() {
     if (params.id) {
       fetchLoad()
       fetchDrivers()
+    }
+    // Get admin user info
+    const adminData = localStorage.getItem('admin')
+    if (adminData) {
+      setAdminUser(JSON.parse(adminData))
     }
   }, [params.id])
 
@@ -654,6 +660,17 @@ export default function AdminLoadDetailPage() {
                 {isUpdatingStatus ? 'Updating...' : 'Update Status'}
               </button>
             </form>
+          </div>
+
+          {/* Notes */}
+          <div className="glass p-6 rounded-2xl">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Notes</h3>
+            <LoadNotes
+              loadRequestId={load.id}
+              currentUserId={adminUser?.id || 'admin'}
+              currentUserType="ADMIN"
+              canEdit={true}
+            />
           </div>
 
           {/* Documents */}

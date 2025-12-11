@@ -1,5 +1,11 @@
+// Single Invoice API Route
+// GET: Get invoice details
+// PATCH: Update invoice (e.g., mark as paid)
+// DELETE: Delete invoice (soft delete)
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { generateInvoicePDF, sendInvoiceEmail } from '@/lib/invoicing'
 
 /**
  * GET /api/invoices/[id]
@@ -15,34 +21,11 @@ export async function GET(
     const invoice = await prisma.invoice.findUnique({
       where: { id },
       include: {
-        shipper: {
-          select: {
-            id: true,
-            companyName: true,
-            email: true,
-            contactName: true,
-            phone: true,
-            billingContactName: true,
-            billingContactEmail: true,
-            billingAddressLine1: true,
-            billingAddressLine2: true,
-            billingCity: true,
-            billingState: true,
-            billingPostalCode: true,
-            paymentTerms: true,
-          },
-        },
+        shipper: true,
         loadRequests: {
           include: {
             pickupFacility: true,
             dropoffFacility: true,
-            driver: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
           },
         },
       },
@@ -55,11 +38,11 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ invoice })
+    return NextResponse.json(invoice)
   } catch (error) {
     console.error('Error fetching invoice:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch invoice', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to fetch invoice' },
       { status: 500 }
     )
   }
@@ -67,7 +50,7 @@ export async function GET(
 
 /**
  * PATCH /api/invoices/[id]
- * Update invoice (mark as sent, paid, etc.)
+ * Update invoice (e.g., mark as paid, update status)
  */
 export async function PATCH(
   request: NextRequest,
@@ -77,63 +60,47 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    const {
-      status,
-      sentAt,
-      paidAt,
-      paymentMethod,
-      paymentReference,
-      notes,
-    } = body
-
-    const updateData: any = {}
-
-    if (status !== undefined) {
-      updateData.status = status
-      
-      // Auto-set timestamps based on status
-      if (status === 'SENT' && !sentAt) {
-        updateData.sentAt = new Date()
-      }
-      if (status === 'PAID' && !paidAt) {
-        updateData.paidAt = new Date()
-      }
-    }
-    if (sentAt !== undefined) updateData.sentAt = sentAt ? new Date(sentAt) : null
-    if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : null
-    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod || null
-    if (paymentReference !== undefined) updateData.paymentReference = paymentReference || null
-    if (notes !== undefined) updateData.notes = notes || null
-
     const invoice = await prisma.invoice.update({
       where: { id },
-      data: updateData,
+      data: body,
       include: {
-        shipper: {
-          select: {
-            id: true,
-            companyName: true,
-            email: true,
-            billingContactEmail: true,
-            paymentTerms: true,
-          },
-        },
-        loadRequests: {
-          select: {
-            id: true,
-            publicTrackingCode: true,
-          },
-        },
+        shipper: true,
+        loadRequests: true,
       },
     })
 
-    return NextResponse.json({ invoice })
+    return NextResponse.json(invoice)
   } catch (error) {
     console.error('Error updating invoice:', error)
     return NextResponse.json(
-      { error: 'Failed to update invoice', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to update invoice' },
       { status: 500 }
     )
   }
 }
 
+/**
+ * DELETE /api/invoices/[id]
+ * Delete invoice (soft delete by setting status to CANCELLED)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const invoice = await prisma.invoice.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+    })
+
+    return NextResponse.json({ success: true, invoice })
+  } catch (error) {
+    console.error('Error deleting invoice:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete invoice' },
+      { status: 500 }
+    )
+  }
+}

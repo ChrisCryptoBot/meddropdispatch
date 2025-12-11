@@ -10,6 +10,7 @@ import {
   sendDriverEnRouteSMS,
   sendDeliveryCompleteSMS,
 } from '@/lib/sms'
+import { autoGenerateInvoiceForLoad } from '@/lib/invoicing'
 
 /**
  * PATCH /api/load-requests/[id]/status
@@ -95,6 +96,15 @@ export async function PATCH(
           isLocked: true,
           lockedAt: new Date(),
         }
+      })
+    }
+
+    // AUTO-INVOICE: Generate invoice when load is marked as COMPLETED
+    if (data.status === 'COMPLETED' && !loadRequest.invoiceId) {
+      // Run asynchronously to avoid blocking the status update
+      autoGenerateInvoiceForLoad(id).catch((error) => {
+        console.error('Error auto-generating invoice:', error)
+        // Don't fail the status update if invoice generation fails
       })
     }
 
