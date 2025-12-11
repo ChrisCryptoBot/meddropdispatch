@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
-import SignatureCapture from '@/components/SignatureCapture'
+import SignatureCapture from '@/components/features/SignatureCapture'
 
 interface Load {
   id: string

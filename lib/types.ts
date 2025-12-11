@@ -10,7 +10,8 @@ import {
 } from '@prisma/client'
 
 // Type definitions (enums converted to strings for SQLite compatibility)
-export type LoadStatus = 
+export type LoadStatus =
+  | 'QUOTE_REQUESTED' // Email-based quote request (passive notification system)
   | 'REQUESTED'      // Initial status - shipper submitted scheduling request (no tracking yet)
   | 'SCHEDULED'      // Load scheduled after phone call agreement (tracking starts here)
   | 'EN_ROUTE'       // Driver en route to pickup
@@ -113,4 +114,63 @@ export interface StatusUpdateData {
   locationText?: string
   quoteAmount?: number
   quoteNotes?: string
+}
+
+// Email-based notification system types
+export type LoadSource = 'EMAIL' | 'WEB_FORM' | 'INTERNAL'
+
+export interface ParsedEmailData {
+  from: string
+  subject: string
+  body: string
+  pickupAddress?: string
+  dropoffAddress?: string
+  description?: string
+  shipperName?: string
+  shipperCompany?: string
+  shipperPhone?: string
+}
+
+export interface GeocodedAddress {
+  formattedAddress: string
+  latitude: number
+  longitude: number
+  city: string
+  state: string
+  postalCode: string
+}
+
+export interface DistanceCalculation {
+  distance: number // miles
+  duration: number // minutes
+  success: boolean
+  error?: string
+}
+
+export interface CalculatedRate {
+  distance: number
+  time: number
+  suggestedRateMin: number
+  suggestedRateMax: number
+  breakdown: {
+    baseRate: number
+    distanceRate: number
+    serviceMultiplier: number
+    total: number
+  }
+}
+
+export interface QuoteRequest {
+  id: string
+  trackingCode: string
+  shipperName: string
+  shipperEmail: string
+  shipperPhone?: string
+  pickupAddress: string
+  dropoffAddress: string
+  distance?: number
+  suggestedRate?: { min: number; max: number }
+  emailSubject?: string
+  createdAt: Date
+  status: LoadStatus
 }

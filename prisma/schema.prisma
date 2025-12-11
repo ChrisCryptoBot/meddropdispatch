@@ -19,11 +19,11 @@ datasource db {
 // ServiceType: STAT, SAME_DAY, SCHEDULED_ROUTE, OVERFLOW, GOVERNMENT
 // SpecimenCategory: UN3373_CATEGORY_B, NON_SPECIMEN_MEDICAL, PHARMACEUTICAL_NON_CONTROLLED, OTHER
 // TemperatureRequirement: AMBIENT, REFRIGERATED, FROZEN, OTHER
-// LoadStatus: REQUESTED, ACCEPTED, SCHEDULED, EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED, DENIED
-// Scheduling system: REQUESTED (initial) → ACCEPTED (after phone call) → SCHEDULED → PICKED_UP → IN_TRANSIT → DELIVERED → COMPLETED
+// LoadStatus: QUOTE_REQUESTED, REQUESTED, ACCEPTED, SCHEDULED, EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED, DENIED
+// Scheduling system: QUOTE_REQUESTED (email-based) → REQUESTED (initial) → ACCEPTED (after phone call) → SCHEDULED → PICKED_UP → IN_TRANSIT → DELIVERED → COMPLETED
 // OR: REQUESTED → DENIED (if doesn't fit schedule)
 // PreferredContactMethod: PHONE, EMAIL
-// CreatedVia: WEB_FORM, INTERNAL
+// CreatedVia: EMAIL, WEB_FORM, INTERNAL
 // TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, ARRIVED_AT_DESTINATION, DELIVERED, PAPERWORK_COMPLETED, CANCELLED, DRIVER_DENIED
 // DocumentType: PROOF_OF_PICKUP, PROOF_OF_DELIVERY, BILL_OF_LADING, OTHER
 // UserRole: ADMIN, DISPATCHER, VIEW_ONLY
@@ -196,6 +196,15 @@ model LoadRequest {
   cancelledById String? // User/Shipper/Driver ID who cancelled
   cancelledAt DateTime? // When load was cancelled
   cancellationBillingRule String? // Billing rule: "BILLABLE", "PARTIAL", "NOT_BILLABLE"
+
+  // Email-Based Quote Request Fields (for passive notification system)
+  rawEmailContent        String? // Original email body content
+  emailSubject           String? // Email subject line
+  emailFrom              String? // Sender email address
+  autoCalculatedDistance Float?  // Auto-calculated distance in miles
+  autoCalculatedTime     Int?    // Auto-calculated time in minutes
+  suggestedRateMin       Float?  // Minimum suggested rate (USD)
+  suggestedRateMax       Float?  // Maximum suggested rate (USD)
 
   // Metadata
   createdVia String   @default("WEB_FORM") // CreatedVia enum

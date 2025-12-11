@@ -615,7 +615,6 @@ export default function RequestLoadPage() {
                   min="0"
                   step="0.1"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="2.5"
                 />
               </div>
 

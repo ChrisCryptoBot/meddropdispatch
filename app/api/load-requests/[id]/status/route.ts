@@ -172,6 +172,7 @@ export async function PATCH(
  */
 function getEventCodeForStatus(status: LoadStatus): TrackingEventCode {
   const mapping: Record<LoadStatus, TrackingEventCode> = {
+    QUOTE_REQUESTED: 'REQUEST_RECEIVED',
     REQUESTED: 'REQUEST_RECEIVED',
     SCHEDULED: 'SCHEDULED',
     EN_ROUTE: 'EN_ROUTE_PICKUP',

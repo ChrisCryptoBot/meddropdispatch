@@ -643,3 +643,194 @@ Medical Courier Services
     })
   }
 }
+
+/**
+ * Parse incoming email webhook data from Resend
+ * Resend webhook format: https://resend.com/docs/api-reference/webhooks
+ */
+export function parseIncomingEmailWebhook(webhookData: any): {
+  from: string
+  subject: string
+  body: string
+} | null {
+  try {
+    // Resend webhook data structure
+    const { from, subject, text, html } = webhookData
+
+    if (!from || !subject) {
+      console.error('Invalid webhook data: missing from or subject')
+      return null
+    }
+
+    // Prefer plain text over HTML
+    const body = text || stripHtmlTags(html || '')
+
+    return {
+      from,
+      subject,
+      body,
+    }
+  } catch (error) {
+    console.error('Error parsing webhook data:', error)
+    return null
+  }
+}
+
+/**
+ * Strip HTML tags from email content
+ */
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove style tags
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove script tags
+    .replace(/<[^>]+>/g, '') // Remove all HTML tags
+    .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
+    .replace(/&amp;/g, '&') // Replace &amp; with &
+    .replace(/&lt;/g, '<') // Replace &lt; with <
+    .replace(/&gt;/g, '>') // Replace &gt; with >
+    .replace(/&quot;/g, '"') // Replace &quot; with "
+    .trim()
+}
+
+/**
+ * Send confirmation email to shipper after quote request is created
+ */
+export async function sendQuoteRequestConfirmation({
+  to,
+  trackingCode,
+  companyName,
+  pickupAddress,
+  dropoffAddress,
+  trackingUrl,
+}: {
+  to: string
+  trackingCode: string
+  companyName?: string
+  pickupAddress?: string
+  dropoffAddress?: string
+  trackingUrl: string
+}): Promise<void> {
+  const subject = `MED DROP - Quote Request Received - ${trackingCode}`
+
+  const text = `
+Hello${companyName ? ` ${companyName}` : ''},
+
+Thank you for contacting MED DROP. We've received your quote request.
+
+Tracking Code: ${trackingCode}
+${pickupAddress ? `Pickup: ${pickupAddress}` : ''}
+${dropoffAddress ? `Delivery: ${dropoffAddress}` : ''}
+
+Our team will review your request and contact you shortly with a quote.
+
+Track your request: ${trackingUrl}
+
+Thank you for choosing MED DROP for your medical courier needs.
+
+---
+MED DROP
+Medical Courier Services
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
+    .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+    .tracking-code { font-size: 24px; font-weight: bold; margin: 10px 0; color: #0ea5e9; }
+    .info-box { background: #f0f9ff; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0ea5e9; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MED DROP</h1>
+      <p>Medical Courier Services</p>
+    </div>
+    <div class="content">
+      <h2>Quote Request Received</h2>
+      <p>Hello${companyName ? ` ${companyName}` : ''},</p>
+      <p>Thank you for contacting MED DROP. We've received your quote request.</p>
+
+      <div class="tracking-code">${trackingCode}</div>
+
+      ${
+        pickupAddress || dropoffAddress
+          ? `
+      <div class="info-box">
+        ${pickupAddress ? `<strong>Pickup:</strong> ${pickupAddress}<br>` : ''}
+        ${dropoffAddress ? `<strong>Delivery:</strong> ${dropoffAddress}` : ''}
+      </div>
+      `
+          : ''
+      }
+
+      <p><strong>Our team will review your request and contact you shortly with a quote.</strong></p>
+
+      <a href="${trackingUrl}" class="button">Track Your Request</a>
+
+      <p>Thank you for choosing MED DROP for your medical courier needs.</p>
+
+      <div class="footer">
+        <p>MED DROP - Professional Medical Courier Services</p>
+        <p>This is an automated notification. Please do not reply to this email.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
+ * Send notification to admin about new quote request
+ */
+export async function sendAdminQuoteRequestNotification({
+  trackingCode,
+  shipperName,
+  shipperEmail,
+  pickupAddress,
+  dropoffAddress,
+  distance,
+  suggestedRate,
+  adminUrl,
+}: {
+  trackingCode: string
+  shipperName?: string
+  shipperEmail: string
+  pickupAddress?: string
+  dropoffAddress?: string
+  distance?: number
+  suggestedRate?: { min: number; max: number }
+  adminUrl: string
+}): Promise<void> {
+  const internalEmail =
+    process.env.INTERNAL_NOTIFICATION_EMAIL || 'dispatch@meddrop.com'
+
+  const subject = `🔔 New Quote Request: ${trackingCode}`
+
+  const text = `
+New quote request received via email!
+
+Tracking Code: ${trackingCode}
+Shipper: ${shipperName || 'Unknown'}
+Email: ${shipperEmail}
+${pickupAddress ? `Pickup: ${pickupAddress}` : ''}
+${dropoffAddress ? `Delivery: ${dropoffAddress}` : ''}
+${distance ? `Distance: ${distance} miles` : ''}
+${suggestedRate ? `Suggested Rate: $${suggestedRate.min.toFixed(2)} - $${suggestedRate.max.toFixed(2)}` : ''}
+
+Review and respond: ${adminUrl}
+  `.trim()
+
+  await sendEmail({ to: internalEmail, subject, text })
+}

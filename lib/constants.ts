@@ -5,6 +5,7 @@ import type { LoadStatus, TrackingEventCode, DriverDenialReason } from './types'
 
 // Status display configurations
 export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
+  QUOTE_REQUESTED: 'Quote Requested',
   REQUESTED: 'Scheduling Request',
   SCHEDULED: 'Scheduled',
   EN_ROUTE: 'En Route to Pickup',
@@ -16,6 +17,7 @@ export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
 }
 
 export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
+  QUOTE_REQUESTED: 'bg-amber-100 text-amber-800',
   REQUESTED: 'bg-blue-100 text-blue-800',
   SCHEDULED: 'bg-cyan-100 text-cyan-800',
   EN_ROUTE: 'bg-purple-100 text-purple-800',
@@ -138,4 +140,22 @@ export const AUTH_ROUTES = [
   '/shipper/signup',
   '/admin/login',
 ]
+
+// Rate calculation constants for email-based quote requests
+export const RATE_CONFIG = {
+  BASE_RATE: parseFloat(process.env.BASE_RATE || '25.00'),
+  PER_MILE_RATE: parseFloat(process.env.PER_MILE_RATE || '1.50'),
+  MINIMUM_RATE: parseFloat(process.env.MINIMUM_RATE || '30.00'),
+  SERVICE_MULTIPLIERS: {
+    STAT: 1.5,
+    SAME_DAY: 1.2,
+    SCHEDULED_ROUTE: 1.0,
+    OVERFLOW: 1.1,
+    GOVERNMENT: 1.0,
+  },
+  RATE_RANGE_MIN_PERCENT: 0.95, // 5% below suggested rate
+  RATE_RANGE_MAX_PERCENT: 1.10, // 10% above suggested rate
+}
+
+
 

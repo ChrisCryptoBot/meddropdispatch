@@ -78,3 +78,5 @@ export function useAuth(options: UseAuthOptions) {
   return { user, isLoading, isAuthenticated: !!user }
 }
 
+
+

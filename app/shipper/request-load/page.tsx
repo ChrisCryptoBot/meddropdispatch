@@ -167,7 +167,6 @@ export default function ShipperRequestLoadPage() {
                   name="clientType"
                   required
                   value={shipper.clientType || ''}
-                  readOnly
                   disabled
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100/80 cursor-not-allowed"
                 >

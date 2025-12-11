@@ -529,8 +529,8 @@ export async function POST(request: NextRequest) {
         specimenCategory: data.specimenCategory as any,
         temperatureRequirement: data.temperatureRequirement as any,
         estimatedContainers: data.estimatedContainers ? parseInt(data.estimatedContainers.toString()) : null,
-        // Convert weight from pounds (lb) to kilograms (kg) for storage
-        estimatedWeightKg: data.estimatedWeightLbs ? parseFloat(data.estimatedWeightLbs.toString()) * 0.453592 : null,
+        // Weight is already in kg from the form
+        estimatedWeightKg: data.estimatedWeightKg ? parseFloat(data.estimatedWeightKg.toString()) : null,
         declaredValue: data.declaredValue ? parseFloat(data.declaredValue.toString()) : null,
         readyTime: data.readyTime ? new Date(data.readyTime) : null,
         deliveryDeadline: data.deliveryDeadline ? new Date(data.deliveryDeadline) : null,
