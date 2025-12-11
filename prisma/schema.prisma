@@ -414,8 +414,33 @@ model Driver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  payouts Payout[]
+
   @@index([email])
   @@index([status])
+}
+
+// Payout: Driver payout history
+model Payout {
+  id            String   @id @default(cuid())
+  driverId      String
+  amount        Float
+  status        String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+  paymentMethod String   // ACH, CHECK
+  payoutDate    DateTime // Scheduled payout date
+  processedAt   DateTime? // When payout was actually processed
+  reference     String? // Check number, ACH confirmation, transaction ID
+  notes         String? // Internal notes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([status])
+  @@index([payoutDate])
 }
 
 // User: Internal staff for admin access

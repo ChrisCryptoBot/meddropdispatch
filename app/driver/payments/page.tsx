@@ -7,11 +7,13 @@ import { showToast, showApiError } from '@/lib/toast'
 
 interface PayoutHistoryItem {
   id: string
-  date: string
+  payoutDate: string
   amount: number
-  method: string
+  paymentMethod: string
   status: string
-  reference?: string
+  reference?: string | null
+  processedAt?: string | null
+  notes?: string | null
 }
 
 export default function DriverPaymentsPage() {
@@ -39,8 +41,8 @@ export default function DriverPaymentsPage() {
     w9Submitted: false,
   })
 
-  // Mock payout history - in production, this would come from API
-  const [payoutHistory] = useState<PayoutHistoryItem[]>([])
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryItem[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -53,7 +55,23 @@ export default function DriverPaymentsPage() {
     setDriver(parsed)
     
     fetchPaymentSettings(parsed.id)
+    fetchPayoutHistory(parsed.id)
   }, [router])
+
+  const fetchPayoutHistory = async (driverId: string) => {
+    setIsLoadingHistory(true)
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/payouts`)
+      if (response.ok) {
+        const data = await response.json()
+        setPayoutHistory(data.payouts || [])
+      }
+    } catch (error) {
+      console.error('Error fetching payout history:', error)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
 
   const fetchPaymentSettings = async (driverId: string) => {
     try {
@@ -425,22 +443,50 @@ export default function DriverPaymentsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {payoutHistory.map((payout) => (
-                <div key={payout.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-900">{formatCurrency(payout.amount)}</p>
-                      <p className="text-sm text-gray-600">{formatDate(payout.date)}</p>
-                      <p className="text-xs text-gray-500">via {payout.method}</p>
+              {isLoadingHistory ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading payout history...</p>
+                </div>
+              ) : (
+                payoutHistory.map((payout) => (
+                  <div key={payout.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <p className="font-semibold text-gray-900 text-lg">{formatCurrency(payout.amount)}</p>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            payout.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                            payout.status === 'PROCESSING' ? 'bg-blue-100 text-blue-700' :
+                            payout.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                            payout.status === 'FAILED' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {payout.status}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-gray-600">
+                            Scheduled: {formatDate(payout.payoutDate)}
+                          </p>
+                          {payout.processedAt && (
+                            <p className="text-sm text-gray-600">
+                              Processed: {formatDate(payout.processedAt)}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500">via {payout.paymentMethod}</p>
+                          {payout.reference && (
+                            <p className="text-xs text-gray-500">Reference: {payout.reference}</p>
+                          )}
+                          {payout.notes && (
+                            <p className="text-xs text-gray-500 italic">{payout.notes}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        payout.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                        payout.status === 'PROCESSING' ? 'bg-blue-100 text-blue-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {payout.status}
-                      </span>
+                  </div>
+                ))
+              )}
                     </div>
                   </div>
                 </div>

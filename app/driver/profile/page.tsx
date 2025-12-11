@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface Driver {
   id: string
@@ -26,6 +27,26 @@ export default function DriverProfilePage() {
   const router = useRouter()
   const [driver, setDriver] = useState<Driver | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    licenseNumber: '',
+    licenseExpiry: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+  })
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -36,8 +57,90 @@ export default function DriverProfilePage() {
 
     const parsedDriver = JSON.parse(driverData)
     setDriver(parsedDriver)
+    setFormData({
+      firstName: parsedDriver.firstName || '',
+      lastName: parsedDriver.lastName || '',
+      email: parsedDriver.email || '',
+      phone: parsedDriver.phone || '',
+      licenseNumber: parsedDriver.licenseNumber || '',
+      licenseExpiry: parsedDriver.licenseExpiry ? new Date(parsedDriver.licenseExpiry).toISOString().split('T')[0] : '',
+      emergencyContact: parsedDriver.emergencyContact || '',
+      emergencyPhone: parsedDriver.emergencyPhone || '',
+    })
     setIsLoading(false)
   }, [router])
+
+  const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!driver) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          licenseNumber: formData.licenseNumber || null,
+          licenseExpiry: formData.licenseExpiry ? new Date(formData.licenseExpiry) : null,
+          emergencyContact: formData.emergencyContact || null,
+          emergencyPhone: formData.emergencyPhone || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update profile')
+      }
+
+      const data = await response.json()
+      setDriver(data.driver)
+      localStorage.setItem('driver', JSON.stringify(data.driver))
+      setIsEditing(false)
+      showToast.success('Profile updated successfully!')
+    } catch (error) {
+      showApiError(error, 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!driver) return
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast.error('Passwords do not match')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}/password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to change password')
+      }
+
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setIsChangingPassword(false)
+      showToast.success('Password changed successfully!')
+    } catch (error) {
+      showApiError(error, 'Failed to change password')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   if (isLoading || !driver) {
     return (

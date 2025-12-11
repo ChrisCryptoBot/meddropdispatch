@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/drivers/[id]/documents
@@ -9,9 +11,16 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id: driverId } = await params
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = new URL(req.url)
     const loadId = searchParams.get('loadId')
     const type = searchParams.get('type')
 
@@ -71,12 +80,6 @@ export async function GET(
     }))
 
     return NextResponse.json({ documents: documentsWithLoadInfo })
-  } catch (error) {
-    console.error('Error fetching driver documents:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch documents', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

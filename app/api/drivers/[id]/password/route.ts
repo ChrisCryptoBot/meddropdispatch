@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, hashPassword } from '@/lib/auth'
+import { createErrorResponse, withErrorHandling, NotFoundError, AuthenticationError, ValidationError } from '@/lib/errors'
+import { changePasswordSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * PATCH /api/drivers/[id]/password
@@ -10,23 +13,33 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: NextRequest) => {
+    // Apply stricter rate limiting for password changes
+    try {
+      rateLimit(RATE_LIMITS.auth)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
-    const { currentPassword, newPassword } = await request.json()
-
-    if (!currentPassword || !newPassword) {
+    const rawBody = await req.json()
+    
+    // Validate request body
+    const validation = await validateRequest(changePasswordSchema, rawBody)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Current password and new password are required' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
 
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'New password must be at least 8 characters long' },
-        { status: 400 }
-      )
-    }
+    const { currentPassword, newPassword } = validation.data
 
     // Get driver with password hash
     const driver = await prisma.driver.findUnique({
@@ -35,20 +48,14 @@ export async function PATCH(
     })
 
     if (!driver || !driver.passwordHash) {
-      return NextResponse.json(
-        { error: 'Driver not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Driver')
     }
 
     // Verify current password
     const isValid = await verifyPassword(currentPassword, driver.passwordHash)
 
     if (!isValid) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 401 }
-      )
+      throw new AuthenticationError('Current password is incorrect')
     }
 
     // Hash new password
@@ -63,12 +70,6 @@ export async function PATCH(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error updating password:', error)
-    return NextResponse.json(
-      { error: 'Failed to update password', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

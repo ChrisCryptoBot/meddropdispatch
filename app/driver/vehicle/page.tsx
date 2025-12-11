@@ -33,19 +33,34 @@ export default function DriverVehiclePage() {
 
   const fetchDriverDetails = async (driverId: string) => {
     try {
-      const response = await fetch(`/api/drivers/${driverId}`)
+      const response = await fetch(`/api/drivers/${driverId}/vehicle`)
       if (response.ok) {
         const data = await response.json()
-        const driverData = data.driver
-        setDriver(driverData)
+        const vehicleData = data.vehicle
         setFormData({
-          vehicleType: driverData.vehicleType || '',
-          vehicleMake: driverData.vehicleMake || '',
-          vehicleModel: driverData.vehicleModel || '',
-          vehicleYear: driverData.vehicleYear?.toString() || '',
-          vehiclePlate: driverData.vehiclePlate || '',
-          hasRefrigeration: driverData.hasRefrigeration || false,
+          vehicleType: vehicleData.vehicleType || '',
+          vehicleMake: vehicleData.vehicleMake || '',
+          vehicleModel: vehicleData.vehicleModel || '',
+          vehicleYear: vehicleData.vehicleYear?.toString() || '',
+          vehiclePlate: vehicleData.vehiclePlate || '',
+          hasRefrigeration: vehicleData.hasRefrigeration || false,
         })
+      } else {
+        // Fallback to full driver endpoint
+        const fallbackResponse = await fetch(`/api/drivers/${driverId}`)
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json()
+          const driverData = fallbackData.driver
+          setDriver(driverData)
+          setFormData({
+            vehicleType: driverData.vehicleType || '',
+            vehicleMake: driverData.vehicleMake || '',
+            vehicleModel: driverData.vehicleModel || '',
+            vehicleYear: driverData.vehicleYear?.toString() || '',
+            vehiclePlate: driverData.vehiclePlate || '',
+            hasRefrigeration: driverData.hasRefrigeration || false,
+          })
+        }
       }
     } catch (error) {
       console.error('Error fetching driver details:', error)
