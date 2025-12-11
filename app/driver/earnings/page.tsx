@@ -31,6 +31,10 @@ export default function DriverEarningsPage() {
   const [loads, setLoads] = useState<LoadEarning[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0],
+  })
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
