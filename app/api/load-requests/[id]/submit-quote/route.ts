@@ -109,27 +109,17 @@ export async function POST(
     })
 
     // Send email notification to shipper about quote submission
-    const { sendEmail } = await import('@/lib/email')
+    const { sendDriverQuoteNotification } = await import('@/lib/email')
     const trackingUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/track/${loadRequest.publicTrackingCode}`
     
-    await sendEmail({
+    await sendDriverQuoteNotification({
       to: loadRequest.shipper.email,
-      subject: `Driver Quote Submitted - ${loadRequest.publicTrackingCode}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Driver Quote Submitted</h2>
-          <p>Dear ${loadRequest.shipper.companyName},</p>
-          <p>A driver has submitted a quote for your load request <strong>${loadRequest.publicTrackingCode}</strong>.</p>
-          <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Quote Amount:</strong> $${driverQuoteAmount.toFixed(2)}</p>
-            ${driverQuoteNotes ? `<p><strong>Driver Notes:</strong> ${driverQuoteNotes}</p>` : ''}
-            <p><strong>Quote Expires:</strong> ${quoteExpiresAt ? new Date(quoteExpiresAt).toLocaleString() : '48 hours from now'}</p>
-          </div>
-          <p>Please review and accept or reject this quote in your portal.</p>
-          <p><a href="${trackingUrl}" style="display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">View Load Details</a></p>
-          <p>Thank you,<br>MED DROP</p>
-        </div>
-      `,
+      shipperName: loadRequest.shipper.companyName,
+      trackingCode: loadRequest.publicTrackingCode,
+      driverName: `${updatedLoad.driver?.firstName || ''} ${updatedLoad.driver?.lastName || ''}`.trim(),
+      quoteAmount: updatedLoad.driverQuoteAmount!,
+      quoteNotes: updatedLoad.driverQuoteNotes || '',
+      trackingUrl,
     })
 
     return NextResponse.json({
