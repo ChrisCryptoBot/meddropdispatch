@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import NotificationBell from '@/components/features/NotificationBell'
 
 export default function AdminLayout({
   children,
@@ -171,6 +172,16 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+        {/* Top Bar with Notification Bell */}
+        <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {pathname === '/admin' ? 'Dashboard' : 
+             pathname.startsWith('/admin/loads') ? 'Load Requests' :
+             pathname.startsWith('/admin/shippers') ? 'Shippers' :
+             'Admin Portal'}
+          </h2>
+          <NotificationBell />
+        </div>
         {children}
       </main>
     </div>

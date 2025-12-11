@@ -5,6 +5,11 @@ import { getTrackingUrl } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, TRACKING_EVENT_LABELS } from '@/lib/constants'
 import type { StatusUpdateData } from '@/lib/types'
 import type { LoadStatus, TrackingEventCode } from '@/lib/types'
+import {
+  sendDriverAssignedSMS,
+  sendDriverEnRouteSMS,
+  sendDeliveryCompleteSMS,
+} from '@/lib/sms'
 
 /**
  * PATCH /api/load-requests/[id]/status
@@ -150,6 +155,55 @@ export async function PATCH(
         readyTime: loadRequest.readyTime,
         deliveryDeadline: loadRequest.deliveryDeadline,
         driverPortalUrl,
+      })
+    }
+
+    // Send SMS notifications for critical status updates (if shipper has SMS enabled)
+    if (loadRequest.shipper.smsNotificationsEnabled && loadRequest.shipper.smsPhoneNumber) {
+      const shipperPhone = loadRequest.shipper.smsPhoneNumber
+
+      // Driver assigned
+      if (data.status === 'SCHEDULED' && loadRequest.driver) {
+        const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
+        await sendDriverAssignedSMS({
+          shipperPhone,
+          trackingCode: loadRequest.publicTrackingCode,
+          driverName,
+        })
+      }
+
+      // Driver en route
+      if (data.status === 'EN_ROUTE' && loadRequest.driver) {
+        const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
+        await sendDriverEnRouteSMS({
+          shipperPhone,
+          trackingCode: loadRequest.publicTrackingCode,
+          driverName,
+        })
+      }
+
+      // Delivery complete
+      if (data.status === 'DELIVERED' || data.status === 'COMPLETED') {
+        const deliveryTime = new Date().toLocaleString()
+        await sendDeliveryCompleteSMS({
+          shipperPhone,
+          trackingCode: loadRequest.publicTrackingCode,
+          deliveryTime,
+        })
+      }
+    }
+
+    // Create in-app notification for admins on critical status changes
+    const criticalStatuses: LoadStatus[] = ['DELIVERED', 'COMPLETED', 'DENIED']
+    if (criticalStatuses.includes(data.status)) {
+      await prisma.notification.create({
+        data: {
+          userId: null, // Broadcast to all admins
+          type: 'LOAD_UPDATE',
+          title: `Load ${data.status}: ${loadRequest.publicTrackingCode}`,
+          message: `${loadRequest.shipper.companyName} - ${eventLabel}`,
+          link: `${baseUrl}/admin/loads/${id}`,
+        },
       })
     }
 

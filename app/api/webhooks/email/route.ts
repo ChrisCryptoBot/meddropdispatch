@@ -12,6 +12,9 @@ import {
   sendQuoteRequestConfirmation,
   sendAdminQuoteRequestNotification,
 } from '@/lib/email'
+import {
+  sendNewQuoteRequestSMS,
+} from '@/lib/sms'
 
 /**
  * POST /api/webhooks/email
@@ -228,6 +231,34 @@ export async function POST(request: NextRequest) {
         : undefined,
       adminUrl,
     })
+
+    // Create in-app notification for admins
+    const route = parsedEmail.pickupAddress && parsedEmail.dropoffAddress
+      ? `${parsedEmail.pickupAddress} → ${parsedEmail.dropoffAddress}`
+      : 'Route to be determined'
+
+    await prisma.notification.create({
+      data: {
+        userId: null, // Broadcast to all admins
+        type: 'QUOTE_REQUEST',
+        title: `New Quote Request: ${trackingCode}`,
+        message: `${shipper.companyName} - ${route}`,
+        link: adminUrl,
+      },
+    })
+
+    // Send SMS to admin (if configured)
+    const adminPhone = process.env.ADMIN_PHONE_NUMBER
+    if (adminPhone) {
+      await sendNewQuoteRequestSMS({
+        adminPhone,
+        trackingCode,
+        shipperName: shipper.companyName,
+        route: parsedEmail.pickupAddress && parsedEmail.dropoffAddress
+          ? `${parsedEmail.pickupAddress.split(',')[0]} → ${parsedEmail.dropoffAddress.split(',')[0]}`
+          : 'Route TBD',
+      })
+    }
 
     return NextResponse.json({
       success: true,

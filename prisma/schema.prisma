@@ -61,6 +61,10 @@ model Shipper {
   billingPostalCode   String?
   stripeCustomerId    String? // Optional - only if client uses Stripe ACH
 
+  // SMS Notifications (Phase 1.2)
+  smsNotificationsEnabled Boolean @default(true)
+  smsPhoneNumber          String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -71,6 +75,23 @@ model Shipper {
 
   @@index([email])
   @@index([companyName])
+}
+
+// Notification: In-app notifications for admin users (Phase 1.1)
+// NotificationType: QUOTE_REQUEST, LOAD_UPDATE, DRIVER_DENIAL, LATE_DELIVERY, COMPLIANCE_EXPIRING, PAYMENT_RECEIVED, OTHER
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?  // Admin user ID (null = all admins)
+  type      String   // NotificationType enum
+  title     String
+  message   String
+  link      String?  // URL to relevant page
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 // Facility: Pickup or dropoff locations
