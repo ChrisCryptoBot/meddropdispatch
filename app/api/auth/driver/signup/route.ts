@@ -71,6 +71,10 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email (don't block on email failure)
     try {
+      console.log('📧 [Signup] Attempting to send welcome email to:', driver.email)
+      console.log('📧 [Signup] RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY)
+      console.log('📧 [Signup] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL)
+      
       await sendDriverWelcomeEmail({
         to: driver.email,
         firstName: driver.firstName,
@@ -80,6 +84,10 @@ export async function POST(request: NextRequest) {
       console.log('✅ Driver welcome email sent successfully to:', driver.email)
     } catch (error) {
       console.error('❌ Failed to send driver welcome email:', error)
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined,
+      })
       // Don't fail signup if email fails
     }
 

@@ -41,6 +41,27 @@
   .text-gradient {
     @apply bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent;
   }
+
+  /* Fluid typography utilities */
+  .text-fluid-4xl {
+    font-size: clamp(1.75rem, 4vw, 2.25rem); /* 28px (mobile) to 36px (desktop) */
+  }
+
+  .text-fluid-3xl {
+    font-size: clamp(1.5rem, 3.5vw, 1.875rem); /* 24px (mobile) to 30px (desktop) */
+  }
+
+  .text-fluid-2xl {
+    font-size: clamp(1.25rem, 3vw, 1.5rem); /* 20px (mobile) to 24px (desktop) */
+  }
+
+  .text-fluid-xl {
+    font-size: clamp(1.125rem, 2.5vw, 1.25rem); /* 18px (mobile) to 20px (desktop) */
+  }
+
+  .text-fluid-lg {
+    font-size: clamp(1rem, 2vw, 1.125rem); /* 16px (mobile) to 18px (desktop) */
+  }
 }
 
 /* Custom scrollbar */

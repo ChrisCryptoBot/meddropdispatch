@@ -825,6 +825,7 @@ export default function DriverLoadDetailPage() {
                     <DocumentViewButton 
                       url={doc.url}
                       title={doc.title}
+                      type={doc.type}
                     />
                     {!doc.isLocked && (
                       <button

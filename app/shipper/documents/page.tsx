@@ -207,6 +207,7 @@ export default function DocumentsPage() {
                 <DocumentViewButton 
                   url={doc.url}
                   title={doc.title}
+                  type={doc.type}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex-shrink-0 ml-4"
                 >
                   View/Download

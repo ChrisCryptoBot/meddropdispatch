@@ -277,6 +277,7 @@ export default function DriverDocumentsPage() {
                   <DocumentViewButton 
                     url={doc.url}
                     title={doc.title}
+                    type={doc.type}
                     className="px-4 py-2 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold hover:from-slate-700 hover:to-slate-800 transition-all inline-block"
                   />
                   {!doc.isLocked && (

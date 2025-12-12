@@ -729,6 +729,7 @@ export default function AdminLoadDetailPage() {
                     <DocumentViewButton 
                       url={doc.url}
                       title={doc.title}
+                      type={doc.type}
                       className="ml-3 px-3 py-1 text-sm"
                     />
                   </div>

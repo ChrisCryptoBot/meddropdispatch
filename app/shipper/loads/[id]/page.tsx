@@ -751,6 +751,7 @@ export default function ShipperLoadDetailPage() {
                       <DocumentViewButton 
                         url={doc.url}
                         title={doc.title}
+                        type={doc.type}
                       />
                     </div>
                   ))}
