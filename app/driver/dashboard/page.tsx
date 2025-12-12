@@ -272,11 +272,17 @@ export default function DriverDashboardPage() {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(load =>
         load.publicTrackingCode.toLowerCase().includes(query) ||
+        load.pickupFacility.name?.toLowerCase().includes(query) ||
         load.pickupFacility.city.toLowerCase().includes(query) ||
         load.pickupFacility.state.toLowerCase().includes(query) ||
+        load.pickupFacility.addressLine1?.toLowerCase().includes(query) ||
+        load.dropoffFacility.name?.toLowerCase().includes(query) ||
         load.dropoffFacility.city.toLowerCase().includes(query) ||
         load.dropoffFacility.state.toLowerCase().includes(query) ||
-        load.commodityDescription.toLowerCase().includes(query)
+        load.dropoffFacility.addressLine1?.toLowerCase().includes(query) ||
+        load.commodityDescription?.toLowerCase().includes(query) ||
+        load.serviceType.toLowerCase().includes(query) ||
+        (load.driver && `${load.driver.firstName} ${load.driver.lastName}`.toLowerCase().includes(query))
       )
     }
 
@@ -463,13 +469,28 @@ export default function DriverDashboardPage() {
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              type="text"
-              placeholder="Search by tracking, city, commodity..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by tracking, city, facility, commodity..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              />
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter by Status */}
@@ -478,7 +499,7 @@ export default function DriverDashboardPage() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="new">New/Requested</option>
@@ -497,7 +518,7 @@ export default function DriverDashboardPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -997,48 +1018,98 @@ export default function DriverDashboardPage() {
                 </div>
               ) : smartRoute ? (
                 <div className="space-y-4">
-                  <div className="bg-slate-50 rounded-lg p-4 mb-4">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
+                  {/* Route Summary Stats */}
+                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-6 mb-4 border border-slate-200">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                      <div className="glass p-3 rounded-lg">
                         <p className="text-2xl font-bold text-gray-900">{smartRoute.totalDistance?.toFixed(1) || 'N/A'}</p>
-                        <p className="text-sm text-gray-600">Total Miles</p>
+                        <p className="text-xs text-gray-600 mt-1">Total Miles</p>
                       </div>
-                      <div>
+                      <div className="glass p-3 rounded-lg">
                         <p className="text-2xl font-bold text-gray-900">{smartRoute.totalTime || 'N/A'}</p>
-                        <p className="text-sm text-gray-600">Total Time</p>
+                        <p className="text-xs text-gray-600 mt-1">Total Time</p>
                       </div>
-                      <div>
+                      <div className="glass p-3 rounded-lg">
                         <p className="text-2xl font-bold text-gray-900">{smartRoute.optimizedRoute?.length || 0}</p>
-                        <p className="text-sm text-gray-600">Stops</p>
+                        <p className="text-xs text-gray-600 mt-1">Total Stops</p>
+                      </div>
+                      <div className="glass p-3 rounded-lg">
+                        <p className="text-2xl font-bold text-gray-900">{smartRoute.loadCount || 0}</p>
+                        <p className="text-xs text-gray-600 mt-1">Loads</p>
+                      </div>
+                    </div>
+                    {/* Estimated Fuel Cost */}
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Estimated Fuel Cost (at $3.50/gal, 20 mpg):</span>
+                        <span className="font-semibold text-gray-900">
+                          ${((smartRoute.totalDistance || 0) / 20 * 3.5).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900">Optimized Route:</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 text-lg">Optimized Route:</h4>
+                      <button
+                        onClick={() => {
+                          // Copy route to clipboard
+                          const routeText = smartRoute.optimizedRoute?.map((stop: any, idx: number) => 
+                            `${idx + 1}. ${stop.type === 'pickup' ? 'Pickup' : 'Delivery'} - ${stop.facilityName}\n   ${stop.address}\n   ${stop.loadCode || ''}`
+                          ).join('\n\n') || ''
+                          navigator.clipboard.writeText(routeText)
+                          toast.success('Route copied to clipboard!')
+                        }}
+                        className="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-all flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Route
+                      </button>
+                    </div>
                     {smartRoute.optimizedRoute?.map((stop: any, index: number) => (
-                      <div key={index} className="glass p-4 rounded-lg">
+                      <div key={index} className="glass p-4 rounded-lg border-l-4 border-slate-300 hover:border-slate-500 transition-all">
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                          <div className={`w-10 h-10 ${stop.type === 'pickup' ? 'bg-green-600' : 'bg-blue-600'} text-white rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-lg`}>
                             {index + 1}
                           </div>
                           <div className="flex-1">
-                            <p className="font-semibold text-gray-900">{stop.type === 'pickup' ? '📍 Pickup' : '🎯 Delivery'}</p>
-                            <p className="text-sm text-gray-700">{stop.facilityName}</p>
-                            <p className="text-xs text-gray-600">{stop.address}</p>
-                            {stop.loadCode && (
-                              <p className="text-xs font-mono text-primary-600 mt-1">{stop.loadCode}</p>
-                            )}
-                            {stop.timeWindow && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {stop.timeWindow}
-                              </p>
-                            )}
-                            {stop.distanceFromPrevious && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {stop.distanceFromPrevious} mi from previous stop
-                              </p>
-                            )}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                stop.type === 'pickup' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {stop.type === 'pickup' ? '📍 PICKUP' : '🎯 DELIVERY'}
+                              </span>
+                              {stop.loadCode && (
+                                <span className="text-xs font-mono text-primary-600 font-semibold bg-primary-50 px-2 py-1 rounded">
+                                  {stop.loadCode}
+                                </span>
+                              )}
+                            </div>
+                            <p className="font-semibold text-gray-900 text-base">{stop.facilityName}</p>
+                            <p className="text-sm text-gray-700 mt-1">{stop.address}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs">
+                              {stop.timeWindow && (
+                                <span className="flex items-center gap-1 text-gray-600">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  {stop.timeWindow}
+                                </span>
+                              )}
+                              {stop.distanceFromPrevious && (
+                                <span className="flex items-center gap-1 text-gray-600">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                  </svg>
+                                  {stop.distanceFromPrevious} mi
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
