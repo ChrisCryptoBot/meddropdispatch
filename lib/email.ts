@@ -467,6 +467,336 @@ Medical Courier Services
   await sendEmail({ to, subject, text })
 }
 
+/**
+ * Send welcome email to new driver
+ */
+export async function sendDriverWelcomeEmail({
+  to,
+  firstName,
+  lastName,
+  email,
+}: {
+  to: string
+  firstName: string
+  lastName: string
+  email: string
+}) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const dashboardUrl = `${baseUrl}/driver/dashboard`
+  const loginUrl = `${baseUrl}/driver/login`
+  
+  const subject = `Welcome to MED DROP, ${firstName}`
+
+  const text = `
+Welcome to MED DROP, ${firstName}!
+
+Your driver account has been successfully created. We're excited to have you join our team of professional medical couriers.
+
+YOUR ACCOUNT DETAILS:
+- Email: ${email}
+- Name: ${firstName} ${lastName}
+
+GET STARTED:
+1. Access your driver dashboard: ${dashboardUrl}
+2. View available loads on the load board
+3. Accept loads that fit your schedule
+4. Update load status as you complete pickups and deliveries
+5. Track your earnings and completed loads
+
+KEY FEATURES:
+- Real-time load board with all available jobs
+- Smart Route optimization for multiple loads
+- Digital signature capture for proof of delivery
+- Temperature logging for refrigerated loads
+- Document upload for POD, BOL, and more
+- Earnings tracking and payout management
+
+SUPPORT:
+If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+
+We're here to help you succeed.
+
+Thank you for choosing MED DROP. Let's get started!
+
+---
+MED DROP
+Medical Courier Services
+Professional. Reliable. Trusted.
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+    .button:hover { background: #0284c7; }
+    .feature { background: #f8fafc; padding: 15px; margin: 10px 0; border-left: 4px solid #0ea5e9; border-radius: 4px; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">Welcome to MED DROP</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Your driver account is ready</p>
+    </div>
+    
+    <div class="content">
+      <p style="font-size: 18px; color: #1e40af;"><strong>Hello ${firstName},</strong></p>
+      
+      <p>Your driver account has been successfully created. We're excited to have you join our team of professional medical couriers.</p>
+      
+      <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #1e40af;">Your Account Details</h3>
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+        <p style="margin: 5px 0;"><strong>Name:</strong> ${firstName} ${lastName}</p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${dashboardUrl}" class="button">Access Your Dashboard</a>
+      </div>
+      
+      <h3 style="color: #1e40af; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Get Started</h3>
+      <ol style="line-height: 2;">
+        <li>Access your driver dashboard to view available loads</li>
+        <li>Browse the load board and accept loads that fit your schedule</li>
+        <li>Update load status as you complete pickups and deliveries</li>
+        <li>Upload documents and capture signatures for proof of delivery</li>
+        <li>Track your earnings and completed loads</li>
+      </ol>
+      
+      <h3 style="color: #1e40af; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px; margin-top: 30px;">Key Features</h3>
+      
+      <div class="feature">
+        <strong>Real-Time Load Board</strong><br>
+        View all available medical courier jobs in your area with real-time updates
+      </div>
+      
+      <div class="feature">
+        <strong>Smart Route Optimization</strong><br>
+        Get AI-suggested routes for multiple loads to maximize efficiency and minimize drive time
+      </div>
+      
+      <div class="feature">
+        <strong>Digital Signature Capture</strong><br>
+        Capture signatures for proof of pickup and delivery directly from your device
+      </div>
+      
+      <div class="feature">
+        <strong>Temperature Logging</strong><br>
+        Record temperatures for refrigerated and frozen loads with precise timestamps
+      </div>
+      
+      <div class="feature">
+        <strong>Document Management</strong><br>
+        Upload proof of delivery, bills of lading, and other required documents instantly
+      </div>
+      
+      <div class="feature">
+        <strong>Earnings Tracking</strong><br>
+        Monitor your completed loads and earnings in real-time with detailed reporting
+      </div>
+      
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0;"><strong>Need Help?</strong></p>
+        <p style="margin: 5px 0 0 0;">If you have any questions or need assistance, our support team is here to help. Don't hesitate to reach out!</p>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af;"><strong>Thank you for choosing MED DROP. Let's get started!</strong></p>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 0;"><strong>MED DROP</strong></p>
+      <p style="margin: 5px 0;">Medical Courier Services</p>
+      <p style="margin: 5px 0;">Professional. Reliable. Trusted.</p>
+      <p style="margin: 15px 0 0 0; font-size: 12px;">This is an automated welcome email. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
+ * Send welcome email to new shipper
+ */
+export async function sendShipperWelcomeEmail({
+  to,
+  companyName,
+  contactName,
+  email,
+}: {
+  to: string
+  companyName: string
+  contactName: string
+  email: string
+}) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const dashboardUrl = `${baseUrl}/shipper/dashboard`
+  const requestLoadUrl = `${baseUrl}/request-load`
+  const loginUrl = `${baseUrl}/shipper/login`
+  
+  const subject = `Welcome to MED DROP, ${companyName}`
+
+  const text = `
+Welcome to MED DROP, ${contactName}!
+
+Your shipper account has been successfully created. We're thrilled to have ${companyName} as part of the MED DROP family.
+
+YOUR ACCOUNT DETAILS:
+- Company: ${companyName}
+- Contact: ${contactName}
+- Email: ${email}
+
+GET STARTED:
+1. Access your shipper dashboard: ${dashboardUrl}
+2. Request new loads through the portal
+3. Track all your shipments in real-time
+4. View and download documents uploaded by drivers
+5. Review invoices and payment history
+
+KEY FEATURES:
+- Real-time shipment tracking
+- Load request management
+- Document access (POD, BOL, etc.)
+- Invoice management and payment tracking
+- Email notifications for status updates
+- Complete shipment history
+
+SUPPORT:
+If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+
+We're here to help you succeed.
+
+Thank you for choosing MED DROP. We look forward to serving you!
+
+---
+MED DROP
+Medical Courier Services
+Professional. Reliable. Trusted.
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+    .button:hover { background: #0284c7; }
+    .button-secondary { display: inline-block; background: #64748b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+    .button-secondary:hover { background: #475569; }
+    .feature { background: #f8fafc; padding: 15px; margin: 10px 0; border-left: 4px solid #0ea5e9; border-radius: 4px; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">Welcome to MED DROP</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Your shipper account is ready</p>
+    </div>
+    
+    <div class="content">
+      <p style="font-size: 18px; color: #1e40af;"><strong>Hello ${contactName},</strong></p>
+      
+      <p>Your shipper account has been successfully created. We're thrilled to have <strong>${companyName}</strong> as part of the MED DROP family.</p>
+      
+      <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #1e40af;">Your Account Details</h3>
+        <p style="margin: 5px 0;"><strong>Company:</strong> ${companyName}</p>
+        <p style="margin: 5px 0;"><strong>Contact:</strong> ${contactName}</p>
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${dashboardUrl}" class="button">Access Your Dashboard</a>
+        <br>
+        <a href="${requestLoadUrl}" class="button-secondary" style="margin-top: 10px;">Request a Load</a>
+      </div>
+      
+      <h3 style="color: #1e40af; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Get Started</h3>
+      <ol style="line-height: 2;">
+        <li>Access your shipper dashboard to view all your loads</li>
+        <li>Request new loads through the portal or by calling us</li>
+        <li>Track all your shipments in real-time</li>
+        <li>View and download documents uploaded by drivers</li>
+        <li>Review invoices and payment history</li>
+      </ol>
+      
+      <h3 style="color: #1e40af; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px; margin-top: 30px;">Key Features</h3>
+      
+      <div class="feature">
+        <strong>Real-Time Tracking</strong><br>
+        Track all your shipments from pickup to delivery with live status updates and estimated arrival times
+      </div>
+      
+      <div class="feature">
+        <strong>Load Management</strong><br>
+        View and manage all your load requests in one convenient dashboard with comprehensive filtering and search
+      </div>
+      
+      <div class="feature">
+        <strong>Document Access</strong><br>
+        Access proof of delivery, bills of lading, and other documents uploaded by drivers instantly
+      </div>
+      
+      <div class="feature">
+        <strong>Invoice Management</strong><br>
+        View invoices, payment history, and manage billing information with detailed financial reporting
+      </div>
+      
+      <div class="feature">
+        <strong>Email Notifications</strong><br>
+        Receive automatic email updates for load status changes, deliveries, and important milestones
+      </div>
+      
+      <div class="feature">
+        <strong>Complete History</strong><br>
+        Access your complete shipment history for records, reporting, and compliance documentation
+      </div>
+      
+      <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0;"><strong>Need to Book a Load?</strong></p>
+        <p style="margin: 5px 0 0 0;">Shippers must call to book loads. Use the portal to track and manage your shipments.</p>
+      </div>
+      
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0;"><strong>Need Help?</strong></p>
+        <p style="margin: 5px 0 0 0;">If you have any questions or need assistance, our support team is here to help. Don't hesitate to reach out!</p>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af;"><strong>Thank you for choosing MED DROP. We look forward to serving you!</strong></p>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 0;"><strong>MED DROP</strong></p>
+      <p style="margin: 5px 0;">Medical Courier Services</p>
+      <p style="margin: 5px 0;">Professional. Reliable. Trusted.</p>
+      <p style="margin: 15px 0 0 0; font-size: 12px;">This is an automated welcome email. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
 // Placeholder functions for other email types used in the codebase
 export async function sendLoadCancelledNotification(params: any) {
   // Implementation placeholder

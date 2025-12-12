@@ -17,7 +17,7 @@ export async function GET(
     const loads = await prisma.loadRequest.findMany({
       where: {
         status: {
-          notIn: ['CANCELLED', 'COMPLETED']
+          notIn: ['CANCELLED', 'DELIVERED']
         }
       },
       include: {

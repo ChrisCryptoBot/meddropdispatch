@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
 import RateCalculator from '@/components/features/RateCalculator'
@@ -90,6 +91,10 @@ export default function DriverDashboardPage() {
   const [quoteAmount, setQuoteAmount] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedLoads, setSelectedLoads] = useState<Set<string>>(new Set())
+  const [showSmartRouteModal, setShowSmartRouteModal] = useState(false)
+  const [smartRoute, setSmartRoute] = useState<any>(null)
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false)
 
   useEffect(() => {
     // Check if driver is logged in
@@ -319,7 +324,6 @@ export default function DriverDashboardPage() {
             'PICKED_UP': 4,
             'IN_TRANSIT': 5,
             'DELIVERED': 6,
-            'COMPLETED': 7,
             'CANCELLED': 99,
             'DENIED': 99,
           }
@@ -499,9 +503,48 @@ export default function DriverDashboardPage() {
           <h3 className="text-xl font-bold text-gray-900">
             {activeTab === 'my' ? 'My Accepted Loads' : 'All Available Loads'}
           </h3>
-          <span className="text-sm text-gray-600">
-            Showing {filteredLoads.length} of {displayLoads.length} loads
-          </span>
+          <div className="flex items-center gap-4">
+            {selectedLoads.size > 0 && (
+              <button
+                onClick={async () => {
+                  setIsCalculatingRoute(true)
+                  setShowSmartRouteModal(true)
+                  try {
+                    const response = await fetch('/api/route-optimization/optimize', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        loadIds: Array.from(selectedLoads),
+                        driverId: driver?.id,
+                      }),
+                    })
+                    const data = await response.json()
+                    if (response.ok) {
+                      setSmartRoute(data)
+                    } else {
+                      const errorMsg = data.message || data.error || 'Failed to optimize route'
+                      toast.error(errorMsg)
+                      console.error('Route optimization error:', data)
+                    }
+                  } catch (error) {
+                    toast.error('Error calculating route')
+                    console.error(error)
+                  } finally {
+                    setIsCalculatingRoute(false)
+                  }
+                }}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Smart Route ({selectedLoads.size} loads)
+              </button>
+            )}
+            <span className="text-sm text-gray-600">
+              Showing {filteredLoads.length} of {displayLoads.length} loads
+            </span>
+          </div>
         </div>
 
         {isLoading ? (
@@ -531,10 +574,28 @@ export default function DriverDashboardPage() {
 
               return (
               <div key={load.id} className="glass p-5 rounded-2xl">
-                <Link
-                  href={`/driver/loads/${load.id}`}
-                  className="block hover:bg-white/60 transition-base"
-                >
+                {/* Checkbox for Smart Route */}
+                <div className="flex items-start gap-3 mb-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedLoads.has(load.id)}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      const newSelected = new Set(selectedLoads)
+                      if (e.target.checked) {
+                        newSelected.add(load.id)
+                      } else {
+                        newSelected.delete(load.id)
+                      }
+                      setSelectedLoads(newSelected)
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-1 w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                  />
+                  <Link
+                    href={`/driver/loads/${load.id}`}
+                    className="flex-1 block hover:bg-white/60 transition-base"
+                  >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -705,7 +766,8 @@ export default function DriverDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                </Link>
+                  </Link>
+                </div>
 
                 {/* Rate Calculator & Actions */}
                 <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
@@ -745,7 +807,7 @@ export default function DriverDashboardPage() {
                   )}
 
                   {/* Delete Button - For scheduled, completed, cancelled, or delivered loads */}
-                  {(load.status === 'SCHEDULED' || load.status === 'COMPLETED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+                  {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
                     <button
                       onClick={(e) => handleDeleteLoad(load.id, e)}
                       className="w-full px-4 py-2 rounded-lg bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition-all flex items-center justify-center gap-2"
@@ -890,6 +952,90 @@ export default function DriverDashboardPage() {
                   {isSubmitting ? 'Submitting...' : 'Submit Quote'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Smart Route Modal */}
+        {showSmartRouteModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSmartRouteModal(false)}>
+            <div className="glass max-w-4xl w-full rounded-2xl p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Smart Route Optimization</h3>
+                <button
+                  onClick={() => {
+                    setShowSmartRouteModal(false)
+                    setSmartRoute(null)
+                    setSelectedLoads(new Set())
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {isCalculatingRoute ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Calculating optimal route...</p>
+                </div>
+              ) : smartRoute ? (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">{smartRoute.totalDistance?.toFixed(1) || 'N/A'}</p>
+                        <p className="text-sm text-gray-600">Total Miles</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">{smartRoute.totalTime || 'N/A'}</p>
+                        <p className="text-sm text-gray-600">Total Time</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-900">{smartRoute.optimizedRoute?.length || 0}</p>
+                        <p className="text-sm text-gray-600">Stops</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900">Optimized Route:</h4>
+                    {smartRoute.optimizedRoute?.map((stop: any, index: number) => (
+                      <div key={index} className="glass p-4 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{stop.type === 'pickup' ? '📍 Pickup' : '🎯 Delivery'}</p>
+                            <p className="text-sm text-gray-700">{stop.facilityName}</p>
+                            <p className="text-xs text-gray-600">{stop.address}</p>
+                            {stop.loadCode && (
+                              <p className="text-xs font-mono text-primary-600 mt-1">{stop.loadCode}</p>
+                            )}
+                            {stop.timeWindow && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {stop.timeWindow}
+                              </p>
+                            )}
+                            {stop.distanceFromPrevious && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {stop.distanceFromPrevious} mi from previous stop
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No route data available</p>
+                </div>
+              )}
             </div>
           </div>
         )}

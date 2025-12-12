@@ -77,8 +77,7 @@ export async function PATCH(
       'EN_ROUTE': ['PICKED_UP'], // Arrive at pickup
       'PICKED_UP': ['IN_TRANSIT', 'DELIVERED'], // Can skip IN_TRANSIT
       'IN_TRANSIT': ['DELIVERED'],
-      'DELIVERED': ['COMPLETED'],
-      'COMPLETED': [], // Terminal state
+      'DELIVERED': [], // Terminal state - delivery complete, paperwork done
       'DENIED': [], // Terminal state
     }
 
@@ -114,7 +113,7 @@ export async function PATCH(
     })
 
     // POD LOCKING: Lock all documents when status becomes DELIVERED
-    if (data.status === 'DELIVERED' || data.status === 'COMPLETED') {
+    if (data.status === 'DELIVERED') {
       await prisma.document.updateMany({
         where: {
           loadRequestId: id,
@@ -127,9 +126,9 @@ export async function PATCH(
       })
     }
 
-    // AUTO-INVOICE: Generate invoice when load is marked as DELIVERED or COMPLETED
+    // AUTO-INVOICE: Generate invoice when load is marked as DELIVERED
     // Send delivery congratulations email with invoice attached
-    if ((data.status === 'DELIVERED' || data.status === 'COMPLETED') && !loadRequest.invoiceId) {
+    if (data.status === 'DELIVERED' && !loadRequest.invoiceId) {
       // Run asynchronously to avoid blocking the status update
       autoGenerateInvoiceForLoad(id)
         .then(async (invoiceId) => {
@@ -260,8 +259,8 @@ export async function PATCH(
       dropoffAddress,
     })
 
-    // Notify driver at key workflow points (EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED, COMPLETED)
-    const driverNotificationStatuses: LoadStatus[] = ['EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED']
+    // Notify driver at key workflow points (EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED)
+    const driverNotificationStatuses: LoadStatus[] = ['EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED']
     if (loadRequest.driver && loadRequest.driver.email && driverNotificationStatuses.includes(data.status)) {
       const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
       await sendDriverLoadStatusEmail({
@@ -304,7 +303,7 @@ export async function PATCH(
       }
 
       // Delivery complete
-      if (data.status === 'DELIVERED' || data.status === 'COMPLETED') {
+      if (data.status === 'DELIVERED') {
         const deliveryTime = new Date().toLocaleString()
         await sendDeliveryCompleteSMS({
           shipperPhone,
@@ -315,7 +314,7 @@ export async function PATCH(
     }
 
     // Create in-app notification for admins on critical status changes
-    const criticalStatuses: LoadStatus[] = ['DELIVERED', 'COMPLETED', 'DENIED']
+    const criticalStatuses: LoadStatus[] = ['DELIVERED', 'DENIED']
     if (criticalStatuses.includes(data.status)) {
       await prisma.notification.create({
         data: {
@@ -347,7 +346,6 @@ function getEventCodeForStatus(status: LoadStatus): TrackingEventCode {
     PICKED_UP: 'PICKED_UP',
     IN_TRANSIT: 'IN_TRANSIT',
     DELIVERED: 'DELIVERED',
-    COMPLETED: 'COMPLETED',
     DENIED: 'DENIED',
   }
 

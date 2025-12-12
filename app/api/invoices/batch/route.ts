@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Find all completed loads without invoices
     const where: any = {
-      status: { in: ['DELIVERED', 'COMPLETED'] },
+      status: { in: ['DELIVERED'] },
       quoteAmount: { not: null },
       invoiceId: null,
     }

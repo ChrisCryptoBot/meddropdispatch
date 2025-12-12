@@ -224,19 +224,19 @@ export default function AdminInvoicesPage() {
           <div className="text-sm text-gray-600">Total Invoices</div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-blue-600 mb-1">
+          <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'SENT').length}
           </div>
           <div className="text-sm text-gray-600">Sent</div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-red-600 mb-1">
+          <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'OVERDUE').length}
           </div>
           <div className="text-sm text-gray-600">Overdue</div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-green-600 mb-1">
+          <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'PAID').length}
           </div>
           <div className="text-sm text-gray-600">Paid</div>

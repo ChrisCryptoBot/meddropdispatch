@@ -55,7 +55,7 @@ export async function GET(
     const shippersWithStats = allShippers.map((shipper) => {
       const loads = shipper.loadRequests
       const completedLoads = loads.filter((load) => 
-        load.status === 'DELIVERED' || load.status === 'COMPLETED'
+        load.status === 'DELIVERED'
       )
       const totalRevenue = completedLoads.reduce(
         (sum, load) => sum + (load.quoteAmount || 0),
@@ -80,7 +80,7 @@ export async function GET(
           totalLoads: loads.length,
           completedLoads: completedLoads.length,
           pendingLoads: loads.filter((load) => 
-            !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(load.status)
+            !['DELIVERED', 'CANCELLED'].includes(load.status)
           ).length,
           totalRevenue: totalRevenue,
           averageRevenuePerLoad: completedLoads.length > 0

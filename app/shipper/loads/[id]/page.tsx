@@ -289,7 +289,7 @@ export default function ShipperLoadDetailPage() {
   }
 
   // Check if load can be cancelled
-  const canCancel = load && !['DELIVERED', 'COMPLETED', 'CANCELLED', 'DENIED'].includes(load.status)
+  const canCancel = load && !['DELIVERED', 'CANCELLED', 'DENIED'].includes(load.status)
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -305,7 +305,6 @@ export default function ShipperLoadDetailPage() {
       'PICKED_UP': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'IN_TRANSIT': 'bg-cyan-100 text-cyan-800 border-cyan-200',
       'DELIVERED': 'bg-green-100 text-green-800 border-green-200',
-      'COMPLETED': 'bg-gray-100 text-gray-800 border-gray-200',
       'CANCELLED': 'bg-red-100 text-red-800 border-red-200',
       'DENIED': 'bg-red-100 text-red-800 border-red-200',
     }
@@ -326,7 +325,6 @@ export default function ShipperLoadDetailPage() {
       'PICKED_UP': 'Picked Up',
       'IN_TRANSIT': 'In Transit',
       'DELIVERED': 'Delivered',
-      'COMPLETED': 'Completed',
       'CANCELLED': 'Cancelled',
       'DENIED': 'Not Scheduled',
     }
@@ -359,15 +357,16 @@ export default function ShipperLoadDetailPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header - Fixed at top of content area (below layout header) */}
-      <div className="fixed left-64 right-0 top-[73px] z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+      <div className="p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <Link href="/shipper/dashboard" className="text-slate-600 hover:text-slate-700 text-sm mb-2 inline-block">
+            ← Back to Dashboard
+          </Link>
           <div className="flex items-center justify-between">
             <div>
-              <Link href="/shipper/dashboard" className="text-blue-600 hover:text-blue-700 text-sm mb-2 inline-block">
-                ← Back to Dashboard
-              </Link>
               <h1 className="text-2xl font-bold text-gray-900">{load.publicTrackingCode}</h1>
+              <p className="text-sm text-gray-600 mt-1">{load.serviceType?.replace(/_/g, ' ')}</p>
             </div>
             <div className="flex items-center gap-3">
               <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(load.status)}`}>
@@ -384,18 +383,12 @@ export default function ShipperLoadDetailPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Spacer to account for fixed header height - adjust based on header content */}
-      <div className="h-24"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Quote Acceptance */}
             {load.status === 'QUOTED' && load.quoteAmount && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-6">
+              <div className="glass rounded-2xl p-6 border-2 border-yellow-300 bg-gradient-to-r from-yellow-50/80 to-orange-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,7 +419,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Driver Quote Submission - Awaiting Approval */}
             {load.status === 'DRIVER_QUOTE_SUBMITTED' && load.driverQuoteAmount && (
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-6">
+              <div className="glass rounded-2xl p-6 border-2 border-amber-300 bg-gradient-to-r from-amber-50/80 to-yellow-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -500,7 +493,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Driver Denial Display */}
             {load.driverDenialReason && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+              <div className="glass rounded-2xl p-6 border border-red-200 bg-red-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -534,7 +527,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Quote Accepted Confirmation */}
             {load.status === 'QUOTE_ACCEPTED' && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+              <div className="glass rounded-2xl p-6 border border-green-200 bg-green-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -557,7 +550,7 @@ export default function ShipperLoadDetailPage() {
             )}
 
             {/* Route Information */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+            <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Route Information</h3>
 
               <div className="space-y-6">
@@ -630,7 +623,7 @@ export default function ShipperLoadDetailPage() {
             </div>
 
             {/* Load Details */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+            <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Load Details</h3>
 
               <div className="grid sm:grid-cols-2 gap-4">
@@ -665,7 +658,7 @@ export default function ShipperLoadDetailPage() {
             </div>
 
             {/* Tracking Timeline */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+            <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Tracking Timeline</h3>
 
               {load.trackingEvents.length === 0 ? (
@@ -709,7 +702,7 @@ export default function ShipperLoadDetailPage() {
             </div>
 
             {/* Documents Section */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+            <div className="glass rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Documents</h3>
                 <button
@@ -764,7 +757,7 @@ export default function ShipperLoadDetailPage() {
           <div className="space-y-6">
             {/* Driver Information */}
             {load.driver && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+              <div className="glass rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Driver Information</h3>
                 <div className="space-y-3">
                   <div>
@@ -788,7 +781,7 @@ export default function ShipperLoadDetailPage() {
             )}
 
             {/* Quick Info */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200">
+            <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Info</h3>
               <div className="space-y-3">
                 <div>

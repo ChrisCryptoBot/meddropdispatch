@@ -34,7 +34,7 @@ export default async function AdminLoadsPage() {
   // Group loads by status
   const activeStatuses = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED', 'PICKED_UP', 'IN_TRANSIT']
   const activeLoads = filteredLoads.filter((load) => activeStatuses.includes(load.status))
-  const completedLoads = filteredLoads.filter((load) => ['DELIVERED', 'COMPLETED'].includes(load.status))
+  const completedLoads = filteredLoads.filter((load) => load.status === 'DELIVERED')
   const cancelledLoads = filteredLoads.filter((load) => load.status === 'CANCELLED')
 
   if (isLoading) {

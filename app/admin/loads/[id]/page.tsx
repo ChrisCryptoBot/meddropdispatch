@@ -572,7 +572,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Invoice Generation */}
-          {(load.status === 'DELIVERED' || load.status === 'COMPLETED') && (
+          {load.status === 'DELIVERED' && (
             <div className="glass p-6 rounded-2xl">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice</h3>
               {load.invoiceId ? (
@@ -656,7 +656,6 @@ export default function AdminLoadDetailPage() {
                   <option value="PICKED_UP">Picked Up</option>
                   <option value="IN_TRANSIT">In Transit</option>
                   <option value="DELIVERED">Delivered</option>
-                  <option value="COMPLETED">Completed</option>
                   <option value="CANCELLED">Cancelled</option>
                 </select>
               </div>

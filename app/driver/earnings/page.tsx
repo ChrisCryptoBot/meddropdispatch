@@ -64,7 +64,7 @@ export default function DriverEarningsPage() {
 
   // Calculate stats
   const completedLoads = loads.filter((load) => 
-    load.status === 'DELIVERED' || load.status === 'COMPLETED'
+    load.status === 'DELIVERED'
   )
   
   const totalEarned = completedLoads.reduce((sum, load) => sum + (load.quoteAmount || 0), 0)
@@ -87,14 +87,14 @@ export default function DriverEarningsPage() {
 
   // Filter loads for display
   const filteredLoads = loads.filter((load) => {
-    if (filter === 'all') return load.status === 'DELIVERED' || load.status === 'COMPLETED'
-    if (filter === 'pending') return load.status !== 'DELIVERED' && load.status !== 'COMPLETED'
-    if (filter === 'completed') return load.status === 'DELIVERED' || load.status === 'COMPLETED'
+    if (filter === 'all') return load.status === 'DELIVERED'
+    if (filter === 'pending') return load.status !== 'DELIVERED'
+    if (filter === 'completed') return load.status === 'DELIVERED'
     return true
   })
 
   const getStatusColor = (status: string) => {
-    if (status === 'DELIVERED' || status === 'COMPLETED') return 'bg-green-100 text-green-700 border-green-300'
+    if (status === 'DELIVERED') return 'bg-green-100 text-green-700 border-green-300'
     if (status === 'IN_TRANSIT' || status === 'PICKED_UP') return 'bg-blue-100 text-blue-700 border-blue-300'
     return 'bg-gray-100 text-gray-700 border-gray-300'
   }
@@ -102,7 +102,6 @@ export default function DriverEarningsPage() {
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       'DELIVERED': 'Delivered',
-      'COMPLETED': 'Completed',
       'IN_TRANSIT': 'In Transit',
       'PICKED_UP': 'Picked Up',
       'SCHEDULED': 'Scheduled',
@@ -148,7 +147,7 @@ export default function DriverEarningsPage() {
           <div className="text-xs text-gray-500 mt-1">{thisYear.length} loads</div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-3xl font-bold text-slate-600 mb-1">{loads.filter(l => l.status === 'DELIVERED' || l.status === 'COMPLETED').length}</div>
+          <div className="text-3xl font-bold text-slate-600 mb-1">{loads.filter(l => l.status === 'DELIVERED').length}</div>
           <div className="text-sm text-gray-600">Completed Loads</div>
           <div className="text-xs text-gray-500 mt-1">All time</div>
         </div>

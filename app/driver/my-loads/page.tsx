@@ -185,7 +185,7 @@ export default function DriverMyLoadsPage() {
         </div>
         <div className="glass rounded-xl p-4">
           <div className="text-2xl font-bold text-green-600">
-            {loads.filter(l => ['DELIVERED', 'COMPLETED'].includes(l.status)).length}
+            {loads.filter(l => l.status === 'DELIVERED').length}
           </div>
           <div className="text-xs text-gray-600">Completed</div>
         </div>
@@ -315,7 +315,7 @@ export default function DriverMyLoadsPage() {
                     >
                       View Details →
                     </Link>
-                    {(load.status === 'SCHEDULED' || load.status === 'COMPLETED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+                    {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
                       <button
                         onClick={() => handleDeleteLoad(load.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

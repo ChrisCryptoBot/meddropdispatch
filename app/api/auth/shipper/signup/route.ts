@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { sendShipperWelcomeEmail } from '@/lib/email'
 
 /**
  * POST /api/auth/shipper/signup
@@ -55,6 +56,20 @@ export async function POST(request: NextRequest) {
 
     // Remove password hash from response
     const { passwordHash: _, ...shipperWithoutPassword } = shipper
+
+    // Send welcome email (don't block on email failure)
+    try {
+      await sendShipperWelcomeEmail({
+        to: shipper.email,
+        companyName: shipper.companyName,
+        contactName: shipper.contactName,
+        email: shipper.email,
+      })
+      console.log('✅ Shipper welcome email sent successfully to:', shipper.email)
+    } catch (error) {
+      console.error('❌ Failed to send shipper welcome email:', error)
+      // Don't fail signup if email fails
+    }
 
     return NextResponse.json({
       success: true,

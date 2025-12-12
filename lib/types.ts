@@ -17,8 +17,7 @@ export type LoadStatus =
   | 'EN_ROUTE'       // Driver en route to pickup
   | 'PICKED_UP'      // Load picked up
   | 'IN_TRANSIT'     // Load in transit to destination
-  | 'DELIVERED'      // Load delivered
-  | 'COMPLETED'      // Paperwork complete, closed
+  | 'DELIVERED'      // Load delivered and complete (final state)
   | 'DENIED'         // Driver declined (doesn't fit schedule, no tracking)
 
 export type TrackingEventCode =
@@ -27,9 +26,7 @@ export type TrackingEventCode =
   | 'EN_ROUTE_PICKUP'       // Driver en route to pickup
   | 'PICKED_UP'             // Load picked up
   | 'IN_TRANSIT'            // Load in transit
-  | 'ARRIVED_AT_DESTINATION'// Arrived at delivery location
-  | 'DELIVERED'             // Load delivered
-  | 'COMPLETED'             // Paperwork complete
+  | 'DELIVERED'             // Load delivered and complete
   | 'DENIED'                // Driver declined (doesn't fit schedule, no tracking)
 
 export type DriverDenialReason =

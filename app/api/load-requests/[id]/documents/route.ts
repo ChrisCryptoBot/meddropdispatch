@@ -92,9 +92,9 @@ export async function POST(
     }
 
     // POD LOCKING: Check if load is DELIVERED and require admin override for new uploads
-    // Exception: DRIVER_MANUAL loads allow drivers to upload documents even if status is COMPLETED
+    // Exception: DRIVER_MANUAL loads allow drivers to upload documents even if status is DELIVERED
     const isDriverManual = loadRequest.createdVia === 'DRIVER_MANUAL'
-    const requiresOverride = (loadRequest.status === 'DELIVERED' || loadRequest.status === 'COMPLETED') && !isDriverManual
+    const requiresOverride = loadRequest.status === 'DELIVERED' && !isDriverManual
     const adminOverride = formData.get('adminOverride') === 'true'
     const adminOverrideBy = formData.get('adminOverrideBy') as string | null
     const adminOverrideNotes = formData.get('adminOverrideNotes') as string | null

@@ -181,19 +181,19 @@ export default function ShipperInvoicesPage() {
           <div className="text-sm text-gray-600">Total Invoices</div>
         </div>
         <div className="glass p-6 rounded-xl">
-          <div className="text-3xl font-bold text-green-600 mb-1">{stats.paid}</div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.paid}</div>
           <div className="text-sm text-gray-600">Paid</div>
         </div>
         <div className="glass p-6 rounded-xl">
-          <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pending}</div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.pending}</div>
           <div className="text-sm text-gray-600">Pending</div>
         </div>
         <div className="glass p-6 rounded-xl">
-          <div className="text-3xl font-bold text-red-600 mb-1">{stats.overdue}</div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">{stats.overdue}</div>
           <div className="text-sm text-gray-600">Overdue</div>
         </div>
         <div className="glass p-6 rounded-xl">
-          <div className="text-3xl font-bold text-blue-600 mb-1">
+          <div className="text-3xl font-bold text-gray-900 mb-1">
             ${stats.totalAmount.toFixed(2)}
           </div>
           <div className="text-sm text-gray-600">Total Amount</div>

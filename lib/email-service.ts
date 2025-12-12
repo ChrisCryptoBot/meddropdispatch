@@ -34,10 +34,11 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 
   // If Resend API key is not configured, log to console (for development)
   if (!client) {
-    console.log('📧 [Email Service] Resend API key not configured. Email would be sent:')
+    console.log('⚠️  [Email Service] Resend API key not configured. Email would be sent:')
     console.log('   To:', to)
     console.log('   Subject:', subject)
-    console.log('   Text:', text.substring(0, 100) + '...')
+    console.log('   Text Preview:', text.substring(0, 200) + '...')
+    console.log('   ⚠️  To actually send emails, set RESEND_API_KEY in your .env file')
     return
   }
 

@@ -216,7 +216,7 @@ export async function DELETE(
     // Allow deletion of scheduled, completed, cancelled, or delivered loads
     // Drivers can delete their own scheduled loads (especially manual loads)
     // Completed/cancelled/delivered loads can also be deleted for cleanup
-    const deletableStatuses = ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'DELIVERED']
+    const deletableStatuses = ['SCHEDULED', 'CANCELLED', 'DELIVERED']
     if (!deletableStatuses.includes(loadRequest.status)) {
       return NextResponse.json(
         {

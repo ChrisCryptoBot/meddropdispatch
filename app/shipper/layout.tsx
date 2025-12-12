@@ -83,16 +83,6 @@ export default function ShipperLayout({
       ),
     },
     {
-      name: 'Saved Facilities',
-      href: '/shipper/facilities',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
-    },
-    {
       name: 'Tracking',
       href: '/shipper/tracking',
       icon: (
@@ -126,9 +116,9 @@ export default function ShipperLayout({
     <div className="min-h-screen flex flex-col">
       {/* Header - Same as Homepage */}
       <header className="glass sticky top-0 z-50 border-b border-white/30 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 pl-4 md:pl-4">
               <div className="w-10 h-10 flex items-center justify-center">
                 <Image
                   src="/logo-icon.png"
@@ -144,7 +134,7 @@ export default function ShipperLayout({
                 <p className="text-xs text-gray-600">Medical Courier Services</p>
               </div>
             </div>
-            <nav className="flex items-center space-x-3">
+            <nav className="flex items-center space-x-3 pr-4">
               <Link
                 href="/shipper/notifications"
                 className={`p-2 rounded-lg transition-base relative ${
@@ -261,7 +251,6 @@ export default function ShipperLayout({
               const isActive = 
                 pathname === item.href || 
                 (item.href === '/shipper/dashboard' && pathname.startsWith('/shipper/dashboard')) ||
-                (item.href === '/shipper/facilities' && pathname.startsWith('/shipper/facilities')) ||
                 (item.href === '/shipper/documents' && pathname.startsWith('/shipper/documents')) ||
                 (item.href === '/shipper/invoices' && pathname.startsWith('/shipper/invoices')) ||
                 (item.href === '/shipper/settings' && pathname.startsWith('/shipper/settings')) ||

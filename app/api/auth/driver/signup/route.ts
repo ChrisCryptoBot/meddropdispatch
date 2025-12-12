@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { sendDriverWelcomeEmail } from '@/lib/email'
 
 /**
  * POST /api/auth/driver/signup
@@ -67,6 +68,20 @@ export async function POST(request: NextRequest) {
 
     // Remove password hash from response
     const { passwordHash: _, ...driverWithoutPassword } = driver
+
+    // Send welcome email (don't block on email failure)
+    try {
+      await sendDriverWelcomeEmail({
+        to: driver.email,
+        firstName: driver.firstName,
+        lastName: driver.lastName,
+        email: driver.email,
+      })
+      console.log('✅ Driver welcome email sent successfully to:', driver.email)
+    } catch (error) {
+      console.error('❌ Failed to send driver welcome email:', error)
+      // Don't fail signup if email fails
+    }
 
     return NextResponse.json({
       success: true,

@@ -46,7 +46,7 @@ export default async function TrackingDetailPage({
     notFound()
   }
 
-  const isActive = !['DELIVERED', 'COMPLETED', 'DENIED'].includes(load.status)
+  const isActive = !['DELIVERED', 'DENIED'].includes(load.status)
 
   return (
     <div className="min-h-screen pb-12">

@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         const completedLoads = await prisma.loadRequest.findMany({
           where: {
             id: { in: loadRequestIds },
-            status: { in: ['DELIVERED', 'COMPLETED'] },
+            status: { in: ['DELIVERED'] },
             quoteAmount: { not: null },
             invoiceId: null,
           },

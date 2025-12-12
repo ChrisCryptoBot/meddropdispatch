@@ -97,11 +97,11 @@ export default function ShipperLoadsPage() {
     if (filterBy !== 'all') {
       if (filterBy === 'completed') {
         filtered = filtered.filter((load) => 
-          load.status === 'DELIVERED' || load.status === 'COMPLETED'
+          load.status === 'DELIVERED'
         )
       } else if (filterBy === 'pending') {
         filtered = filtered.filter((load) => 
-          !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(load.status)
+          !['DELIVERED', 'CANCELLED'].includes(load.status)
         )
       } else if (filterBy === 'delivered') {
         filtered = filtered.filter((load) => load.status === 'DELIVERED')
@@ -157,10 +157,10 @@ export default function ShipperLoadsPage() {
   const stats = useMemo(() => {
     const totalLoads = loads.length
     const completedLoads = loads.filter((load) => 
-      load.status === 'DELIVERED' || load.status === 'COMPLETED'
+      load.status === 'DELIVERED'
     ).length
     const totalRevenue = loads
-      .filter((load) => load.status === 'DELIVERED' || load.status === 'COMPLETED')
+      .filter((load) => load.status === 'DELIVERED')
       .reduce((sum, load) => sum + (load.quoteAmount || 0), 0)
 
     return {

@@ -73,7 +73,7 @@ export async function POST(
       throw new ValidationError('Load is already cancelled')
     }
 
-    if (load.status === 'DELIVERED' || load.status === 'COMPLETED') {
+    if (load.status === 'DELIVERED') {
       throw new ValidationError('Cannot cancel a delivered or completed load')
     }
 

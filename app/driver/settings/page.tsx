@@ -20,6 +20,8 @@ export default function DriverSettingsPage() {
     emergencyContact: '',
     emergencyPhone: '',
   })
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -84,6 +86,32 @@ export default function DriverSettingsPage() {
       showApiError(error, 'Failed to update profile')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!driver) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete account')
+      }
+
+      // Clear local storage and redirect
+      localStorage.removeItem('driver')
+      showToast.success('Account deleted successfully')
+      router.push('/driver/login')
+    } catch (error) {
+      showApiError(error, 'Failed to delete account')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -243,6 +271,47 @@ export default function DriverSettingsPage() {
             </button>
           </div>
         </form>
+
+        {/* Delete Account Section */}
+        <div className="mt-12 glass rounded-2xl p-6 border-2 border-red-200">
+          <h2 className="text-xl font-bold text-red-700 mb-2">Danger Zone</h2>
+          <p className="text-gray-600 mb-4">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          {!showDeleteConfirm ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+            >
+              Delete Account
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-red-700 font-semibold">
+                Are you absolutely sure? This action cannot be undone.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? 'Deleting...' : 'Yes, Delete My Account'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

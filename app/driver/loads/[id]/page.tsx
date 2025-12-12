@@ -627,7 +627,7 @@ export default function DriverLoadDetailPage() {
           </div>
           
           {/* Delete Load Button - Only for scheduled, completed, cancelled, or delivered loads */}
-          {(load.status === 'SCHEDULED' || load.status === 'COMPLETED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+          {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <button
                 onClick={handleDeleteLoad}

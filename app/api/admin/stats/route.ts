@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     ]
 
     // Completed statuses
-    const completedStatuses: string[] = ['DELIVERED', 'COMPLETED']
+    const completedStatuses: string[] = ['DELIVERED']
 
     // Run all queries in parallel for better performance
     const [
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Completed today (DELIVERED or COMPLETED, completed today)
+      // Completed today (DELIVERED, completed today)
       prisma.loadRequest.count({
         where: {
           status: {
@@ -99,11 +99,11 @@ export async function GET(request: NextRequest) {
           },
           OR: [
             {
-              // Check if there's a tracking event for DELIVERED or COMPLETED today
+              // Check if there's a tracking event for DELIVERED today
               trackingEvents: {
                 some: {
                   code: {
-                    in: ['DELIVERED', 'COMPLETED'],
+                    in: ['DELIVERED'],
                   },
                   createdAt: {
                     gte: startOfToday,
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
               trackingEvents: {
                 some: {
                   code: {
-                    in: ['DELIVERED', 'COMPLETED'],
+                    in: ['DELIVERED'],
                   },
                   createdAt: {
                     gte: startOfYesterday,
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
               trackingEvents: {
                 some: {
                   code: {
-                    in: ['DELIVERED', 'COMPLETED'],
+                    in: ['DELIVERED'],
                   },
                   createdAt: {
                     gte: startOfToday,
@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
               trackingEvents: {
                 some: {
                   code: {
-                    in: ['DELIVERED', 'COMPLETED'],
+                    in: ['DELIVERED'],
                   },
                   createdAt: {
                     gte: startOfYesterday,

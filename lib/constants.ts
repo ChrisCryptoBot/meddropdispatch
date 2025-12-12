@@ -12,7 +12,6 @@ export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
   DELIVERED: 'Delivered',
-  COMPLETED: 'Completed',
   DENIED: 'Not Scheduled',
 }
 
@@ -24,7 +23,6 @@ export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
   PICKED_UP: 'bg-orange-100 text-orange-800',
   IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
   DELIVERED: 'bg-emerald-100 text-emerald-800',
-  COMPLETED: 'bg-gray-100 text-gray-800',
   DENIED: 'bg-red-100 text-red-800',
 }
 
@@ -35,9 +33,7 @@ export const TRACKING_EVENT_LABELS: Record<TrackingEventCode, string> = {
   EN_ROUTE_PICKUP: 'En Route to Pickup',
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
-  ARRIVED_AT_DESTINATION: 'Arrived at Destination',
   DELIVERED: 'Delivered',
-  COMPLETED: 'Completed',
   DENIED: 'Not Scheduled',
 }
 

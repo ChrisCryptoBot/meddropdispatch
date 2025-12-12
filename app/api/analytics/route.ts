@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const completedLoads = await prisma.loadRequest.count({
       where: {
         createdAt: { gte: startDate },
-        status: { in: ['DELIVERED', 'COMPLETED'] },
+        status: { in: ['DELIVERED'] },
       },
     })
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const revenueResult = await prisma.loadRequest.aggregate({
       where: {
         createdAt: { gte: startDate },
-        status: { in: ['DELIVERED', 'COMPLETED'] },
+        status: { in: ['DELIVERED'] },
         quoteAmount: { not: null },
       },
       _sum: {

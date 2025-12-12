@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface LoadRequest {
   id: string
@@ -39,6 +40,37 @@ export default function ShipperDashboardPage() {
   const [filter, setFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'readyTime' | 'deadline' | 'status' | 'amount' | 'cancelled'>('newest')
   const [searchQuery, setSearchQuery] = useState('')
+  const [deletingLoadId, setDeletingLoadId] = useState<string | null>(null)
+
+  const handleDeleteLoad = async (loadId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!confirm('Are you sure you want to delete this load? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingLoadId(loadId)
+    try {
+      const response = await fetch(`/api/load-requests/${loadId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete load')
+      }
+
+      // Remove from local state
+      setLoads(loads.filter(load => load.id !== loadId))
+      showToast.success('Load deleted successfully')
+    } catch (error) {
+      console.error('Error deleting load:', error)
+      showApiError(error, 'Failed to delete load')
+    } finally {
+      setDeletingLoadId(null)
+    }
+  }
 
   useEffect(() => {
     // Check authentication
@@ -150,7 +182,6 @@ export default function ShipperDashboardPage() {
       'PICKED_UP': 'bg-indigo-100 text-indigo-800 border-indigo-200',
       'IN_TRANSIT': 'bg-cyan-100 text-cyan-800 border-cyan-200',
       'DELIVERED': 'bg-green-100 text-green-800 border-green-200',
-      'COMPLETED': 'bg-gray-100 text-gray-800 border-gray-200',
       'CANCELLED': 'bg-red-100 text-red-800 border-red-200',
       'DENIED': 'bg-red-100 text-red-800 border-red-200',
     }
@@ -169,7 +200,6 @@ export default function ShipperDashboardPage() {
       'PICKED_UP': 'Picked Up',
       'IN_TRANSIT': 'In Transit',
       'DELIVERED': 'Delivered',
-      'COMPLETED': 'Completed',
       'CANCELLED': 'Cancelled',
       'DENIED': 'Not Scheduled',
     }
@@ -198,7 +228,7 @@ export default function ShipperDashboardPage() {
         all: [],
         pending: ['REQUESTED', 'NEW', 'QUOTED'],
         active: ['QUOTE_ACCEPTED', 'SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'],
-        completed: ['DELIVERED', 'COMPLETED'],
+        delivered: ['DELIVERED'],
         cancelled: ['CANCELLED', 'DENIED'],
       }
       filtered = filtered.filter(load => statusMap[filter]?.includes(load.status))
@@ -230,7 +260,6 @@ export default function ShipperDashboardPage() {
             'PICKED_UP': 4,
             'IN_TRANSIT': 5,
             'DELIVERED': 6,
-            'COMPLETED': 7,
             'CANCELLED': 99,
             'DENIED': 99,
           }
@@ -268,7 +297,7 @@ export default function ShipperDashboardPage() {
     total: loads.length,
     pending: loads.filter(l => ['QUOTE_REQUESTED', 'REQUESTED', 'NEW', 'QUOTED'].includes(l.status)).length,
     active: loads.filter(l => ['QUOTE_ACCEPTED', 'SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length,
-    completed: loads.filter(l => ['DELIVERED', 'COMPLETED'].includes(l.status)).length,
+    delivered: loads.filter(l => l.status === 'DELIVERED').length,
     cancelled: loads.filter(l => ['CANCELLED', 'DENIED'].includes(l.status)).length,
   }
 
@@ -290,48 +319,68 @@ export default function ShipperDashboardPage() {
 
   return (
     <div className="p-8">
+        {/* Call to Book Loads - Prominent CTA */}
+        <div className="glass rounded-2xl p-6 mb-8 bg-gradient-to-r from-slate-50 to-neutral-50 border-2 border-slate-300">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Need to Book a Load?</h2>
+                <p className="text-gray-700 mb-2">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
+                <a
+                  href="tel:+1234567890"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  Call to Book: (123) 456-7890
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="glass rounded-xl p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+          <div className="glass rounded-2xl p-6">
             <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</div>
             <div className="text-sm text-gray-600">Total Loads</div>
           </div>
-          <div className="glass rounded-xl p-6">
-            <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.pending}</div>
+          <div className="glass rounded-2xl p-6">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.pending}</div>
             <div className="text-sm text-gray-600">Pending</div>
           </div>
-          <div className="glass rounded-xl p-6">
-            <div className="text-3xl font-bold text-blue-600 mb-1">{stats.active}</div>
+          <div className="glass rounded-2xl p-6">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.active}</div>
             <div className="text-sm text-gray-600">Active</div>
           </div>
-          <div className="glass rounded-xl p-6">
-            <div className="text-3xl font-bold text-green-600 mb-1">{stats.completed}</div>
+          <div className="glass rounded-2xl p-6">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.delivered}</div>
+            <div className="text-sm text-gray-600">Delivered</div>
+          </div>
+          <div className="glass rounded-2xl p-6">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.completed}</div>
             <div className="text-sm text-gray-600">Completed</div>
           </div>
-          <div className="glass rounded-xl p-6">
-            <div className="text-3xl font-bold text-red-600 mb-1">{stats.cancelled}</div>
+          <div className="glass rounded-2xl p-6">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.cancelled}</div>
             <div className="text-sm text-gray-600">Cancelled</div>
           </div>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-bold text-gray-900">My Loads</h1>
-            <div className="flex gap-3">
-              <Link
-                href="/shipper/templates"
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all"
-              >
-                Templates
-              </Link>
-            </div>
-          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Loads</h1>
           <p className="text-gray-600">Manage and track all your shipment requests</p>
         </div>
 
         {/* Filters, Search, and Sort */}
-        <div className="glass p-4 rounded-xl mb-6">
+        <div className="glass p-6 rounded-2xl mb-6">
           <div className="grid md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
@@ -356,6 +405,7 @@ export default function ShipperDashboardPage() {
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="active">Active</option>
+                <option value="delivered">Delivered</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled / Denied</option>
               </select>
@@ -500,15 +550,16 @@ export default function ShipperDashboardPage() {
         ) : (
           <div className="space-y-4">
             {filteredLoads.map((load) => (
-              <Link
+              <div
                 key={load.id}
-                href={`/shipper/loads/${load.id}`}
-                className="block glass rounded-xl p-6 hover:shadow-xl transition-all"
+                className="glass p-5 rounded-2xl hover:shadow-lg transition-all relative"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div>
+                  <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-gray-900 text-lg font-mono">{load.publicTrackingCode}</h3>
+                      <Link href={`/shipper/loads/${load.id}`}>
+                        <h3 className="font-bold text-gray-900 text-lg font-mono hover:text-slate-600 transition-colors">{load.publicTrackingCode}</h3>
+                      </Link>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
                         {getStatusLabel(load.status)}
                       </span>
@@ -517,14 +568,33 @@ export default function ShipperDashboardPage() {
                       Created {new Date(load.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  {load.quoteAmount && (
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">
-                        ${load.quoteAmount.toLocaleString()}
+                  <div className="flex items-center gap-3">
+                    {load.quoteAmount && (
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-gray-900">
+                          ${load.quoteAmount.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">Quote Amount</div>
                       </div>
-                      <div className="text-xs text-gray-500">Quote Amount</div>
-                    </div>
-                  )}
+                    )}
+                    {/* Delete button for completed/cancelled/delivered/scheduled loads */}
+                    {['CANCELLED', 'DELIVERED', 'SCHEDULED'].includes(load.status) && (
+                      <button
+                        onClick={(e) => handleDeleteLoad(load.id, e)}
+                        disabled={deletingLoadId === load.id}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Delete load"
+                      >
+                        {deletingLoadId === load.id ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -620,7 +690,20 @@ export default function ShipperDashboardPage() {
                     </div>
                   </div>
                 )}
-              </Link>
+
+                {/* View Details Link */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Link
+                    href={`/shipper/loads/${load.id}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all text-sm"
+                  >
+                    View Details
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         )}

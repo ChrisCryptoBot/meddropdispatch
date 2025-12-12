@@ -166,3 +166,72 @@ export async function PATCH(
     })
   })(request)
 }
+
+/**
+ * DELETE /api/drivers/[id]
+ * Delete driver account
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+
+    // Check if driver exists
+    const driver = await prisma.driver.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            loadRequests: {
+              where: {
+                status: {
+                  notIn: ['DELIVERED', 'CANCELLED'],
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!driver) {
+      throw new NotFoundError('Driver')
+    }
+
+    // Check for active loads
+    if (driver._count.loadRequests > 0) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete account',
+          message: 'You have active loads that must be completed or cancelled before deleting your account.',
+          activeLoadsCount: driver._count.loadRequests,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Unassign driver from any loads (set driverId to null)
+    await prisma.loadRequest.updateMany({
+      where: { driverId: id },
+      data: { driverId: null },
+    })
+
+    // Delete driver account
+    await prisma.driver.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Account deleted successfully',
+    })
+  })(request)
+}
