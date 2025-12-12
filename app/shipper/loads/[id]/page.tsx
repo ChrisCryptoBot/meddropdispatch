@@ -574,7 +574,13 @@ export default function ShipperLoadDetailPage() {
                         <span className="font-medium">Contact:</span> {load.pickupFacility.contactName}
                       </p>
                       <p>
-                        <span className="font-medium">Phone:</span> {load.pickupFacility.contactPhone}
+                        <span className="font-medium">Phone:</span>{' '}
+                        <a
+                          href={`tel:${load.pickupFacility.contactPhone.replace(/\D/g, '')}`}
+                          className="text-slate-600 hover:text-slate-800 hover:underline"
+                        >
+                          {load.pickupFacility.contactPhone}
+                        </a>
                       </p>
                       <p className="pt-2">
                         <span className="font-medium">Date:</span> {load.readyTime ? new Date(load.readyTime).toLocaleString() : 'TBD'}
@@ -609,7 +615,13 @@ export default function ShipperLoadDetailPage() {
                         <span className="font-medium">Contact:</span> {load.dropoffFacility.contactName}
                       </p>
                       <p>
-                        <span className="font-medium">Phone:</span> {load.dropoffFacility.contactPhone}
+                        <span className="font-medium">Phone:</span>{' '}
+                        <a
+                          href={`tel:${load.dropoffFacility.contactPhone.replace(/\D/g, '')}`}
+                          className="text-slate-600 hover:text-slate-800 hover:underline"
+                        >
+                          {load.dropoffFacility.contactPhone}
+                        </a>
                       </p>
                       {load.deliveryDeadline && (
                         <p className="pt-2">

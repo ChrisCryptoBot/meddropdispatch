@@ -34,7 +34,7 @@ export default function MobileBottomNav({ items, className = '' }: MobileBottomN
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full min-w-0 px-2 ${
                 isActive
-                  ? 'text-blue-600'
+                  ? 'text-slate-600'
                   : 'text-gray-500 hover:text-gray-700'
               } transition-colors`}
             >

@@ -669,7 +669,15 @@ export default function DriverLoadDetailPage() {
             </p>
             <div className="pt-2 mt-2 border-t border-gray-200">
               <p className="text-gray-600">Contact: {load.pickupFacility.contactName}</p>
-              <p className="text-gray-600">Phone: {load.pickupFacility.contactPhone}</p>
+              <p className="text-gray-600">
+                Phone:{' '}
+                <a
+                  href={`tel:${load.pickupFacility.contactPhone.replace(/\D/g, '')}`}
+                  className="text-slate-600 hover:text-slate-800 hover:underline font-medium"
+                >
+                  {load.pickupFacility.contactPhone}
+                </a>
+              </p>
             </div>
             {load.readyTime && (
               <p className="text-gray-600 pt-2 border-t border-gray-200">
@@ -705,7 +713,15 @@ export default function DriverLoadDetailPage() {
             </p>
             <div className="pt-2 mt-2 border-t border-gray-200">
               <p className="text-gray-600">Contact: {load.dropoffFacility.contactName}</p>
-              <p className="text-gray-600">Phone: {load.dropoffFacility.contactPhone}</p>
+              <p className="text-gray-600">
+                Phone:{' '}
+                <a
+                  href={`tel:${load.dropoffFacility.contactPhone.replace(/\D/g, '')}`}
+                  className="text-slate-600 hover:text-slate-800 hover:underline font-medium"
+                >
+                  {load.dropoffFacility.contactPhone}
+                </a>
+              </p>
             </div>
             {load.deliveryDeadline && (
               <p className="text-gray-600 pt-2 border-t border-gray-200">

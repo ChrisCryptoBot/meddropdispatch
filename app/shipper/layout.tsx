@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import MobileBottomNav from '@/components/features/MobileBottomNav'
 
 export default function ShipperLayout({
   children,
@@ -150,7 +151,7 @@ export default function ShipperLayout({
               <div className="relative">
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-base flex items-center gap-2 ${
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-base flex items-center gap-2 ${
                     pathname?.startsWith('/shipper/settings') || pathname?.startsWith('/shipper/billing') || pathname?.startsWith('/shipper/security')
                       ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
                       : 'text-gray-700 hover:bg-white/60'
@@ -185,7 +186,8 @@ export default function ShipperLayout({
                           Account Settings
                         </div>
                       </Link>
-                      <Link
+                      {/* Temporarily hidden until billing page is built */}
+                      {/* <Link
                         href="/shipper/billing"
                         onClick={() => setProfileDropdownOpen(false)}
                         className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
@@ -200,8 +202,9 @@ export default function ShipperLayout({
                           </svg>
                           Billing & Payments
                         </div>
-                      </Link>
-                      <Link
+                      </Link> */}
+                      {/* Temporarily hidden until security page is built */}
+                      {/* <Link
                         href="/shipper/security"
                         onClick={() => setProfileDropdownOpen(false)}
                         className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
@@ -216,7 +219,7 @@ export default function ShipperLayout({
                           </svg>
                           Security
                         </div>
-                      </Link>
+                      </Link> */}
                       <button
                         onClick={() => {
                           localStorage.removeItem('shipper')
@@ -241,8 +244,8 @@ export default function ShipperLayout({
         </div>
       </header>
 
-      {/* Sidebar - Fixed full height */}
-      <aside className="fixed left-0 top-[73px] w-64 glass border-r border-white/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
+      {/* Sidebar - Fixed full height - Hidden on mobile */}
+      <aside className="hidden md:block fixed left-0 top-[73px] w-64 glass border-r border-white/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
@@ -279,7 +282,7 @@ export default function ShipperLayout({
           <div className="p-4 border-t border-white/30">
             <Link
               href="/shipper/support"
-              className={`w-full px-4 py-2 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 ${
+              className={`w-full px-4 py-3 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 ${
                 pathname === '/shipper/support' || pathname?.startsWith('/shipper/support')
                   ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
                   : 'text-gray-700 hover:bg-white/40'
@@ -294,10 +297,61 @@ export default function ShipperLayout({
         </div>
       </aside>
 
-      {/* Main Content - Offset for fixed sidebar */}
-      <main className="ml-64 bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 min-h-screen" style={{ marginTop: '73px' }}>
+      {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
+      <main className="md:ml-64 bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 min-h-screen pb-16 md:pb-0" style={{ marginTop: '73px' }}>
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        items={[
+          {
+            name: 'My Loads',
+            href: '/shipper/dashboard',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Tracking',
+            href: '/shipper/tracking',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Documents',
+            href: '/shipper/documents',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Invoices',
+            href: '/shipper/invoices',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+              </svg>
+            ),
+          },
+          {
+            name: 'Profile',
+            href: '/shipper/settings',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
