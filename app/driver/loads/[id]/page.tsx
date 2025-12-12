@@ -63,6 +63,16 @@ interface Load {
     contactName: string
     phone: string
   }
+  vehicle?: {
+    id: string
+    vehicleType: string
+    vehicleMake?: string | null
+    vehicleModel?: string | null
+    vehicleYear?: number | null
+    vehiclePlate: string
+    hasRefrigeration: boolean
+    nickname?: string | null
+  }
   trackingEvents: Array<{
     id: string
     label: string
@@ -467,6 +477,15 @@ export default function DriverLoadDetailPage() {
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
               {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_COLORS]}
             </span>
+            <button
+              onClick={handleDeleteLoad}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
+              title="Delete load"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -642,6 +661,52 @@ export default function DriverLoadDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Assigned Vehicle */}
+        {load.vehicle && (
+          <div className="glass p-6 rounded-2xl">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Assigned Vehicle
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-gray-900 text-lg">
+                      {load.vehicle.nickname || `${load.vehicle.vehicleType.replace(/_/g, ' ')}`}
+                    </p>
+                    {load.vehicle.hasRefrigeration && (
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                        Refrigerated
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Type:</span> {load.vehicle.vehicleType.replace(/_/g, ' ')}
+                    </div>
+                    <div>
+                      <span className="font-medium">Plate:</span> {load.vehicle.vehiclePlate}
+                    </div>
+                    {load.vehicle.vehicleYear && load.vehicle.vehicleMake && load.vehicle.vehicleModel && (
+                      <div className="col-span-2">
+                        <span className="font-medium">Details:</span> {load.vehicle.vehicleYear} {load.vehicle.vehicleMake} {load.vehicle.vehicleModel}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pickup Location */}
         <div className="glass p-6 rounded-2xl">

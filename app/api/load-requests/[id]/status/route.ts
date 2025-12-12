@@ -209,6 +209,22 @@ export async function PATCH(
       }
     })
 
+    // Create in-app notification for driver on important status changes
+    if (loadRequest.driverId && data.status !== loadRequest.status) {
+      const { notifyDriverLoadStatusChanged } = await import('@/lib/notifications')
+      await notifyDriverLoadStatusChanged({
+        driverId: loadRequest.driverId,
+        loadRequestId: id,
+        trackingCode: loadRequest.publicTrackingCode,
+        oldStatus: loadRequest.status,
+        newStatus: data.status,
+        statusLabel: eventLabel,
+      }).catch((error) => {
+        console.error('Error creating driver notification:', error)
+        // Don't fail the status update if notification creation fails
+      })
+    }
+
     // Send notification emails to both shipper and driver at key workflow points
     const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'

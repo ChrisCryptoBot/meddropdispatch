@@ -120,6 +120,19 @@ export async function POST(
       },
     })
 
+    // Create in-app notification for driver
+    if (loadRequest.driverId) {
+      const { notifyDriverQuoteDecision } = await import('@/lib/notifications')
+      await notifyDriverQuoteDecision({
+        driverId: loadRequest.driverId,
+        loadRequestId: id,
+        trackingCode: loadRequest.publicTrackingCode,
+        decision: 'REJECTED',
+      }).catch((error) => {
+        console.error('Error creating driver notification:', error)
+      })
+    }
+
     logger.info('Driver quote rejected by shipper', {
       loadId: id,
       shipperId,

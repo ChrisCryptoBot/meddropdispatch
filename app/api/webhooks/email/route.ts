@@ -289,6 +289,20 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Create notification for ALL drivers (since all drivers are admins)
+    // This ensures drivers see potential leads contacting via email
+    const { notifyAllDriversCompanyEmailReceived } = await import('@/lib/notifications')
+    await notifyAllDriversCompanyEmailReceived({
+      fromEmail: parsedEmail.from,
+      subject: parsedEmail.subject,
+      message: sanitizedBody,
+      trackingCode,
+      loadRequestId: loadRequest.id,
+    }).catch((error) => {
+      console.error('Error creating driver notifications for company email:', error)
+      // Don't fail the webhook if notification creation fails
+    })
+
     // Send SMS to admin (if configured)
     const adminPhone = process.env.ADMIN_PHONE_NUMBER
     if (adminPhone) {

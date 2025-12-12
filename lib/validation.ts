@@ -325,6 +325,7 @@ export const cancelLoadSchema = z.object({
 
 export const acceptLoadSchema = z.object({
   driverId: z.string().min(1, 'Driver ID is required'),
+  vehicleId: z.string().min(1, 'Vehicle ID is required'),
 })
 
 export const acceptQuoteSchema = z.object({})

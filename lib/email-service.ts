@@ -34,9 +34,17 @@ export interface EmailOptions {
 /**
  * Send an email using Resend
  * Falls back to console logging if Resend is not configured
+ * Also creates notifications for all drivers if email is sent to company email
  */
 export async function sendEmail(options: EmailOptions, throwOnError: boolean = false): Promise<void> {
   const { to, subject, text, html, attachments } = options
+
+  // Check if email is being sent to company email (potential lead)
+  const companyEmail = process.env.COMPANY_EMAIL || process.env.RESEND_FROM_EMAIL || 'support@meddrop.com'
+  const isCompanyEmail = to.toLowerCase().includes(companyEmail.toLowerCase()) || 
+                         to.toLowerCase().includes('support@meddrop.com') ||
+                         to.toLowerCase().includes('info@meddrop.com') ||
+                         to.toLowerCase().includes('contact@meddrop.com')
 
   const client = getResendClient()
 
@@ -130,6 +138,24 @@ export async function sendEmail(options: EmailOptions, throwOnError: boolean = f
       hasAttachments: !!attachments?.length,
       responseKeys: Object.keys(result),
     })
+
+    // If email was sent to company email, notify all drivers (potential lead)
+    if (isCompanyEmail) {
+      try {
+        const { notifyAllDriversCompanyEmailReceived } = await import('./notifications')
+        await notifyAllDriversCompanyEmailReceived({
+          fromEmail: to, // The recipient (company email) - we'll extract sender from email headers if available
+          subject,
+          message: text.substring(0, 500), // First 500 chars of email content
+        }).catch((notifError) => {
+          console.error('📧 [Email Service] Failed to create driver notifications:', notifError)
+          // Don't fail email send if notification creation fails
+        })
+      } catch (notifError) {
+        console.error('📧 [Email Service] Error importing notification function:', notifError)
+        // Don't fail email send if notification import fails
+      }
+    }
   } catch (error: any) {
     console.error('📧 [Email Service] Failed to send email:', error)
     console.error('📧 [Email Service] Error details:', {

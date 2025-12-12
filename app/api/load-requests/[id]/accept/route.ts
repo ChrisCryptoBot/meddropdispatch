@@ -41,7 +41,20 @@ export async function POST(
       )
     }
 
-    const { driverId } = validation.data
+    const { driverId, vehicleId } = validation.data
+
+    // Verify vehicle belongs to driver
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        id: vehicleId,
+        driverId: driverId,
+        isActive: true,
+      },
+    })
+
+    if (!vehicle) {
+      throw new ValidationError('Vehicle not found or does not belong to driver')
+    }
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -65,11 +78,12 @@ export async function POST(
       throw new ValidationError(`Cannot accept load with status: ${loadRequest.status}. Load must be REQUESTED.`)
     }
 
-    // Update load with driver assignment - set to SCHEDULED (tracking starts here)
+    // Update load with driver and vehicle assignment - set to SCHEDULED (tracking starts here)
     const updatedLoad = await prisma.loadRequest.update({
       where: { id },
       data: {
         driverId,
+        vehicleId,
         assignedAt: loadRequest.assignedAt || new Date(),
         acceptedByDriverAt: new Date(),
         // Set status to SCHEDULED - driver accepted after phone call, tracking now active
@@ -83,6 +97,16 @@ export async function POST(
             lastName: true,
             phone: true,
             email: true,
+          },
+        },
+        vehicle: {
+          select: {
+            id: true,
+            vehicleType: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehiclePlate: true,
+            nickname: true,
           },
         },
         shipper: true,
@@ -152,6 +176,19 @@ export async function POST(
       readyTime: updatedLoad.readyTime,
       deliveryDeadline: updatedLoad.deliveryDeadline,
     })
+
+    // Create in-app notification for driver (they already accepted, but this confirms it's scheduled)
+    if (driverId) {
+      const { notifyDriverLoadStatusChanged } = await import('@/lib/notifications')
+      await notifyDriverLoadStatusChanged({
+        driverId,
+        loadRequestId: id,
+        trackingCode: updatedLoad.publicTrackingCode,
+        oldStatus: loadRequest.status,
+        newStatus: 'SCHEDULED',
+        statusLabel: 'Scheduled',
+      })
+    }
 
     logger.info('Load accepted by driver', {
       loadId: id,

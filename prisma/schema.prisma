@@ -104,21 +104,28 @@ model LoadTemplate {
   @@index([isActive])
 }
 
-// Notification: In-app notifications for admin users (Phase 1.1)
-// NotificationType: QUOTE_REQUEST, LOAD_UPDATE, DRIVER_DENIAL, LATE_DELIVERY, COMPLIANCE_EXPIRING, PAYMENT_RECEIVED, OTHER
+// Notification: In-app notifications for admin users and drivers
+// NotificationType: QUOTE_REQUEST, LOAD_UPDATE, DRIVER_DENIAL, LATE_DELIVERY, COMPLIANCE_EXPIRING, PAYMENT_RECEIVED, SHIPPER_REQUEST_CALL, NEW_LOAD_ASSIGNED, LOAD_CANCELLED, DOCUMENT_UPLOADED, OTHER
 model Notification {
   id        String   @id @default(cuid())
   userId    String?  // Admin user ID (null = all admins)
+  driverId  String?  // Driver ID (for driver notifications)
+  loadRequestId String? // Related load request ID (if applicable)
   type      String   // NotificationType enum
   title     String
   message   String
   link      String?  // URL to relevant page
   isRead    Boolean  @default(false)
   readAt    DateTime?
+  metadata  String?  // JSON string for additional data (e.g., shipper phone number for call requests)
   createdAt DateTime @default(now())
 
+  loadRequest LoadRequest? @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+
   @@index([userId, isRead])
+  @@index([driverId, isRead])
   @@index([createdAt])
+  @@index([loadRequestId])
 }
 
 // Facility: Pickup or dropoff locations
@@ -185,6 +192,7 @@ model LoadRequest {
 
   // Driver Assignment
   driverId           String? // Assigned driver
+  vehicleId          String? // Assigned vehicle for this load
   assignedAt         DateTime? // When assigned to driver
   acceptedByDriverAt DateTime? // When driver accepted
   
@@ -284,11 +292,14 @@ model LoadRequest {
   pickupFacility  Facility        @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
   dropoffFacility Facility        @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
   driver          Driver?         @relation(fields: [driverId], references: [id])
+  vehicle         Vehicle?        @relation(fields: [vehicleId], references: [id])
   invoice         Invoice?        @relation(fields: [invoiceId], references: [id])
+  notifications   Notification[]
   trackingEvents  TrackingEvent[]
   documents       Document[]
 
   @@index([driverId])
+  @@index([vehicleId])
   @@index([publicTrackingCode])
   @@index([shipperId])
   @@index([status])
@@ -431,6 +442,8 @@ model Driver {
 
   // Relations
   loadRequests LoadRequest[]
+  vehicles     Vehicle[]
+  documents    DriverDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -440,6 +453,69 @@ model Driver {
 
   @@index([email])
   @@index([status])
+}
+
+// Vehicle: Driver vehicles (drivers can have multiple vehicles)
+model Vehicle {
+  id        String   @id @default(cuid())
+  driverId String
+  
+  // Vehicle Details
+  vehicleType      String // VehicleType enum: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
+  vehicleMake      String?
+  vehicleModel     String?
+  vehicleYear      Int?
+  vehiclePlate     String
+  hasRefrigeration Boolean @default(false)
+  isActive         Boolean @default(true) // Soft delete - can deactivate instead of deleting
+  
+  // Optional nickname for easy identification
+  nickname String? // e.g., "Work Van", "Backup Truck"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  driver      Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  loadRequests LoadRequest[]
+
+  @@index([driverId])
+  @@index([isActive])
+}
+
+// DriverDocument: Driver compliance and certification documents
+// DocumentType: DRIVERS_LICENSE, VEHICLE_INSURANCE, VEHICLE_REGISTRATION, HIPAA_CERTIFICATE, UN3373_CERTIFICATE, BACKGROUND_CHECK, W9_FORM, OTHER
+model DriverDocument {
+  id        String   @id @default(cuid())
+  driverId  String
+  
+  // Document Details
+  type        String   // DocumentType enum
+  title       String   // e.g., "Driver's License", "Vehicle Insurance - ABC-1234"
+  url         String   // Storage URL (S3, etc.) or base64 data
+  mimeType    String?  // MIME type (image/jpeg, application/pdf, etc.)
+  fileSize    Int?     // File size in bytes
+  fileHash    String?  // SHA-256 hash for document integrity verification
+  
+  // Expiration Tracking
+  expiryDate  DateTime? // When document expires (for licenses, insurance, certs)
+  
+  // Status
+  isActive    Boolean  @default(true) // Soft delete
+  verifiedBy  String?  // Admin user ID who verified the document
+  verifiedAt  DateTime? // When document was verified by admin
+  notes       String?  // Optional notes about the document
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([type])
+  @@index([isActive])
+  @@index([expiryDate])
 }
 
 // Payout: Driver payout history

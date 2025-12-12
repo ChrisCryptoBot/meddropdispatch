@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
 import RateCalculator from '@/components/features/RateCalculator'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface Driver {
   id: string
@@ -95,6 +96,10 @@ export default function DriverDashboardPage() {
   const [showSmartRouteModal, setShowSmartRouteModal] = useState(false)
   const [smartRoute, setSmartRoute] = useState<any>(null)
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false)
+  const [vehicles, setVehicles] = useState<any[]>([])
+  const [showVehicleSelectModal, setShowVehicleSelectModal] = useState(false)
+  const [pendingLoadId, setPendingLoadId] = useState<string | null>(null)
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
 
   useEffect(() => {
     // Check if driver is logged in
@@ -107,8 +112,9 @@ export default function DriverDashboardPage() {
     const parsedDriver = JSON.parse(driverData)
     setDriver(parsedDriver)
 
-    // Fetch all loads
+    // Fetch all loads and vehicles
     fetchLoads(parsedDriver.id)
+    fetchVehicles(parsedDriver.id)
   }, [router])
 
   const fetchLoads = async (driverId: string) => {
@@ -153,21 +159,53 @@ export default function DriverDashboardPage() {
     }
   }
 
+  const fetchVehicles = async (driverId: string) => {
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/vehicles`)
+      if (response.ok) {
+        const data = await response.json()
+        setVehicles(data.vehicles || [])
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+    }
+  }
+
   const handleAcceptLoad = async (loadId: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
     if (!driver) return
 
+    // Check if driver has vehicles
+    if (vehicles.length === 0) {
+      showToast.warning('No vehicles available', 'Please add a vehicle in Vehicle Settings before accepting loads.')
+      router.push('/driver/vehicle')
+      return
+    }
+
+    // Show vehicle selection modal
+    setPendingLoadId(loadId)
+    setSelectedVehicleId(vehicles[0]?.id || '')
+    setShowVehicleSelectModal(true)
+  }
+
+  const handleConfirmAcceptLoad = async () => {
+    if (!driver || !pendingLoadId || !selectedVehicleId) return
+
     if (!confirm('Accept this scheduling request? You should call the shipper first to confirm details and pricing before accepting.')) {
       return
     }
 
+    setIsSubmitting(true)
     try {
-      const response = await fetch(`/api/load-requests/${loadId}/accept`, {
+      const response = await fetch(`/api/load-requests/${pendingLoadId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ driverId: driver.id }),
+        body: JSON.stringify({ 
+          driverId: driver.id,
+          vehicleId: selectedVehicleId,
+        }),
       })
 
       if (!response.ok) {
@@ -177,9 +215,14 @@ export default function DriverDashboardPage() {
 
       // Refresh loads
       await fetchLoads(driver.id)
+      setShowVehicleSelectModal(false)
+      setPendingLoadId(null)
+      setSelectedVehicleId('')
       showToast.success('Load scheduled!', 'Tracking is now active.')
     } catch (error) {
       showApiError(error, 'Failed to accept load')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -420,23 +463,6 @@ export default function DriverDashboardPage() {
             <p className="text-xs text-gray-600">Active</p>
           </div>
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="glass p-6 rounded-2xl mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <Link
-          href="/driver/manual-load"
-          className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Record Manual Load & Upload Documents
-        </Link>
-        <p className="text-sm text-gray-600 mt-2">
-          Document loads that weren't created through the system (from emails, phone calls, etc.)
-        </p>
       </div>
 
       {/* Tabs */}
@@ -1121,6 +1147,95 @@ export default function DriverDashboardPage() {
                   <p className="text-gray-600">No route data available</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Vehicle Selection Modal */}
+        {showVehicleSelectModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => {
+            setShowVehicleSelectModal(false)
+            setPendingLoadId(null)
+            setSelectedVehicleId('')
+          }}>
+            <div className="glass max-w-md w-full rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Select Vehicle</h3>
+              <p className="text-sm text-gray-600 mb-4">Choose which vehicle you'll use for this load.</p>
+              
+              <div className="space-y-3 mb-6">
+                {vehicles.filter(v => v.isActive).map((vehicle) => (
+                  <label
+                    key={vehicle.id}
+                    className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedVehicleId === vehicle.id
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300 bg-white/60'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="vehicle"
+                      value={vehicle.id}
+                      checked={selectedVehicleId === vehicle.id}
+                      onChange={(e) => setSelectedVehicleId(e.target.value)}
+                      className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-gray-900">
+                          {vehicle.nickname || `${vehicle.vehicleType.replace(/_/g, ' ')}`}
+                        </p>
+                        {vehicle.hasRefrigeration && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            Refrigerated
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {vehicle.vehicleYear && vehicle.vehicleMake && vehicle.vehicleModel
+                          ? `${vehicle.vehicleYear} ${vehicle.vehicleMake} ${vehicle.vehicleModel}`
+                          : vehicle.vehicleType.replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Plate: {vehicle.vehiclePlate}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {vehicles.filter(v => v.isActive).length === 0 && (
+                <div className="text-center py-8 mb-6">
+                  <p className="text-gray-600 mb-4">No active vehicles available</p>
+                  <button
+                    onClick={() => {
+                      setShowVehicleSelectModal(false)
+                      router.push('/driver/vehicle')
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Add Vehicle
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowVehicleSelectModal(false)
+                    setPendingLoadId(null)
+                    setSelectedVehicleId('')
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmAcceptLoad}
+                  disabled={isSubmitting || !selectedVehicleId || vehicles.filter(v => v.isActive).length === 0}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting ? 'Accepting...' : 'Accept Load'}
+                </button>
+              </div>
             </div>
           </div>
         )}

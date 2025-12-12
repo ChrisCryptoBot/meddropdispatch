@@ -115,6 +115,19 @@ export async function POST(
       },
     })
 
+    // Create in-app notification for driver
+    if (loadRequest.driverId) {
+      const { notifyDriverQuoteDecision } = await import('@/lib/notifications')
+      await notifyDriverQuoteDecision({
+        driverId: loadRequest.driverId,
+        loadRequestId: id,
+        trackingCode: loadRequest.publicTrackingCode,
+        decision: 'APPROVED',
+      }).catch((error) => {
+        console.error('Error creating driver notification:', error)
+      })
+    }
+
     // Send notification email to driver
     const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
     try {

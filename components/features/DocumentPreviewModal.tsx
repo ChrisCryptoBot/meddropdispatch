@@ -86,14 +86,24 @@ export default function DocumentPreviewModal({
 
   // Handle escape key
   useEffect(() => {
+    // Ensure we're in the browser environment
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !document.addEventListener) {
+      return
+    }
+    
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose()
       }
     }
+    
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
-      return () => document.removeEventListener('keydown', handleEscape)
+      return () => {
+        if (typeof document !== 'undefined' && document.removeEventListener) {
+          document.removeEventListener('keydown', handleEscape)
+        }
+      }
     }
   }, [isOpen, onClose])
 

@@ -29,6 +29,27 @@ export async function GET(
         shipper: true,
         pickupFacility: true,
         dropoffFacility: true,
+        driver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+          }
+        },
+        vehicle: {
+          select: {
+            id: true,
+            vehicleType: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehicleYear: true,
+            vehiclePlate: true,
+            hasRefrigeration: true,
+            nickname: true,
+          }
+        },
         trackingEvents: {
           orderBy: { createdAt: 'desc' }
         },

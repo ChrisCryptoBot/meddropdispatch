@@ -123,6 +123,19 @@ export async function POST(
       ? `${cancelledLoad.driver.firstName || ''} ${cancelledLoad.driver.lastName || ''}`.trim() 
       : null
 
+    // Create in-app notification for driver if load was assigned
+    if (cancelledLoad.driverId) {
+      const { notifyDriverLoadCancelled } = await import('@/lib/notifications')
+      await notifyDriverLoadCancelled({
+        driverId: cancelledLoad.driverId,
+        loadRequestId: id,
+        trackingCode: cancelledLoad.publicTrackingCode,
+        reason: `${cancellationReason.replace(/_/g, ' ')}${notes ? ` - ${notes}` : ''}`,
+      }).catch((error) => {
+        console.error('Error creating driver cancellation notification:', error)
+      })
+    }
+
     await sendLoadCancelledNotification({
       shipperEmail: cancelledLoad.shipper.email,
       driverEmail: cancelledLoad.driver?.email || null,

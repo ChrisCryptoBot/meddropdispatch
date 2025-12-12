@@ -1099,5 +1099,138 @@ Medical Courier Services
   })
 }
 
+/**
+ * Send forgot password email with username and temporary password
+ */
+export async function sendForgotPasswordEmail({
+  to,
+  firstName,
+  lastName,
+  username,
+  temporaryPassword,
+  loginUrl,
+}: {
+  to: string
+  firstName: string
+  lastName: string
+  username: string
+  temporaryPassword: string
+  loginUrl: string
+}) {
+  const subject = `MED DROP - Password Reset Request`
+  const fullName = `${firstName} ${lastName}`.trim() || 'Driver'
+
+  const text = `
+Hello ${fullName},
+
+You requested a password reset for your MED DROP driver account.
+
+YOUR LOGIN CREDENTIALS:
+Username (Email): ${username}
+Temporary Password: ${temporaryPassword}
+
+IMPORTANT SECURITY NOTICE:
+- This is a temporary password that has been set for your account
+- Please log in immediately and change your password to something secure
+- Do not share this password with anyone
+- If you did not request this password reset, please contact support immediately
+
+LOG IN NOW:
+${loginUrl}
+
+After logging in, please go to your Profile settings to change your password to something more secure.
+
+Thank you for using MED DROP.
+
+---
+MED DROP
+Medical Courier Services
+Professional. Reliable. Trusted.
+
+This is an automated email. Please do not reply to this email.
+If you have questions, contact support@meddrop.com
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
+    .credentials-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .credential-row { margin: 15px 0; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #0ea5e9; }
+    .credential-label { font-weight: 600; color: #0369a1; margin-bottom: 5px; }
+    .credential-value { font-size: 18px; font-family: 'Courier New', monospace; color: #1e40af; font-weight: bold; }
+    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+    .button:hover { background: #0284c7; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">Password Reset Request</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">MED DROP - Driver Portal</p>
+    </div>
+    
+    <div class="content">
+      <p style="font-size: 18px; color: #1e40af;"><strong>Hello ${fullName},</strong></p>
+      
+      <p>You requested a password reset for your MED DROP driver account.</p>
+      
+      <div class="credentials-box">
+        <h3 style="margin-top: 0; color: #0369a1; text-align: center;">Your Login Credentials</h3>
+        
+        <div class="credential-row">
+          <div class="credential-label">Username (Email):</div>
+          <div class="credential-value">${username}</div>
+        </div>
+        
+        <div class="credential-row">
+          <div class="credential-label">Temporary Password:</div>
+          <div class="credential-value">${temporaryPassword}</div>
+        </div>
+      </div>
+      
+      <div class="warning-box">
+        <p style="margin: 0;"><strong>⚠️ Important Security Notice:</strong></p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+          <li>This is a temporary password that has been set for your account</li>
+          <li>Please log in immediately and change your password to something secure</li>
+          <li>Do not share this password with anyone</li>
+          <li>If you did not request this password reset, please contact support immediately</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${loginUrl}" class="button">Log In Now</a>
+      </div>
+      
+      <p style="color: #6b7280; font-size: 14px;">After logging in, please go to your <strong>Profile</strong> settings to change your password to something more secure.</p>
+      
+      <p style="margin-top: 30px;">Thank you for using MED DROP.</p>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 0;"><strong>MED DROP</strong></p>
+      <p style="margin: 5px 0;">Medical Courier Services</p>
+      <p style="margin: 5px 0;">Professional. Reliable. Trusted.</p>
+      <p style="margin: 15px 0 0 0; font-size: 12px;">This is an automated email. Please do not reply to this email.</p>
+      <p style="margin: 5px 0; font-size: 12px;">If you have questions, contact support@meddrop.com</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
 // Re-export sendEmail from email-service for backward compatibility
 export { sendEmail } from './email-service'
