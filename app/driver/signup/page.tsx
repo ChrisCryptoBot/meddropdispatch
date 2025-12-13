@@ -88,9 +88,9 @@ export default function DriverSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <div className="glass p-8 rounded-3xl">
+        <div className="glass-accent p-8 rounded-3xl border-2 border-teal-200/30 shadow-medical">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
@@ -103,14 +103,14 @@ export default function DriverSignupPage() {
                 priority
               />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Join as Driver</h1>
-            <p className="text-gray-600">Create your driver account</p>
+            <h1 className="text-3xl font-bold text-gradient mb-2">Join as Driver</h1>
+            <p className="text-teal-700">Create your driver account</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-700 text-sm font-medium">{error}</p>
+            <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
+              <p className="text-urgent-700 text-sm font-medium">{error}</p>
             </div>
           )}
 
@@ -132,7 +132,7 @@ export default function DriverSignupPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                   />
                 </div>
 
@@ -147,7 +147,7 @@ export default function DriverSignupPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                   />
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function DriverSignupPage() {
                     name="vehicleMake"
                     value={formData.vehicleMake}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                     placeholder="Toyota"
                   />
                 </div>
@@ -247,7 +247,7 @@ export default function DriverSignupPage() {
                     name="vehicleModel"
                     value={formData.vehicleModel}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                     placeholder="Sienna"
                   />
                 </div>
@@ -266,7 +266,7 @@ export default function DriverSignupPage() {
                     onChange={handleChange}
                     min="1900"
                     max={new Date().getFullYear() + 1}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                     placeholder="2020"
                   />
                 </div>
@@ -281,7 +281,7 @@ export default function DriverSignupPage() {
                     name="vehiclePlate"
                     value={formData.vehiclePlate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
                     placeholder="ABC-1234"
                   />
                 </div>
@@ -294,7 +294,7 @@ export default function DriverSignupPage() {
                   name="hasRefrigeration"
                   checked={formData.hasRefrigeration}
                   onChange={handleChange}
-                  className="w-4 h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
+                  className="w-4 h-4 text-teal-600 border-teal-300 rounded focus:ring-teal-500"
                 />
                 <label htmlFor="hasRefrigeration" className="ml-2 text-sm text-gray-700">
                   My vehicle has refrigeration capabilities
@@ -342,7 +342,7 @@ export default function DriverSignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold text-lg hover:from-slate-700 hover:to-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
+              className="w-full px-6 py-4 rounded-xl bg-gradient-accent text-white font-bold text-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
             >
               {isLoading ? 'Creating Account...' : 'Create Driver Account'}
             </button>
@@ -350,13 +350,13 @@ export default function DriverSignupPage() {
 
           {/* Footer Links */}
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-teal-700">
               Already have an account?{' '}
-              <Link href="/driver/login" className="text-slate-600 hover:text-slate-700 font-medium">
+              <Link href="/driver/login" className="text-teal-600 hover:text-teal-900 font-medium">
                 Sign in
               </Link>
             </p>
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 mt-2 inline-block">
+            <Link href="/" className="text-sm text-gray-600 hover:text-teal-700 mt-2 inline-block">
               ← Back to Home
             </Link>
           </div>

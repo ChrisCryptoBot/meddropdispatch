@@ -100,20 +100,20 @@ export default function ShipperLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold text-gradient mb-2">
               MED DROP
             </h1>
           </Link>
-          <p className="text-gray-600">Shipper Portal Login</p>
+          <p className="text-medical">Shipper Portal Login</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-8">
+        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
@@ -125,7 +125,7 @@ export default function ShipperLoginPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                 placeholder="your@email.com"
                 required
               />
@@ -141,7 +141,7 @@ export default function ShipperLoginPage() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                 placeholder="••••••••"
                 required
               />
@@ -149,7 +149,7 @@ export default function ShipperLoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-urgent-50 border-2 border-urgent-200 text-urgent-700 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
@@ -158,32 +158,32 @@ export default function ShipperLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-slate-600 to-slate-700 text-white py-3 rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-medical">
             <p>
               Don't have an account?{' '}
-              <Link href="/shipper/signup" className="text-slate-600 hover:text-slate-700 font-medium">
+              <Link href="/shipper/signup" className="text-blue-600 hover:text-blue-800 font-medium">
                 Sign up as Shipper
               </Link>
             </p>
-            <Link href="/" className="text-gray-500 hover:text-gray-700 mt-2 inline-block">
+            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
               ← Back to Home
             </Link>
           </div>
         </div>
 
         {/* Test Credentials */}
-        <div className="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
-          <p className="font-semibold text-slate-900 mb-2">Test Credentials:</p>
-          <div className="text-slate-800 space-y-1">
-            <p>Email: <code className="bg-slate-100 px-2 py-0.5 rounded">shipper@test.com</code></p>
-            <p>Password: <code className="bg-slate-100 px-2 py-0.5 rounded">shipper123</code></p>
+        <div className="mt-6 glass-primary border-2 border-blue-200/30 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-gray-900 mb-2">Test Credentials:</p>
+          <div className="text-gray-800 space-y-1">
+            <p>Email: <code className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">shipper@test.com</code></p>
+            <p>Password: <code className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">shipper123</code></p>
           </div>
         </div>
       </div>

@@ -96,7 +96,7 @@ export default function ShipperSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -112,22 +112,22 @@ export default function ShipperSignupPage() {
                   priority
                 />
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-gradient">
                 MED DROP
               </h1>
             </div>
-            <p className="text-gray-600">Join as Shipper</p>
+            <p className="text-medical">Join as Shipper</p>
           </Link>
         </div>
 
         {/* Signup Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Your Account</h2>
+        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
+          <h2 className="heading-secondary text-2xl mb-6">Create Your Account</h2>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm font-medium">{error}</p>
+            <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-lg">
+              <p className="text-urgent-700 text-sm font-medium">{error}</p>
             </div>
           )}
 
@@ -147,7 +147,7 @@ export default function ShipperSignupPage() {
                   value={formData.companyName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                   placeholder="Acme Healthcare"
                 />
               </div>
@@ -163,7 +163,7 @@ export default function ShipperSignupPage() {
                   value={formData.contactName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                   placeholder="John Doe"
                 />
               </div>
@@ -178,7 +178,7 @@ export default function ShipperSignupPage() {
                   value={formData.clientType}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                 >
                   <option value="CLINIC">Clinic</option>
                   <option value="HOSPITAL">Hospital</option>
@@ -204,7 +204,7 @@ export default function ShipperSignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                   placeholder="contact@company.com"
                 />
               </div>
@@ -220,7 +220,7 @@ export default function ShipperSignupPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -242,7 +242,7 @@ export default function ShipperSignupPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                   placeholder="At least 6 characters"
                 />
               </div>
@@ -258,7 +258,7 @@ export default function ShipperSignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                 />
               </div>
             </div>
@@ -267,21 +267,21 @@ export default function ShipperSignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-slate-600 to-slate-700 text-white py-3 rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {isLoading ? 'Creating Account...' : 'Create Shipper Account'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-medical">
             <p>
               Already have an account?{' '}
-              <Link href="/shipper/login" className="text-slate-600 hover:text-slate-700 font-medium">
+              <Link href="/shipper/login" className="text-blue-600 hover:text-blue-800 font-medium">
                 Sign in
               </Link>
             </p>
-            <Link href="/" className="text-gray-500 hover:text-gray-700 mt-2 inline-block">
+            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
               ← Back to Home
             </Link>
           </div>
