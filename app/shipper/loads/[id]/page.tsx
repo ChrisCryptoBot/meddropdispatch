@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
+import GPSTrackingMap from '@/components/features/GPSTrackingMap'
 
 interface LoadRequest {
   id: string
@@ -50,6 +51,8 @@ interface LoadRequest {
     phone: string
     vehicleType: string
   } | null
+  gpsTrackingEnabled?: boolean
+  gpsTrackingStartedAt?: string
   trackingEvents: Array<{
     id: string
     code: string
@@ -84,6 +87,13 @@ export default function ShipperLoadDetailPage() {
   const [cancelNotes, setCancelNotes] = useState('')
   const [isCancelling, setIsCancelling] = useState(false)
   const [isRequestingCall, setIsRequestingCall] = useState(false)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [rating, setRating] = useState(5)
+  const [feedback, setFeedback] = useState('')
+  const [wouldRecommend, setWouldRecommend] = useState(true)
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false)
+  const [existingRating, setExistingRating] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -102,6 +112,13 @@ export default function ShipperLoadDetailPage() {
       fetchDocuments()
     }
   }, [router, params])
+
+  useEffect(() => {
+    // Fetch existing rating if load is delivered
+    if (load?.status === 'DELIVERED' && params?.id) {
+      fetchExistingRating()
+    }
+  }, [load?.status, params?.id])
 
   const fetchLoad = async () => {
     if (!params?.id) return
@@ -286,6 +303,84 @@ export default function ShipperLoadDetailPage() {
       showApiError(error, 'Failed to cancel load. Please try again.')
     } finally {
       setIsCancelling(false)
+    }
+  }
+
+  const fetchExistingRating = async () => {
+    if (!params?.id) return
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/rate-driver`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.rating) {
+          setExistingRating(data.rating)
+          setRating(data.rating.rating)
+          setFeedback(data.rating.feedback || '')
+          setWouldRecommend(data.rating.wouldRecommend)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching rating:', error)
+    }
+  }
+
+  const handleSubmitRating = async () => {
+    if (!shipper || !params?.id) return
+    
+    setIsSubmittingRating(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/rate-driver`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipperId: shipper.id,
+          rating,
+          feedback: feedback || null,
+          wouldRecommend,
+        }),
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to submit rating')
+      }
+      
+      await fetchExistingRating()
+      setShowRatingModal(false)
+      showToast.success('Rating submitted successfully!', 'Thank you for your feedback.')
+    } catch (error) {
+      console.error('Error submitting rating:', error)
+      showApiError(error, 'Failed to submit rating. Please try again.')
+    } finally {
+      setIsSubmittingRating(false)
+    }
+  }
+
+  const handleDeleteLoad = async () => {
+    if (!params?.id || !shipper) return
+    
+    if (!confirm('Are you sure you want to permanently remove this load? This action cannot be undone and will delete all associated data including documents, tracking events, and ratings.')) {
+      return
+    }
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete load')
+      }
+      
+      showToast.success('Load permanently removed')
+      router.push('/shipper/dashboard')
+    } catch (error) {
+      console.error('Error deleting load:', error)
+      showApiError(error, 'Failed to delete load. Please try again.')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -695,6 +790,18 @@ export default function ShipperLoadDetailPage() {
               )}
             </div>
 
+            {/* GPS Tracking Map - Only show if enabled and driver is assigned */}
+            {load && load.driver && load.gpsTrackingEnabled && (
+              <div className="mb-6">
+                <GPSTrackingMap
+                  loadId={load.id}
+                  pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                  dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                  enabled={load.gpsTrackingEnabled}
+                />
+              </div>
+            )}
+
             {/* Tracking Timeline */}
             <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Tracking Timeline</h3>
@@ -832,6 +939,87 @@ export default function ShipperLoadDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Rate Your Driver - Only for delivered loads */}
+            {load.status === 'DELIVERED' && load.driver && (
+              <div className="glass rounded-2xl p-6 border-2 border-green-200 bg-gradient-to-r from-green-50/80 to-emerald-50/80">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Rate Your Driver</h3>
+                    <p className="text-sm text-gray-600">
+                      {existingRating 
+                        ? 'You have already rated this driver. You can update your rating below.'
+                        : 'How was your experience with this driver? Your feedback helps us improve our service.'}
+                    </p>
+                  </div>
+                </div>
+                
+                {existingRating && (
+                  <div className="mb-4 p-3 bg-white/60 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg
+                            key={star}
+                            className={`w-5 h-5 ${star <= existingRating.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">
+                        {existingRating.rating} out of 5 stars
+                      </span>
+                    </div>
+                    {existingRating.feedback && (
+                      <p className="text-sm text-gray-700 mb-2">{existingRating.feedback}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      {existingRating.wouldRecommend ? '✓ Would recommend' : '✗ Would not recommend'}
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowRatingModal(true)}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                  {existingRating ? 'Update Rating' : 'Rate Your Driver'}
+                </button>
+              </div>
+            )}
+
+            {/* Permanently Remove Load Button */}
+            <div className="glass rounded-2xl p-6 border-2 border-red-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Danger Zone</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Permanently remove this load from the system. This action cannot be undone and will delete all associated data.
+              </p>
+              <button
+                onClick={handleDeleteLoad}
+                disabled={isDeleting}
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Removing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Permanently Remove This Load
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Quick Info */}
             <div className="glass rounded-2xl p-6">
@@ -1104,6 +1292,108 @@ export default function ShipperLoadDetailPage() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass max-w-md w-full rounded-2xl p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              {existingRating ? 'Update Your Rating' : 'Rate Your Driver'}
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Star Rating */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Rating *
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <svg
+                        className={`w-10 h-10 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {rating === 1 && 'Poor'}
+                  {rating === 2 && 'Fair'}
+                  {rating === 3 && 'Good'}
+                  {rating === 4 && 'Very Good'}
+                  {rating === 5 && 'Excellent'}
+                </p>
+              </div>
+
+              {/* Feedback */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Feedback (Optional)
+                </label>
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+                  placeholder="Share your experience with this driver..."
+                />
+              </div>
+
+              {/* Would Recommend */}
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={wouldRecommend}
+                    onChange={(e) => setWouldRecommend(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-semibold text-gray-700">
+                    I would recommend this driver
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowRatingModal(false)
+                  if (existingRating) {
+                    setRating(existingRating.rating)
+                    setFeedback(existingRating.feedback || '')
+                    setWouldRecommend(existingRating.wouldRecommend)
+                  } else {
+                    setRating(5)
+                    setFeedback('')
+                    setWouldRecommend(true)
+                  }
+                }}
+                disabled={isSubmittingRating}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitRating}
+                disabled={isSubmittingRating || rating < 1}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingRating ? 'Submitting...' : existingRating ? 'Update Rating' : 'Submit Rating'}
               </button>
             </div>
           </div>

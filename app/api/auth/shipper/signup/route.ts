@@ -26,6 +26,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if email is blocked (DNU list)
+    try {
+      const blockedEmail = await prisma.blockedEmail.findUnique({
+        where: { email: email.toLowerCase() },
+      })
+
+      if (blockedEmail && blockedEmail.isActive) {
+        return NextResponse.json(
+          { 
+            error: 'Email address is blocked',
+            message: 'This email address has been blocked and cannot be used to create an account. Please contact support if you believe this is an error.',
+          },
+          { status: 403 }
+        )
+      }
+    } catch (error) {
+      // If BlockedEmail model doesn't exist yet (Prisma client not regenerated), skip the check
+      console.warn('BlockedEmail check skipped - model may not be available yet:', error)
+    }
+
     // Check if shipper already exists
     const existing = await prisma.shipper.findUnique({
       where: { email: email.toLowerCase() },

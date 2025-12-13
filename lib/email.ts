@@ -14,6 +14,8 @@ export async function sendLoadConfirmationEmail({
   loadDetails,
   rateInfo,
   baseUrl,
+  driverInfo,
+  gpsTrackingEnabled = false,
 }: {
   to: string
   companyName: string
@@ -33,11 +35,25 @@ export async function sendLoadConfirmationEmail({
     quoteAmount?: number | null
   }
   baseUrl: string
+  driverInfo?: {
+    name: string
+    phone: string
+    email: string
+    vehicle?: {
+      type: string
+      make?: string | null
+      model?: string | null
+      plate: string
+      nickname?: string | null
+    } | null
+  }
+  gpsTrackingEnabled?: boolean
 }) {
   const trackingUrl = `${baseUrl}/track/${trackingCode}`
   const signupUrl = `${baseUrl}/shipper/signup?email=${encodeURIComponent(to)}&tracking=${trackingCode}`
   const loginUrl = `${baseUrl}/shipper/login?email=${encodeURIComponent(to)}&tracking=${trackingCode}`
   const viewLoadUrl = trackingUrl
+  const gpsTrackingUrl = gpsTrackingEnabled ? `${baseUrl}/track/${trackingCode}#gps` : null
 
   const subject = `MED DROP - Load Confirmation: ${trackingCode}`
 
@@ -71,12 +87,23 @@ LOAD DETAILS:
 ${loadDetails.readyTime ? `- Ready Time: ${formatDate(loadDetails.readyTime)}` : ''}
 ${loadDetails.deliveryDeadline ? `- Delivery Deadline: ${formatDate(loadDetails.deliveryDeadline)}` : ''}
 ${loadDetails.commodityDescription ? `- Description: ${loadDetails.commodityDescription}` : ''}
-${loadDetails.driverName ? `- Assigned Driver: ${loadDetails.driverName}` : ''}
+
+${driverInfo ? `
+DRIVER INFORMATION:
+- Driver Name: ${driverInfo.name}
+- Phone: ${driverInfo.phone}
+${driverInfo.vehicle ? `- Vehicle: ${driverInfo.vehicle.nickname || driverInfo.vehicle.type}${driverInfo.vehicle.make && driverInfo.vehicle.model ? ` (${driverInfo.vehicle.make} ${driverInfo.vehicle.model})` : ''}${driverInfo.vehicle.plate ? ` - Plate: ${driverInfo.vehicle.plate}` : ''}` : ''}
+` : ''}
 
 ${rateInfo?.quoteAmount ? `RATE: $${rateInfo.quoteAmount.toFixed(2)}` : rateInfo?.ratePerMile ? `RATE: $${rateInfo.ratePerMile.toFixed(2)} per mile${rateInfo.totalDistance ? ` (${rateInfo.totalDistance.toFixed(1)} miles)` : ''}` : ''}
 
 TRACK YOUR SHIPMENT:
 ${trackingUrl}
+${gpsTrackingEnabled && gpsTrackingUrl ? `
+LIVE GPS TRACKING:
+${gpsTrackingUrl}
+View real-time driver location on the tracking page.
+` : ''}
 
 CREATE AN ACCOUNT TO MANAGE YOUR LOADS:
 ${signupUrl}
@@ -179,13 +206,33 @@ Medical Courier Services
           <div class="detail-value">${loadDetails.commodityDescription}</div>
         </div>
         ` : ''}
-        ${loadDetails.driverName ? `
+      </div>
+
+      ${driverInfo ? `
+      <div class="section" style="background: #f0fdf4; border-left: 4px solid #10b981;">
+        <h3 style="color: #059669;">Driver Information</h3>
         <div class="detail-row">
-          <div class="detail-label">Assigned Driver</div>
-          <div class="detail-value">${loadDetails.driverName}</div>
+          <div class="detail-label">Driver Name</div>
+          <div class="detail-value">${driverInfo.name}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Phone</div>
+          <div class="detail-value">
+            <a href="tel:${driverInfo.phone}" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">${driverInfo.phone}</a>
+          </div>
+        </div>
+        ${driverInfo.vehicle ? `
+        <div class="detail-row">
+          <div class="detail-label">Vehicle</div>
+          <div class="detail-value">
+            ${driverInfo.vehicle.nickname || driverInfo.vehicle.type}
+            ${driverInfo.vehicle.make && driverInfo.vehicle.model ? ` (${driverInfo.vehicle.make} ${driverInfo.vehicle.model})` : ''}
+            ${driverInfo.vehicle.plate ? ` - Plate: ${driverInfo.vehicle.plate}` : ''}
+          </div>
         </div>
         ` : ''}
       </div>
+      ` : ''}
 
       ${rateInfo && (rateInfo.quoteAmount || rateInfo.ratePerMile) ? `
       <div class="rate-box">
@@ -201,7 +248,31 @@ Medical Courier Services
 
       <div class="button-group">
         <a href="${viewLoadUrl}" class="button">Track Your Shipment</a>
+        ${gpsTrackingEnabled && gpsTrackingUrl ? `
+        <a href="${gpsTrackingUrl}" class="button" style="background: #10b981;">View Live GPS Tracking</a>
+        ` : ''}
       </div>
+
+      ${gpsTrackingEnabled ? `
+      <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <h3 style="margin-top: 0; color: #059669; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Live GPS Tracking Enabled
+        </h3>
+        <p style="margin-bottom: 15px; color: #047857;">Your driver has enabled real-time GPS tracking for this delivery. You can view their exact location on the tracking page, which includes both UPS-style status updates and a live GPS map showing the driver's current position.</p>
+        <div class="button-group" style="margin: 20px 0 0 0;">
+          <a href="${gpsTrackingUrl}" class="button" style="background: #10b981;">View GPS Map & Tracking</a>
+        </div>
+      </div>
+      ` : `
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <h3 style="margin-top: 0; color: #1e40af;">Track Your Shipment</h3>
+        <p style="margin-bottom: 15px;">Use the tracking link above to view real-time status updates, delivery timeline, and all shipment details. You'll see UPS-style tracking with status updates at each milestone.</p>
+      </div>
+      `}
 
       <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px; margin: 30px 0;">
         <h3 style="margin-top: 0; color: #1e40af;">Create an Account to Manage Your Loads</h3>

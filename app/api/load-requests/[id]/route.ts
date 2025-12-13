@@ -234,30 +234,30 @@ export async function DELETE(
       throw new NotFoundError('Load request')
     }
 
-    // Allow deletion of scheduled, completed, cancelled, or delivered loads
-    // Drivers can delete their own scheduled loads (especially manual loads)
-    // Completed/cancelled/delivered loads can also be deleted for cleanup
-    const deletableStatuses = ['SCHEDULED', 'CANCELLED', 'DELIVERED']
-    if (!deletableStatuses.includes(loadRequest.status)) {
-      return NextResponse.json(
-        {
-          error: 'Cannot delete load',
-          message: `Only scheduled, completed, cancelled, or delivered loads can be deleted. Current status: ${loadRequest.status}`,
-        },
-        { status: 400 }
-      )
-    }
+    // Allow deletion of any load by shipper or driver (for cleanup)
+    // No status restrictions - shippers and drivers can delete their loads at any time
+    // This is a permanent deletion, so use with caution
 
-    // Delete the load (Prisma will cascade delete related records if foreign keys are set up)
-    // If cascade is not set up, we need to delete related records first
+    // Delete the load (Prisma will cascade delete related records via onDelete: Cascade)
+    // Manually delete records that might not have cascade set up
     await prisma.$transaction(async (tx) => {
-      // Delete related records first
+      // Delete related records first (some may have cascade, but we'll be explicit)
       await tx.trackingEvent.deleteMany({
         where: { loadRequestId: id }
       })
       await tx.document.deleteMany({
         where: { loadRequestId: id }
       })
+      // Delete driver rating if exists (has cascade, but explicit for clarity)
+      try {
+        await tx.driverRating.deleteMany({
+          where: { loadRequestId: id }
+        })
+      } catch (e) {
+        // Model might not exist yet if migration hasn't run
+        console.warn('Could not delete driver rating (model may not exist yet):', e)
+      }
+      // GPS tracking points have cascade delete, so they'll be deleted automatically
       // Then delete the load
       await tx.loadRequest.delete({
         where: { id }

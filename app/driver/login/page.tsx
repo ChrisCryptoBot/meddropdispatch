@@ -151,8 +151,8 @@ export default function DriverLoginPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                  Password
-                </label>
+                Password
+              </label>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}

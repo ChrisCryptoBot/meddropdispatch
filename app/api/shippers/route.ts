@@ -17,7 +17,22 @@ export async function GET(request: NextRequest) {
       return createErrorResponse(error)
     }
 
+    const { searchParams } = new URL(req.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const search = searchParams.get('search')?.trim()
+
+    const whereClause: any = includeDeleted ? {} : { deletedAt: null }
+    
+    // Add search filter if provided
+    if (search && search.length >= 2) {
+      whereClause.companyName = {
+        contains: search,
+        mode: 'insensitive', // Case-insensitive search
+      }
+    }
+
     const shippers = await prisma.shipper.findMany({
+      where: whereClause,
       select: {
         id: true,
         companyName: true,
@@ -26,8 +41,10 @@ export async function GET(request: NextRequest) {
         phone: true,
         email: true,
         isActive: true,
+        deletedAt: true,
       },
       orderBy: { companyName: 'asc' },
+      take: search ? 10 : undefined, // Limit results when searching
     })
 
     return NextResponse.json({ shippers })
@@ -65,6 +82,27 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data
+
+    // Check if email is blocked (DNU list)
+    try {
+      const blockedEmail = await prisma.blockedEmail.findUnique({
+        where: { email: data.email.toLowerCase() },
+      })
+
+      if (blockedEmail && blockedEmail.isActive) {
+        return NextResponse.json(
+          {
+            error: 'Email address is blocked',
+            message: 'This email address has been blocked and cannot be used to create an account.',
+          },
+          { status: 403 }
+        )
+      }
+    } catch (error) {
+      // If BlockedEmail model doesn't exist yet (Prisma client not regenerated), skip the check
+      // This allows the API to work while the dev server is being restarted
+      console.warn('BlockedEmail check skipped - model may not be available yet:', error)
+    }
 
     // Check if shipper with this email already exists
     const existingShipper = await prisma.shipper.findUnique({

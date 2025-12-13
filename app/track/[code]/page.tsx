@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import DocumentCard from '@/components/features/DocumentCard'
+import GPSTrackingMap from '@/components/features/GPSTrackingMap'
 
 async function getLoadByTrackingCode(code: string) {
   const load = await prisma.loadRequest.findUnique({
@@ -22,6 +23,34 @@ async function getLoadByTrackingCode(code: string) {
           vehicleType: true,
         }
       },
+      vehicle: true, // Include vehicle info
+      trackingEvents: {
+        orderBy: { createdAt: 'asc' }
+      },
+      documents: {
+        orderBy: { createdAt: 'desc' }
+      }
+    },
+    select: {
+      id: true,
+      publicTrackingCode: true,
+      status: true,
+      serviceType: true,
+      gpsTrackingEnabled: true,
+      gpsTrackingStartedAt: true,
+      shipper: true,
+      pickupFacility: true,
+      dropoffFacility: true,
+      driver: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          vehicleType: true,
+        }
+      },
+      vehicle: true,
       trackingEvents: {
         orderBy: { createdAt: 'asc' }
       },

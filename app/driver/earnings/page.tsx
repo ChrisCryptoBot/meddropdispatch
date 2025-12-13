@@ -118,11 +118,11 @@ export default function DriverEarningsPage() {
   const filteredLoads = useMemo(() => {
     let filtered = loads.filter((load) => {
       // Status filter
-      if (filter === 'all') return load.status === 'DELIVERED'
-      if (filter === 'pending') return load.status !== 'DELIVERED'
-      if (filter === 'completed') return load.status === 'DELIVERED'
-      return true
-    })
+    if (filter === 'all') return load.status === 'DELIVERED'
+    if (filter === 'pending') return load.status !== 'DELIVERED'
+    if (filter === 'completed') return load.status === 'DELIVERED'
+    return true
+  })
 
     // Shipper filter
     if (shipperFilter !== 'all') {

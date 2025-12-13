@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { showToast, showApiError } from '@/lib/toast'
 
 interface Shipper {
   id: string
@@ -46,6 +47,7 @@ export default function DriverShippersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortField>('recent_activity')
   const [selectedClientType, setSelectedClientType] = useState<string>('all')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -70,6 +72,71 @@ export default function DriverShippersPage() {
       console.error('Error fetching shippers:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDelete = async (shipperId: string, companyName: string) => {
+    if (!confirm(`Are you sure you want to deactivate ${companyName}? This will hide them from active lists but preserve their data.`)) {
+      return
+    }
+
+    setDeletingId(shipperId)
+    try {
+      const response = await fetch(`/api/shippers/${shipperId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete shipper')
+      }
+
+      showToast.success('Shipper deactivated successfully')
+      if (driver) {
+        await fetchShippers(driver.id) // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting shipper:', error)
+      showApiError(error, 'Failed to delete shipper')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleDNU = async (shipperId: string, companyName: string, email: string) => {
+    const reason = prompt(`Mark ${companyName} as DNU (Do Not Use)?\n\nThis will:\n- Permanently delete the account\n- Block the email from future signups\n\nEnter reason (optional):`)
+    
+    if (reason === null) return // User cancelled
+
+    if (!confirm(`⚠️ WARNING: This will PERMANENTLY DELETE ${companyName} and BLOCK ${email} from signing up again.\n\nThis action cannot be undone. Continue?`)) {
+      return
+    }
+
+    setDeletingId(shipperId)
+    try {
+      const response = await fetch(`/api/shippers/${shipperId}/dnu`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: reason || `DNU: ${companyName}`,
+          blockEmail: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to mark shipper as DNU')
+      }
+
+      showToast.success('Shipper marked as DNU and deleted. Email has been blocked.')
+      if (driver) {
+        await fetchShippers(driver.id) // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error marking shipper as DNU:', error)
+      showApiError(error, 'Failed to mark shipper as DNU')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -400,13 +467,41 @@ export default function DriverShippersPage() {
                         </p>
                       </div>
                     )}
-                    <div className="mt-3">
+                    <div className="mt-3 flex gap-2">
                       <Link
                         href={`/driver/shippers/${shipper.id}/loads`}
-                        className="block w-full text-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-semibold"
+                        className="flex-1 text-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-semibold"
                       >
                         View Loads
                       </Link>
+                      <button
+                        onClick={() => handleDelete(shipper.id, shipper.companyName)}
+                        disabled={deletingId === shipper.id}
+                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Deactivate shipper (soft delete)"
+                      >
+                        {deletingId === shipper.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDNU(shipper.id, shipper.companyName, shipper.email)}
+                        disabled={deletingId === shipper.id}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Mark as DNU (permanently delete and block email)"
+                      >
+                        {deletingId === shipper.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

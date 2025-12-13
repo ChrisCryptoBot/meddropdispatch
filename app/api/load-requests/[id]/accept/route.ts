@@ -41,7 +41,7 @@ export async function POST(
       )
     }
 
-    const { driverId, vehicleId } = validation.data
+    const { driverId, vehicleId, gpsTrackingEnabled } = validation.data
 
     // Verify vehicle belongs to driver
     const vehicle = await prisma.vehicle.findFirst({
@@ -88,6 +88,9 @@ export async function POST(
         acceptedByDriverAt: new Date(),
         // Set status to SCHEDULED - driver accepted after phone call, tracking now active
         status: 'SCHEDULED',
+        // Enable GPS tracking if driver chose to enable it
+        gpsTrackingEnabled: gpsTrackingEnabled === true,
+        gpsTrackingStartedAt: gpsTrackingEnabled === true ? new Date() : null,
       },
       include: {
         driver: {

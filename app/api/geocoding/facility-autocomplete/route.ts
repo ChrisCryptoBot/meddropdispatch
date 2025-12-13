@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
 
     if (!apiKey) {
       console.warn('⚠️  GOOGLE_MAPS_API_KEY not configured - facility autocomplete disabled')
-      return NextResponse.json({ predictions: [] })
+      return NextResponse.json({ 
+        predictions: [],
+        error: 'Google Maps API key not configured',
+        message: 'Please set GOOGLE_MAPS_API_KEY in your .env file'
+      })
     }
 
     try {
@@ -61,8 +65,11 @@ export async function GET(request: NextRequest) {
       })
 
       if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
-        console.warn('Places Autocomplete API error:', response.data.status)
-        return NextResponse.json({ predictions: [] })
+        console.warn('Places Autocomplete API error:', response.data.status, response.data.error_message)
+        return NextResponse.json({ 
+          predictions: [],
+          error: `Google Places API error: ${response.data.status}${response.data.error_message ? ` - ${response.data.error_message}` : ''}`
+        })
       }
 
       // Format predictions for frontend
@@ -75,7 +82,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ predictions })
     } catch (error) {
       console.error('Error in facility autocomplete:', error)
-      return NextResponse.json({ predictions: [] })
+      return NextResponse.json({ 
+        predictions: [],
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
     }
   })(request)
 }

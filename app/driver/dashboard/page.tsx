@@ -100,6 +100,7 @@ export default function DriverDashboardPage() {
   const [showVehicleSelectModal, setShowVehicleSelectModal] = useState(false)
   const [pendingLoadId, setPendingLoadId] = useState<string | null>(null)
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
+  const [enableLocationTracking, setEnableLocationTracking] = useState(false)
 
   useEffect(() => {
     // Check if driver is logged in
@@ -184,6 +185,9 @@ export default function DriverDashboardPage() {
       return
     }
 
+    // Reset location tracking toggle when opening modal
+    setEnableLocationTracking(false)
+
     // Show vehicle selection modal
     setPendingLoadId(loadId)
     setSelectedVehicleId(vehicles[0]?.id || '')
@@ -218,7 +222,8 @@ export default function DriverDashboardPage() {
       setShowVehicleSelectModal(false)
       setPendingLoadId(null)
       setSelectedVehicleId('')
-      showToast.success('Load scheduled!', 'Tracking is now active.')
+      setEnableLocationTracking(false)
+      showToast.success('Load scheduled!', enableLocationTracking ? 'Location tracking is enabled. Shipper can see your location.' : 'Tracking is now active.')
     } catch (error) {
       showApiError(error, 'Failed to accept load')
     } finally {
@@ -436,13 +441,12 @@ export default function DriverDashboardPage() {
         <div className="mb-6">
           <Link
             href="/driver/manual-load"
-            className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
+            className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg hover:shadow-xl"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Create Manual Load
-            <span className="text-xs bg-white/20 px-2 py-1 rounded">For walk-in customers</span>
           </Link>
         </div>
 
@@ -1217,12 +1221,50 @@ export default function DriverDashboardPage() {
                 </div>
               )}
 
+              {/* Location Tracking Toggle */}
+              {vehicles.filter(v => v.isActive).length > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <label htmlFor="enableLocationTracking" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                          Track My Location
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Allow shipper to see your real-time location during this delivery
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEnableLocationTracking(!enableLocationTracking)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        enableLocationTracking ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                      role="switch"
+                      aria-checked={enableLocationTracking}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          enableLocationTracking ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowVehicleSelectModal(false)
                     setPendingLoadId(null)
                     setSelectedVehicleId('')
+                    setEnableLocationTracking(false)
                   }}
                   className="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
                 >

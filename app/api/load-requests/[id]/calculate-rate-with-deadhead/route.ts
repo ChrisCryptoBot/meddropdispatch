@@ -116,6 +116,7 @@ export async function POST(
     // Calculate profit estimates (pre-bid if not accepted, post-bid if accepted)
     const isAccepted = loadRequest.status !== 'REQUESTED' && loadRequest.status !== 'NEW'
     const estimatedTimeMinutes = Math.ceil((totalDistance / 45) * 60) // Assume 45 mph average
+    const estimatedHours = estimatedTimeMinutes / 60
     const profitEstimate = calculateProfitEstimate({
       rate: adjustedRate,
       totalDistance,
@@ -123,6 +124,9 @@ export async function POST(
       minimumRatePerMile: driverMinimumRatePerMile,
       isManualLoad: loadRequest.createdVia === 'DRIVER_MANUAL',
     })
+
+    // Calculate rate per hour
+    const ratePerHour = estimatedHours > 0 ? adjustedRate / estimatedHours : 0
 
     // Update load request with calculated values
     await prisma.loadRequest.update({
@@ -142,7 +146,10 @@ export async function POST(
         deadheadDistance: deadheadDistance,
         loadDistance: loadDistance,
         totalDistance: totalDistance,
+        estimatedTimeMinutes: estimatedTimeMinutes,
+        estimatedHours: estimatedHours,
         ratePerMile: adjustedRatePerMile,
+        ratePerHour: ratePerHour,
         suggestedRateMin: rateResult.suggestedRateMin,
         suggestedRateMax: rateResult.suggestedRateMax,
         breakdown: {

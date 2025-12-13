@@ -18,6 +18,9 @@ export const createLoadRequestSchema = z.object({
   contactName: nonEmptyStringSchema.optional(),
   phone: phoneSchema.optional(),
   shipperId: z.string().optional(),
+  
+  // Driver assignment (optional - can assign during creation)
+  driverId: z.string().optional(),
 
   // Pickup Facility
   pickupFacilityName: nonEmptyStringSchema,
@@ -326,6 +329,7 @@ export const cancelLoadSchema = z.object({
 export const acceptLoadSchema = z.object({
   driverId: z.string().min(1, 'Driver ID is required'),
   vehicleId: z.string().min(1, 'Vehicle ID is required'),
+  gpsTrackingEnabled: z.boolean().optional().default(false), // Optional: driver can choose to enable location tracking
 })
 
 export const acceptQuoteSchema = z.object({})

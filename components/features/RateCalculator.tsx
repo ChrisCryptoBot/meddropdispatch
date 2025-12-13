@@ -34,8 +34,10 @@ export default function RateCalculator({
   const [quotedRate, setQuotedRate] = useState<string>('')
   const [isSavingQuote, setIsSavingQuote] = useState(false)
   const [quoteSaved, setQuoteSaved] = useState(false)
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
 
   const handleUseCurrentLocation = async () => {
+    setIsGettingLocation(true)
     try {
       const location = await getCurrentLocation()
       if (location) {
@@ -46,17 +48,22 @@ export default function RateCalculator({
             if (data.address) {
               setDriverStartingLocation(data.address)
               showToast.success('Current location captured')
+              setIsGettingLocation(false)
               return
             }
           }
         } catch (e) {
+          console.warn('Reverse geocoding failed, using coordinates:', e)
           // Fall through to coordinates
         }
         setDriverStartingLocation(`${location.latitude}, ${location.longitude}`)
         showToast.success('Current location captured (coordinates)')
       }
     } catch (error) {
+      console.error('Error getting current location:', error)
       showToast.error('Could not get current location. Please enter manually.')
+    } finally {
+      setIsGettingLocation(false)
     }
   }
 
@@ -156,15 +163,25 @@ export default function RateCalculator({
             </div>
             <button
               onClick={handleUseCurrentLocation}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+              disabled={isGettingLocation}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               title="Use GPS location"
               type="button"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              GPS
+              {isGettingLocation ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600"></div>
+                  <span>Getting...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  GPS
+                </>
+              )}
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-1">
@@ -196,7 +213,7 @@ export default function RateCalculator({
       {calculation && (
         <div className="mt-4 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
           <h4 className="font-semibold text-gray-900 mb-3 text-sm">Rate Calculation</h4>
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             {calculation.deadheadDistance !== undefined && (
               <>
                 <div>
@@ -215,10 +232,26 @@ export default function RateCalculator({
                 {calculation.totalDistance?.toFixed(1) || calculation.distance?.toFixed(1) || '0.0'} mi
               </p>
             </div>
+            {calculation.estimatedTimeMinutes && (
+              <div>
+                <p className="text-gray-600 mb-1">Estimated Time</p>
+                <p className="font-bold text-gray-900">
+                  {calculation.estimatedTimeMinutes >= 60 
+                    ? `${Math.floor(calculation.estimatedTimeMinutes / 60)}h ${calculation.estimatedTimeMinutes % 60}m`
+                    : `${calculation.estimatedTimeMinutes}m`}
+                </p>
+              </div>
+            )}
             {calculation.ratePerMile && (
               <div>
                 <p className="text-gray-600 mb-1">Rate Per Mile</p>
                 <p className="font-bold text-primary-700">${calculation.ratePerMile.toFixed(2)}/mi</p>
+              </div>
+            )}
+            {calculation.ratePerHour && (
+              <div>
+                <p className="text-gray-600 mb-1">Rate Per Hour</p>
+                <p className="font-bold text-primary-700">${calculation.ratePerHour.toFixed(2)}/hr</p>
               </div>
             )}
           </div>

@@ -49,6 +49,11 @@ model Shipper {
   email        String  @unique
   passwordHash String? // For shipper portal login
   isActive     Boolean @default(true)
+  
+  // Soft Delete
+  deletedAt    DateTime? // When shipper was soft deleted
+  deletedBy    String?   // User/Driver ID who deleted
+  deletedReason String?   // Reason for deletion
 
   // Payment Terms & Billing
   paymentTerms        String  @default("NET_14") // NET_7, NET_14, NET_30, INVOICE_ONLY
@@ -73,9 +78,25 @@ model Shipper {
   loadRequests LoadRequest[]
   invoices     Invoice[]
   loadTemplates LoadTemplate[]
+  driverRatings DriverRating[]
 
   @@index([email])
   @@index([companyName])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+// BlockedEmail: DNU (Do Not Use) list - blocks emails from signing up
+model BlockedEmail {
+  id          String   @id @default(cuid())
+  email       String   @unique // Blocked email address
+  reason      String?  // Reason for blocking
+  blockedBy   String?  // User/Driver ID who blocked
+  blockedAt   DateTime @default(now())
+  isActive    Boolean  @default(true) // Can unblock if needed
+  
+  @@index([email])
+  @@index([isActive])
 }
 
 // LoadTemplate: Recurring load templates for shippers (Phase 2.2)
@@ -196,6 +217,10 @@ model LoadRequest {
   assignedAt         DateTime? // When assigned to driver
   acceptedByDriverAt DateTime? // When driver accepted
   
+  // GPS Tracking (Optional - Premium Feature)
+  gpsTrackingEnabled Boolean @default(false) // Driver can enable real-time GPS tracking
+  gpsTrackingStartedAt DateTime? // When GPS tracking was enabled
+  
   // Driver Denial Tracking (when driver rejects/declines a load before accepting)
   driverDenialReason String? // DriverDenialReason: PRICE_TOO_LOW, ROUTE_NOT_FEASIBLE, TIMING_NOT_WORKABLE, TOO_FAR, EQUIPMENT_REQUIRED, ALREADY_BOOKED, OTHER
   driverDenialNotes  String? // Optional notes explaining denial
@@ -297,6 +322,8 @@ model LoadRequest {
   notifications   Notification[]
   trackingEvents  TrackingEvent[]
   documents       Document[]
+  gpsTrackingPoints GPSTrackingPoint[]
+  driverRating      DriverRating?
 
   @@index([driverId])
   @@index([vehicleId])
@@ -304,6 +331,34 @@ model LoadRequest {
   @@index([shipperId])
   @@index([status])
   @@index([createdAt])
+}
+
+// DriverRating: Shipper feedback and rating for driver after delivery
+model DriverRating {
+  id            String   @id @default(cuid())
+  loadRequestId String   @unique
+  driverId      String
+  shipperId     String
+  
+  // Rating (1-5 stars)
+  rating        Int      // 1-5 stars
+  
+  // Feedback
+  feedback      String?  // Optional text feedback
+  wouldRecommend Boolean @default(true) // Would recommend this driver
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  loadRequest   LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+  driver        Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipper       Shipper     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([shipperId])
+  @@index([loadRequestId])
+  @@index([rating])
 }
 
 // TrackingEvent: UPS-style tracking checkpoints with chain-of-custody
@@ -326,6 +381,28 @@ model TrackingEvent {
   @@index([loadRequestId])
   @@index([createdAt])
   @@index([actorId])
+}
+
+// GPSTrackingPoint: Real-time GPS location updates for premium tracking
+model GPSTrackingPoint {
+  id            String   @id @default(cuid())
+  loadRequestId String
+  driverId      String   // Driver who is being tracked
+  latitude      Float    // GPS latitude
+  longitude     Float    // GPS longitude
+  accuracy      Float?   // GPS accuracy in meters
+  heading       Float?   // Direction of travel in degrees (0-360)
+  speed         Float?   // Speed in meters per second
+  altitude      Float?   // Altitude in meters
+  timestamp     DateTime @default(now()) // When this location was recorded
+
+  // Relations
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+  driver      Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([loadRequestId, timestamp])
+  @@index([driverId])
+  @@index([timestamp])
 }
 
 // Document: Attachments for proof of pickup/delivery, BOL, etc.
@@ -444,6 +521,8 @@ model Driver {
   loadRequests LoadRequest[]
   vehicles     Vehicle[]
   documents    DriverDocument[]
+  gpsTrackingPoints GPSTrackingPoint[]
+  ratings      DriverRating[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

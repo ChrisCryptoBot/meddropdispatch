@@ -4,11 +4,21 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import ShipperAutocomplete from '@/components/features/ShipperAutocomplete'
 
 export default function RequestLoadPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState('')
+  const [selectedShipper, setSelectedShipper] = useState<{
+    id: string
+    companyName: string
+    email: string
+    contactName: string
+    phone: string
+    clientType: string
+  } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -86,7 +96,7 @@ export default function RequestLoadPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form id="loadRequestForm" onSubmit={handleSubmit} className="space-y-8">
           {/* Shipper Information */}
           <div className="glass p-8 rounded-2xl">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Company Information</h3>
@@ -95,14 +105,46 @@ export default function RequestLoadPage() {
                 <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
                   Company Name *
                 </label>
-                <input
-                  type="text"
+                <ShipperAutocomplete
                   id="companyName"
                   name="companyName"
-                  required
+                  value={companyName}
+                  onChange={(value) => {
+                    setCompanyName(value)
+                    // Clear selected shipper if user is typing a new name
+                    if (!value || value !== selectedShipper?.companyName) {
+                      setSelectedShipper(null)
+                    }
+                  }}
+                  onShipperSelect={(shipper) => {
+                    setSelectedShipper(shipper)
+                    setCompanyName(shipper.companyName)
+                    // Auto-populate other fields if shipper is selected
+                    const form = document.getElementById('loadRequestForm') as HTMLFormElement
+                    if (form) {
+                      const emailInput = form.querySelector('[name="email"]') as HTMLInputElement
+                      const contactNameInput = form.querySelector('[name="contactName"]') as HTMLInputElement
+                      const phoneInput = form.querySelector('[name="phone"]') as HTMLInputElement
+                      const clientTypeSelect = form.querySelector('[name="clientType"]') as HTMLSelectElement
+                      
+                      if (emailInput) emailInput.value = shipper.email
+                      if (contactNameInput) contactNameInput.value = shipper.contactName
+                      if (phoneInput) phoneInput.value = shipper.phone
+                      if (clientTypeSelect) clientTypeSelect.value = shipper.clientType
+                    }
+                  }}
+                  placeholder="Type company name to search or enter new..."
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="ABC Medical Center"
+                  required
                 />
+                {selectedShipper && (
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Found existing shipper - fields auto-populated
+                  </p>
+                )}
               </div>
 
               <div>

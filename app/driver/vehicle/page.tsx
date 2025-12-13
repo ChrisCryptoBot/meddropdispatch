@@ -306,7 +306,7 @@ export default function DriverVehiclePage() {
               {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Vehicle Nickname (Optional)
@@ -321,113 +321,113 @@ export default function DriverVehiclePage() {
                 <p className="text-xs text-gray-500 mt-1">A friendly name to identify this vehicle</p>
               </div>
 
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Vehicle Type *
+              </label>
+              <select
+                value={formData.vehicleType}
+                onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                required
+              >
+                <option value="">Select vehicle type</option>
+                <option value="SEDAN">Sedan</option>
+                <option value="SUV">SUV</option>
+                <option value="VAN">Van</option>
+                <option value="SPRINTER">Sprinter</option>
+                <option value="BOX_TRUCK">Box Truck</option>
+                <option value="REFRIGERATED">Refrigerated</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Vehicle Type *
+                  Make
                 </label>
-                <select
-                  value={formData.vehicleType}
-                  onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
-                  required
-                >
-                  <option value="">Select vehicle type</option>
-                  <option value="SEDAN">Sedan</option>
-                  <option value="SUV">SUV</option>
-                  <option value="VAN">Van</option>
-                  <option value="SPRINTER">Sprinter</option>
-                  <option value="BOX_TRUCK">Box Truck</option>
-                  <option value="REFRIGERATED">Refrigerated</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Make
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vehicleMake}
-                    onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
+                <input
+                  type="text"
+                  value={formData.vehicleMake}
+                  onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
-                    placeholder="e.g., Ford"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Model
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vehicleModel}
-                    onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
-                    placeholder="e.g., Transit"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Year
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.vehicleYear}
-                    onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
-                    placeholder="2024"
-                    min="1900"
-                    max="2100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    License Plate *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vehiclePlate}
-                    onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
-                    placeholder="ABC-1234"
-                    required
-                  />
-                </div>
+                  placeholder="e.g., Ford"
+                />
               </div>
 
               <div>
-                <label className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasRefrigeration}
-                    onChange={(e) => setFormData({ ...formData, hasRefrigeration: e.target.checked })}
-                    className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
-                  />
-                  <span className="text-sm font-semibold text-gray-700">
-                    Vehicle has refrigeration capability
-                  </span>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Model
                 </label>
-                <p className="text-xs text-gray-500 mt-1 ml-8">
-                  Required for temperature-controlled shipments
-                </p>
+                <input
+                  type="text"
+                  value={formData.vehicleModel}
+                  onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  placeholder="e.g., Transit"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Year
+                </label>
+                <input
+                  type="number"
+                  value={formData.vehicleYear}
+                  onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  placeholder="2024"
+                  min="1900"
+                  max="2100"
+                />
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    License Plate *
+                </label>
+                <input
+                  type="text"
+                  value={formData.vehiclePlate}
+                  onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  placeholder="ABC-1234"
+                    required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={formData.hasRefrigeration}
+                  onChange={(e) => setFormData({ ...formData, hasRefrigeration: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                />
+                <span className="text-sm font-semibold text-gray-700">
+                  Vehicle has refrigeration capability
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1 ml-8">
+                Required for temperature-controlled shipments
+              </p>
+          </div>
+
               <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
+            <button
+              type="button"
                   onClick={() => {
                     setShowAddModal(false)
                     resetForm()
                   }}
                   className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
+            >
+              Cancel
+            </button>
                 <button
                   type="submit"
                   disabled={isSaving}
@@ -435,9 +435,9 @@ export default function DriverVehiclePage() {
                 >
                   {isSaving ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>
-              </div>
-            </form>
           </div>
+        </form>
+      </div>
         </div>
       )}
     </div>

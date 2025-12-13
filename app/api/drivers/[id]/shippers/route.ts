@@ -30,7 +30,11 @@ export async function GET(
 
     // Get ALL shippers in the system (for follow-up lists)
     // This ensures every shipper from every job is stored for follow-up
+    // Exclude soft-deleted shippers (deletedAt is not null)
     const allShippers = await prisma.shipper.findMany({
+      where: {
+        deletedAt: null, // Only show non-deleted shippers
+      },
       include: {
         loadRequests: {
           where: {

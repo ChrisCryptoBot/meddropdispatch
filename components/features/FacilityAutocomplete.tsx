@@ -129,14 +129,35 @@ export default function FacilityAutocomplete({
         }
 
         const response = await fetch(url)
+        const data = await response.json()
+        
         if (response.ok) {
-          const data = await response.json()
+          console.log('Facility autocomplete response:', data)
+          
+          // Check for API key error
+          if (data.error && data.message) {
+            console.error('Autocomplete error:', data.message)
+            // Don't show predictions if there's an error
+            setPredictions([])
+            setShowSuggestions(false)
+            return
+          }
+          
           // Only show suggestions if we haven't selected or started fetching in the meantime
           if (!justSelectedRef.current && !isFetchingDetails) {
             setPredictions(data.predictions || [])
-            setShowSuggestions(true)
+            setShowSuggestions(data.predictions && data.predictions.length > 0)
+            if (!data.predictions || data.predictions.length === 0) {
+              console.warn('No predictions returned from API. Check if GOOGLE_MAPS_API_KEY is configured.')
+            }
           } else {
             // If we selected during fetch, clear everything
+            setPredictions([])
+            setShowSuggestions(false)
+          }
+        } else {
+          console.error('Facility autocomplete API error:', response.status, data)
+          if (!justSelectedRef.current && !isFetchingDetails) {
             setPredictions([])
             setShowSuggestions(false)
           }
@@ -145,6 +166,7 @@ export default function FacilityAutocomplete({
         console.error('Error fetching facility autocomplete:', error)
         if (!justSelectedRef.current && !isFetchingDetails) {
           setPredictions([])
+          setShowSuggestions(false)
         }
       } finally {
         setIsLoading(false)

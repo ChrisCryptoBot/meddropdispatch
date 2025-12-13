@@ -190,26 +190,22 @@ export async function DELETE(
       throw new NotFoundError('Shipper')
     }
 
-    // Check for active loads
-    if (shipper._count.loadRequests > 0) {
-      return NextResponse.json(
-        {
-          error: 'Cannot delete account',
-          message: 'You have active loads that must be completed or cancelled before deleting your account.',
-          activeLoadsCount: shipper._count.loadRequests,
-        },
-        { status: 400 }
-      )
-    }
-
-    // Delete shipper account (cascade will handle facilities, templates, invoices)
-    await prisma.shipper.delete({
+    // Soft delete: Set isActive to false and mark as deleted
+    // This maintains the record for historical purposes but hides it from active lists
+    const updatedShipper = await prisma.shipper.update({
       where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+        deletedBy: null, // Can be set if we track who deleted it
+        deletedReason: 'Soft deleted by admin/driver',
+      },
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Account deleted successfully',
+      message: 'Shipper deactivated successfully',
+      shipper: updatedShipper,
     })
   })(request)
 }

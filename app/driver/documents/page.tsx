@@ -154,8 +154,8 @@ export default function DriverDocumentsPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Documents</h1>
-        <p className="text-gray-600">View all documents from your assigned loads</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Documents</h1>
+          <p className="text-gray-600">View all documents from your assigned loads</p>
       </div>
 
       {/* Filters */}

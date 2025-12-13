@@ -38,6 +38,8 @@ interface Load {
   suggestedRateMin?: number
   suggestedRateMax?: number
   deadheadStartingLocation?: string
+  gpsTrackingEnabled?: boolean
+  gpsTrackingStartedAt?: string
   pickupFacility: {
     name: string
     addressLine1: string
@@ -103,6 +105,9 @@ export default function DriverLoadDetailPage() {
   const [driverStartingLocation, setDriverStartingLocation] = useState('')
   const [isCalculatingRate, setIsCalculatingRate] = useState(false)
   const [rateCalculation, setRateCalculation] = useState<any>(null)
+  const [gpsTrackingEnabled, setGpsTrackingEnabled] = useState(false)
+  const [isTogglingGPS, setIsTogglingGPS] = useState(false)
+  const [gpsWatchId, setGpsWatchId] = useState<number | null>(null)
 
   useEffect(() => {
     // Get driver from localStorage
@@ -165,7 +170,7 @@ export default function DriverLoadDetailPage() {
   }
 
   const handleDeleteLoad = async () => {
-    if (!confirm('Are you sure you want to delete this load? This will permanently delete the load and all associated documents. This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to permanently remove this load? This action cannot be undone and will delete all associated data including documents, tracking events, GPS tracking points, and ratings.')) {
       return
     }
 
@@ -193,6 +198,103 @@ export default function DriverLoadDetailPage() {
       fetchDocuments()
     }
   }, [params.id])
+
+  useEffect(() => {
+    if (load) {
+      setGpsTrackingEnabled(load.gpsTrackingEnabled || false)
+    }
+  }, [load])
+
+  // GPS tracking effect - submit location updates when enabled
+  useEffect(() => {
+    if (!gpsTrackingEnabled || !load || !driver) return
+
+    if (!navigator.geolocation) {
+      showToast.error('GPS not available', 'Your device does not support GPS tracking.')
+      setGpsTrackingEnabled(false)
+      return
+    }
+
+    // Request location permission and start tracking
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        try {
+          await fetch(`/api/load-requests/${load.id}/gps-tracking`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              heading: position.coords.heading || null,
+              speed: position.coords.speed || null,
+              altitude: position.coords.altitude || null,
+            }),
+          })
+        } catch (error) {
+          console.error('Error submitting GPS coordinates:', error)
+          // Don't show error toast for every failed submission to avoid spam
+        }
+      },
+      (error) => {
+        console.error('GPS error:', error)
+        if (error.code === error.PERMISSION_DENIED) {
+          showToast.error('GPS permission denied', 'Please enable location permissions to use GPS tracking.')
+          setGpsTrackingEnabled(false)
+          handleToggleGPSTracking(false)
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 10000, // Accept cached position up to 10 seconds old
+        timeout: 5000,
+      }
+    )
+
+    setGpsWatchId(watchId)
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+    }
+  }, [gpsTrackingEnabled, load, driver])
+
+  const handleToggleGPSTracking = async (enabled: boolean) => {
+    if (!load) return
+
+    setIsTogglingGPS(true)
+    try {
+      const response = await fetch(`/api/load-requests/${load.id}/gps-tracking`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to toggle GPS tracking')
+      }
+
+      const data = await response.json()
+      setGpsTrackingEnabled(data.gpsTrackingEnabled)
+      
+      // Update load state
+      setLoad({ ...load, gpsTrackingEnabled: data.gpsTrackingEnabled, gpsTrackingStartedAt: data.gpsTrackingStartedAt })
+
+      if (enabled) {
+        showToast.success('GPS tracking enabled', 'Your location will be shared with the shipper in real-time.')
+      } else {
+        showToast.success('GPS tracking disabled', 'Location sharing has been stopped.')
+      }
+    } catch (error) {
+      console.error('Error toggling GPS tracking:', error)
+      showToast.error('Failed to toggle GPS tracking', error instanceof Error ? error.message : 'Unknown error')
+      setGpsTrackingEnabled(!enabled) // Revert state
+    } finally {
+      setIsTogglingGPS(false)
+    }
+  }
 
   const handleDocumentUpload = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -480,7 +582,7 @@ export default function DriverLoadDetailPage() {
             <button
               onClick={handleDeleteLoad}
               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
-              title="Delete load"
+              title="Permanently remove this load"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -489,6 +591,50 @@ export default function DriverLoadDetailPage() {
           </div>
         </div>
       </header>
+
+      {/* GPS Tracking Toggle - Only show if driver is assigned and load is active */}
+      {load && load.driverId && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+        <div className="fixed top-20 left-0 right-0 z-40 px-4">
+          <div className="glass p-4 rounded-xl border-2 border-blue-200 shadow-lg max-w-md mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${gpsTrackingEnabled ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                  <svg className={`w-6 h-6 ${gpsTrackingEnabled ? 'text-blue-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">Real-Time GPS Tracking</p>
+                  <p className="text-xs text-gray-600">
+                    {gpsTrackingEnabled ? 'Shipper can see your location' : 'Premium feature - Enable to share location'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggleGPSTracking(!gpsTrackingEnabled)}
+                disabled={isTogglingGPS}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  gpsTrackingEnabled ? 'bg-blue-600' : 'bg-gray-200'
+                } ${isTogglingGPS ? 'opacity-50 cursor-not-allowed' : ''}`}
+                role="switch"
+                aria-checked={gpsTrackingEnabled}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    gpsTrackingEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+            {gpsTrackingEnabled && gpsTrackingStartedAt && (
+              <p className="text-xs text-gray-500 mt-2">
+                Tracking started: {new Date(gpsTrackingStartedAt).toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main content with top padding to account for fixed headers */}
       <main className="px-4 pt-24 md:pt-24 pb-6 space-y-6">
@@ -645,21 +791,25 @@ export default function DriverLoadDetailPage() {
             )}
           </div>
           
-          {/* Delete Load Button - Only for scheduled, completed, cancelled, or delivered loads */}
-          {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* Permanently Remove Load Button - Available for all loads */}
+          <div className="mt-6 pt-6 border-t-2 border-red-200">
+            <div className="glass rounded-2xl p-6 border-2 border-red-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Danger Zone</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Permanently remove this load from the system. This action cannot be undone and will delete all associated data including documents, tracking events, and GPS tracking points.
+              </p>
               <button
                 onClick={handleDeleteLoad}
-                className="w-full px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold transition-base flex items-center justify-center gap-2"
-                title="Delete this load"
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                title="Permanently remove this load"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Delete Load
+                Permanently Remove This Load
               </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Assigned Vehicle */}

@@ -7,6 +7,7 @@ import { showToast } from '@/lib/toast'
 import RateCalculator from '@/components/features/RateCalculator'
 import AddressAutocomplete from '@/components/features/AddressAutocomplete'
 import FacilityAutocomplete from '@/components/features/FacilityAutocomplete'
+import ShipperAutocomplete from '@/components/features/ShipperAutocomplete'
 
 export default function DriverManualLoadPage() {
   const router = useRouter()
@@ -20,9 +21,17 @@ export default function DriverManualLoadPage() {
   const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedDocuments, setUploadedDocuments] = useState<Array<{title: string, type: string}>>([])
-  const [shippers, setShippers] = useState<Array<{id: string, companyName: string, email: string}>>([])
   const [selectedShipperId, setSelectedShipperId] = useState<string>('')
-  const [showNewShipperForm, setShowNewShipperForm] = useState(false)
+  const [selectedShipperData, setSelectedShipperData] = useState<{
+    id: string
+    companyName: string
+    email: string
+    contactName: string
+    phone: string
+    clientType: string
+  } | null>(null)
+  const [drivers, setDrivers] = useState<Array<{id: string, firstName: string, lastName: string, email: string, status: string}>>([])
+  const [selectedDriverId, setSelectedDriverId] = useState<string>('')
   const [newShipperData, setNewShipperData] = useState({
     companyName: '',
     email: '',
@@ -30,7 +39,6 @@ export default function DriverManualLoadPage() {
     phone: '',
     clientType: 'OTHER',
   })
-  const [isLoadingShippers, setIsLoadingShippers] = useState(false)
   const [formData, setFormData] = useState<any>({
     pickupFacilityName: '',
     pickupAddressLine1: '',
@@ -55,51 +63,22 @@ export default function DriverManualLoadPage() {
       return
     }
     setDriver(JSON.parse(driverData))
-    fetchShippers()
+    fetchDrivers()
   }, [router])
 
-  const fetchShippers = async () => {
-    setIsLoadingShippers(true)
+  const fetchDrivers = async () => {
     try {
-      const response = await fetch('/api/shippers')
+      const response = await fetch('/api/drivers')
       if (response.ok) {
         const data = await response.json()
-        setShippers(data.shippers || [])
+        // Show all drivers (available and on load) - user can choose any driver
+        setDrivers(data.drivers || [])
       }
     } catch (error) {
-      console.error('Error fetching shippers:', error)
-    } finally {
-      setIsLoadingShippers(false)
+      console.error('Error fetching drivers:', error)
     }
   }
 
-  const handleCreateShipper = async () => {
-    if (!newShipperData.companyName || !newShipperData.email || !newShipperData.contactName || !newShipperData.phone) {
-      showToast.error('Please fill in all required shipper fields')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/shippers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newShipperData),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to create shipper')
-      }
-
-      const data = await response.json()
-      setSelectedShipperId(data.shipper.id)
-      setShowNewShipperForm(false)
-      await fetchShippers()
-      showToast.success('Shipper created successfully')
-    } catch (error) {
-      showToast.error(error instanceof Error ? error.message : 'Failed to create shipper')
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -112,18 +91,30 @@ export default function DriverManualLoadPage() {
     const data = { ...formEntries, ...formData }
     setFormData(data) // Store for rate calculator
 
-    // Validate shipper is selected
-    if (!selectedShipperId) {
-      setError('Please select or create a shipper for this load')
+    // Validate shipper fields
+    if (!newShipperData.companyName || !newShipperData.email || !newShipperData.contactName || !newShipperData.phone) {
+      setError('Please fill in all required shipper fields (Company Name, Email, Contact Name, Phone)')
       setIsSubmitting(false)
       return
     }
 
     // Create a load request for shipper acceptance
+    // If selectedShipperId exists, use it. Otherwise, API will create new shipper from form data
     const requestData = {
       createdVia: 'DRIVER_MANUAL',
+      shipperId: selectedShipperId || undefined, // Only include if shipper was selected from autocomplete
+      // If no shipperId, include all shipper fields for API to create new shipper
+      ...(selectedShipperId ? {} : {
+        companyName: newShipperData.companyName,
+        email: newShipperData.email,
+        contactName: newShipperData.contactName,
+        phone: newShipperData.phone,
+        clientType: newShipperData.clientType,
+      }),
+      // Creator driver ID (the driver creating the load)
       driverId: driver.id,
-      shipperId: selectedShipperId,
+      // Assign to specific driver if selected (different from creator)
+      assignedDriverId: selectedDriverId || undefined,
       // Basic info
       pickupFacilityName: data.pickupFacilityName || 'Manual Entry',
       pickupAddressLine1: data.pickupAddressLine1 || '',
@@ -319,154 +310,119 @@ export default function DriverManualLoadPage() {
                 Select an existing shipper or create a new one for this load.
               </p>
               
-              {!showNewShipperForm ? (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="shipperSelect" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Select Shipper <span className="text-red-500">*</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800">New Shipper Information</h4>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label htmlFor="shipperCompanyName" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Company Name <span className="text-red-500">*</span>
                     </label>
-                    {isLoadingShippers ? (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-600"></div>
-                        <span>Loading shippers...</span>
-                      </div>
-                    ) : (
-                      <select
-                        id="shipperSelect"
-                        value={selectedShipperId}
-                        onChange={(e) => setSelectedShipperId(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                        required
-                      >
-                        <option value="">-- Select a shipper --</option>
-                        {shippers.map((shipper) => (
-                          <option key={shipper.id} value={shipper.id}>
-                            {shipper.companyName} ({shipper.email})
-                          </option>
-                        ))}
-                      </select>
+                    <ShipperAutocomplete
+                      id="shipperCompanyName"
+                      value={newShipperData.companyName}
+                      onChange={(value) => {
+                        setNewShipperData({ ...newShipperData, companyName: value })
+                        // Clear selected shipper if user is typing a new name
+                        if (!value || value !== selectedShipperData?.companyName) {
+                          setSelectedShipperData(null)
+                          setSelectedShipperId('')
+                        }
+                      }}
+                      onShipperSelect={(shipper) => {
+                        setSelectedShipperData(shipper)
+                        setSelectedShipperId(shipper.id)
+                        // Auto-populate all fields when shipper is selected
+                        setNewShipperData({
+                          companyName: shipper.companyName,
+                          email: shipper.email,
+                          contactName: shipper.contactName,
+                          phone: shipper.phone,
+                          clientType: shipper.clientType,
+                        })
+                        showToast.success(`Selected: ${shipper.companyName}`)
+                      }}
+                      placeholder="Type company name to search or enter new..."
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      required
+                    />
+                    {selectedShipperData && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Found existing shipper - fields auto-populated
+                      </p>
+                    )}
+                    {!selectedShipperData && newShipperData.companyName && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        New shipper will be created when you submit the load
+                      </p>
                     )}
                   </div>
-                  
-                  <div className="pt-2 border-t border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => setShowNewShipperForm(true)}
-                      className="text-sm text-slate-600 hover:text-slate-800 font-medium flex items-center gap-2"
+                  <div>
+                    <label htmlFor="newShipperEmail" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="newShipperEmail"
+                      value={newShipperData.email}
+                      onChange={(e) => setNewShipperData({ ...newShipperData, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="newShipperContactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Contact Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="newShipperContactName"
+                      value={newShipperData.contactName}
+                      onChange={(e) => setNewShipperData({ ...newShipperData, contactName: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="newShipperPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="newShipperPhone"
+                      value={newShipperData.phone}
+                      onChange={(e) => setNewShipperData({ ...newShipperData, phone: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="newShipperClientType" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Client Type
+                    </label>
+                    <select
+                      id="newShipperClientType"
+                      value={newShipperData.clientType}
+                      onChange={(e) => setNewShipperData({ ...newShipperData, clientType: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Create New Shipper
-                    </button>
+                      <option value="OTHER">Other</option>
+                      <option value="CLINIC">Clinic</option>
+                      <option value="LAB">Lab</option>
+                      <option value="HOSPITAL">Hospital</option>
+                      <option value="PHARMACY">Pharmacy</option>
+                      <option value="DIALYSIS_CENTER">Dialysis Center</option>
+                      <option value="IMAGING_CENTER">Imaging Center</option>
+                      <option value="GOVERNMENT">Government</option>
+                    </select>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-800">New Shipper Information</h4>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowNewShipperForm(false)
-                        setNewShipperData({
-                          companyName: '',
-                          email: '',
-                          contactName: '',
-                          phone: '',
-                          clientType: 'OTHER',
-                        })
-                      }}
-                      className="text-sm text-gray-600 hover:text-gray-800"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label htmlFor="newShipperCompanyName" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Company Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="newShipperCompanyName"
-                        value={newShipperData.companyName}
-                        onChange={(e) => setNewShipperData({ ...newShipperData, companyName: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="newShipperEmail" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        id="newShipperEmail"
-                        value={newShipperData.email}
-                        onChange={(e) => setNewShipperData({ ...newShipperData, email: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="newShipperContactName" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Contact Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="newShipperContactName"
-                        value={newShipperData.contactName}
-                        onChange={(e) => setNewShipperData({ ...newShipperData, contactName: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="newShipperPhone" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Phone <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        id="newShipperPhone"
-                        value={newShipperData.phone}
-                        onChange={(e) => setNewShipperData({ ...newShipperData, phone: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="newShipperClientType" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Client Type
-                      </label>
-                      <select
-                        id="newShipperClientType"
-                        value={newShipperData.clientType}
-                        onChange={(e) => setNewShipperData({ ...newShipperData, clientType: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                      >
-                        <option value="OTHER">Other</option>
-                        <option value="CLINIC">Clinic</option>
-                        <option value="LAB">Lab</option>
-                        <option value="HOSPITAL">Hospital</option>
-                        <option value="PHARMACY">Pharmacy</option>
-                        <option value="DIALYSIS_CENTER">Dialysis Center</option>
-                        <option value="IMAGING_CENTER">Imaging Center</option>
-                        <option value="GOVERNMENT">Government</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={handleCreateShipper}
-                    className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
-                  >
-                    Create Shipper
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Basic Info */}
@@ -497,6 +453,30 @@ export default function DriverManualLoadPage() {
                     <option value="GOVERNMENT">Government</option>
                     <option value="OTHER">Other</option>
                   </select>
+                </div>
+                <div>
+                  <label htmlFor="assignedDriver" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Load Assigned To
+                  </label>
+                  <select
+                    id="assignedDriver"
+                    name="assignedDriver"
+                    value={selectedDriverId}
+                    onChange={(e) => setSelectedDriverId(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  >
+                    <option value="">Select a driver (optional)</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.firstName} {d.lastName} 
+                        {d.status === 'ON_LOAD' ? ' (On Load)' : d.status === 'AVAILABLE' ? ' (Available)' : ''} 
+                        {d.id === driver?.id ? ' (You)' : ''} - {d.email}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional: Assign this load to a specific driver during creation
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="commodityDescription" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -696,6 +676,8 @@ export default function DriverManualLoadPage() {
                     type="tel"
                     id="pickupContactPhone"
                     name="pickupContactPhone"
+                    value={formData.pickupContactPhone || ''}
+                    onChange={(e) => setFormData({ ...formData, pickupContactPhone: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
                   />
                 </div>
@@ -803,6 +785,8 @@ export default function DriverManualLoadPage() {
                     type="tel"
                     id="dropoffContactPhone"
                     name="dropoffContactPhone"
+                    value={formData.dropoffContactPhone || ''}
+                    onChange={(e) => setFormData({ ...formData, dropoffContactPhone: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
                   />
                 </div>

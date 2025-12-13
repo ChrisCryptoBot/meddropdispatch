@@ -475,8 +475,8 @@ export default function DriverProfilePage() {
                 </p>
               )}
             </div>
+            </div>
           </div>
-        </div>
         </div>
       )}
 
