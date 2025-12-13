@@ -64,7 +64,7 @@ export default function DriverLayout({
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function DriverLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header - Same as Homepage */}
-      <header className="glass sticky top-0 z-50 border-b border-white/30 flex-shrink-0">
+      <header className="glass-accent sticky top-0 z-50 border-b border-teal-200/30 flex-shrink-0">
         <div className="w-full py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 pl-4 md:pl-4">
@@ -134,7 +134,7 @@ export default function DriverLayout({
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-xs text-gray-600">Medical Courier Services</p>
+                <p className="text-xs text-teal-700">Medical Courier Services</p>
               </div>
             </div>
             <nav className="flex items-center space-x-3 pr-4">
@@ -142,8 +142,8 @@ export default function DriverLayout({
                 href="/driver/notifications"
                 className={`p-3 rounded-lg transition-base relative ${
                   pathname === '/driver/notifications' || pathname?.startsWith('/driver/notifications')
-                    ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
-                    : 'text-gray-700 hover:bg-white/60'
+                    ? 'bg-gradient-accent text-white shadow-medical'
+                    : 'text-gray-700 hover:bg-teal-50/60'
                 }`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,8 +155,8 @@ export default function DriverLayout({
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className={`px-5 py-3 rounded-lg text-base font-medium transition-base flex items-center gap-2 ${
                     pathname?.startsWith('/driver/profile') || pathname?.startsWith('/driver/vehicle')
-                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
-                      : 'text-gray-700 hover:bg-white/60'
+                      ? 'bg-gradient-accent text-white shadow-medical'
+                      : 'text-gray-700 hover:bg-teal-50/60'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,14 +170,14 @@ export default function DriverLayout({
                 {profileDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setProfileDropdownOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-56 glass rounded-lg shadow-lg z-20 border border-white/30 overflow-hidden">
+                    <div className="absolute right-0 mt-2 w-56 glass-accent rounded-lg shadow-medical z-20 border-2 border-teal-200/30 overflow-hidden">
                       <Link
                         href="/driver/profile"
                         onClick={() => setProfileDropdownOpen(false)}
                         className={`block px-4 py-3 text-sm transition-base ${
                           pathname?.startsWith('/driver/profile')
-                            ? 'bg-slate-600 text-white'
-                            : 'text-gray-700 hover:bg-white/60'
+                            ? 'bg-teal-600 text-white'
+                            : 'text-gray-700 hover:bg-teal-50/60'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -190,10 +190,10 @@ export default function DriverLayout({
                       <Link
                         href="/driver/vehicle"
                         onClick={() => setProfileDropdownOpen(false)}
-                        className={`block px-4 py-3 text-sm transition-base border-t border-white/20 ${
+                        className={`block px-4 py-3 text-sm transition-base border-t border-teal-200/30 ${
                           pathname?.startsWith('/driver/vehicle')
-                            ? 'bg-slate-600 text-white'
-                            : 'text-gray-700 hover:bg-white/60'
+                            ? 'bg-teal-600 text-white'
+                            : 'text-gray-700 hover:bg-teal-50/60'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export default function DriverLayout({
                           setProfileDropdownOpen(false)
                           router.push('/driver/login')
                         }}
-                        className="w-full block px-4 py-3 text-sm text-gray-700 hover:bg-white/60 transition-base border-t border-white/20 text-left"
+                        className="w-full block px-4 py-3 text-sm text-gray-700 hover:bg-teal-50/60 transition-base border-t border-teal-200/30 text-left"
                       >
                         <div className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +228,7 @@ export default function DriverLayout({
       </header>
 
       {/* Sidebar - Fixed full height - Hidden on mobile */}
-      <aside className="hidden md:block fixed left-0 top-[73px] w-64 glass border-r border-white/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
+      <aside className="hidden md:block fixed left-0 top-[73px] w-64 glass-accent border-r border-teal-200/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
@@ -250,8 +250,8 @@ export default function DriverLayout({
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
                     isActive
-                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-white/40'
+                      ? 'bg-gradient-accent text-white shadow-lg'
+                      : 'text-gray-700 hover:bg-teal-50/60'
                   }`}
                 >
                   {item.icon}
@@ -262,13 +262,13 @@ export default function DriverLayout({
           </nav>
 
           {/* Support */}
-          <div className="p-4 border-t border-white/30">
+          <div className="p-4 border-t border-teal-200/30">
             <Link
               href="/driver/support"
               className={`w-full px-4 py-2 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 ${
                 pathname === '/driver/support' || pathname?.startsWith('/driver/support')
-                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white'
-                  : 'text-gray-700 hover:bg-white/40'
+                  ? 'bg-gradient-accent text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-teal-50/60'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,7 +281,7 @@ export default function DriverLayout({
       </aside>
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
-      <main className="md:ml-64 bg-gradient-to-br from-slate-50 via-neutral-50 to-stone-50 min-h-screen pb-16 md:pb-0" style={{ marginTop: '73px' }}>
+      <main className="md:ml-64 bg-gradient-medical-bg min-h-screen pb-16 md:pb-0" style={{ marginTop: '73px' }}>
         {children}
       </main>
 
