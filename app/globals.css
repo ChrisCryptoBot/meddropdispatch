@@ -8,14 +8,30 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gradient-medical-bg text-gray-900;
   }
 }
 
 @layer utilities {
-  /* Glass morphism utility */
+  /* Enhanced Glass morphism utilities with color tints */
   .glass {
-    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-glass;
+    @apply bg-white/50 backdrop-blur-lg border border-white/30 shadow-glass;
+  }
+
+  .glass-primary {
+    @apply bg-blue-50/60 backdrop-blur-md border border-blue-200/30 shadow-glass;
+  }
+
+  .glass-accent {
+    @apply bg-teal-50/60 backdrop-blur-md border border-teal-200/30 shadow-medical;
+  }
+
+  .glass-urgent {
+    @apply bg-red-50/60 backdrop-blur-md border border-red-200/30 shadow-urgent;
+  }
+
+  .glass-success {
+    @apply bg-green-50/60 backdrop-blur-md border border-green-200/30;
   }
 
   .glass-dark {
@@ -37,9 +53,45 @@
     @apply px-4 py-2 rounded-lg font-medium transition-base;
   }
 
-  /* Text gradient */
+  /* Text gradients - medical themed */
   .text-gradient {
-    @apply bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-urgent {
+    @apply bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent;
+  }
+
+  /* Status badges with borders */
+  .status-badge {
+    @apply px-3 py-1.5 rounded-lg text-sm font-semibold border-2 transition-all;
+  }
+
+  /* Medical-themed accents */
+  .medical-accent {
+    @apply border-l-4 border-teal-500;
+  }
+
+  .urgent-accent {
+    @apply border-l-4 border-red-500 animate-pulse;
+  }
+
+  /* Heading hierarchy */
+  .heading-primary {
+    @apply text-fluid-4xl font-bold text-gradient;
+  }
+
+  .heading-secondary {
+    @apply text-fluid-2xl font-semibold text-gray-900;
+  }
+
+  /* Medical context text */
+  .text-medical {
+    @apply text-blue-700 font-medium;
+  }
+
+  .text-stat {
+    @apply text-red-700 font-bold uppercase tracking-wide;
   }
 
   /* Fluid typography utilities */

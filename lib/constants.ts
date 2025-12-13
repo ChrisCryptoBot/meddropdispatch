@@ -15,15 +15,28 @@ export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
   DENIED: 'Not Scheduled',
 }
 
+// Enhanced load status colors with medical context
 export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
-  QUOTE_REQUESTED: 'bg-amber-100 text-amber-800',
-  REQUESTED: 'bg-blue-100 text-blue-800',
-  SCHEDULED: 'bg-cyan-100 text-cyan-800',
-  EN_ROUTE: 'bg-purple-100 text-purple-800',
-  PICKED_UP: 'bg-orange-100 text-orange-800',
-  IN_TRANSIT: 'bg-yellow-100 text-yellow-800',
-  DELIVERED: 'bg-emerald-100 text-emerald-800',
-  DENIED: 'bg-red-100 text-red-800',
+  QUOTE_REQUESTED: 'bg-blue-50 text-blue-700 border-blue-200 border-2',
+  REQUESTED: 'bg-indigo-50 text-indigo-700 border-indigo-200 border-2',
+  SCHEDULED: 'bg-teal-50 text-teal-700 border-teal-200 border-2',
+  EN_ROUTE: 'bg-purple-50 text-purple-700 border-purple-200 border-2',
+  PICKED_UP: 'bg-orange-50 text-orange-700 border-orange-200 border-2',
+  IN_TRANSIT: 'bg-amber-50 text-amber-700 border-amber-200 border-2',
+  DELIVERED: 'bg-green-50 text-green-700 border-green-200 border-2',
+  DENIED: 'bg-red-50 text-red-700 border-red-200 border-2',
+}
+
+// Service type priority colors
+export const SERVICE_TYPE_COLORS: Record<string, string> = {
+  CRITICAL_STAT: 'bg-red-500',
+  STAT: 'bg-orange-500',
+  SAME_DAY: 'bg-amber-500',
+  ROUTINE: 'bg-blue-500',
+  SCHEDULED_ROUTE: 'bg-teal-500',
+  OVERFLOW: 'bg-blue-400',
+  GOVERNMENT: 'bg-indigo-500',
+  OTHER: 'bg-gray-500',
 }
 
 // Tracking event configurations

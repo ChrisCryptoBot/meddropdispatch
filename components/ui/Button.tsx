@@ -4,7 +4,7 @@ import React from 'react'
 import { clsx } from 'clsx'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'outline'
+  variant?: 'primary' | 'secondary' | 'accent' | 'success' | 'urgent' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
   children: React.ReactNode
@@ -24,11 +24,12 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const variants = {
-    primary: 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white shadow-lg hover:shadow-xl',
-    secondary: 'bg-white/60 hover:bg-white/80 text-gray-700 border border-gray-300',
+    primary: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl',
+    secondary: 'bg-white/70 hover:bg-white/90 text-gray-700 border-2 border-gray-300',
+    accent: 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg hover:shadow-xl shadow-medical',
     success: 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl',
-    danger: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl',
-    outline: 'bg-transparent border-2 border-slate-600 text-slate-700 hover:bg-slate-50',
+    urgent: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl shadow-urgent',
+    outline: 'bg-transparent border-2 border-blue-600 text-blue-700 hover:bg-blue-50',
   }
 
   const sizes = {
@@ -41,7 +42,7 @@ export default function Button({
     <button
       className={clsx(
         'rounded-lg font-semibold transition-all duration-200 ease-in-out',
-        'hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2',
+        'hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100',
         variants[variant],
         sizes[size],
