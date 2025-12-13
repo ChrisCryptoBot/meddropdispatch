@@ -315,7 +315,7 @@ export default function ShipperDashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your loads...</p>
         </div>
       </div>
@@ -325,20 +325,20 @@ export default function ShipperDashboardPage() {
   return (
     <div className="p-8">
         {/* Call to Book Loads - Prominent CTA */}
-        <div className="glass rounded-2xl p-6 mb-8 bg-gradient-to-r from-slate-50 to-neutral-50 border-2 border-slate-300">
+        <div className="glass-primary rounded-2xl p-6 mb-8 border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">Need to Book a Load?</h2>
-                <p className="text-gray-700 mb-2">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
+                <p className="text-medical mb-2">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
                 <a
                   href="tel:+1234567890"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -352,25 +352,25 @@ export default function ShipperDashboardPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <div className="glass rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</div>
-            <div className="text-sm text-gray-600">Total Loads</div>
+          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+            <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
+            <div className="text-sm text-medical">Total Loads</div>
           </div>
-          <div className="glass rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.pending}</div>
-            <div className="text-sm text-gray-600">Pending</div>
+          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+            <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
+            <div className="text-sm text-medical">Pending</div>
           </div>
-          <div className="glass rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.active}</div>
-            <div className="text-sm text-gray-600">Active</div>
+          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+            <div className="text-3xl font-bold text-gradient mb-1">{stats.active}</div>
+            <div className="text-sm text-medical">Active</div>
           </div>
-          <div className="glass rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.delivered}</div>
-            <div className="text-sm text-gray-600">Delivered</div>
+          <div className="glass-success rounded-2xl p-6 border-2 border-green-200/30">
+            <div className="text-3xl font-bold text-success-700 mb-1">{stats.delivered}</div>
+            <div className="text-sm text-success-700">Delivered</div>
           </div>
-          <div className="glass rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">{stats.cancelled}</div>
-            <div className="text-sm text-gray-600">Cancelled</div>
+          <div className="glass-urgent rounded-2xl p-6 border-2 border-red-200/30">
+            <div className="text-3xl font-bold text-urgent-700 mb-1">{stats.cancelled}</div>
+            <div className="text-sm text-urgent-700">Cancelled</div>
           </div>
         </div>
 
@@ -381,7 +381,7 @@ export default function ShipperDashboardPage() {
         </div>
 
         {/* Filters, Search, and Sort */}
-        <div className="glass p-6 rounded-2xl mb-6">
+        <div className="glass-primary p-6 rounded-2xl mb-6 border-2 border-blue-200/30">
           <div className="grid md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
@@ -392,7 +392,7 @@ export default function ShipperDashboardPage() {
                   placeholder="Search by tracking, facility, city, driver..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 pl-10 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
                 />
                 <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -416,7 +416,7 @@ export default function ShipperDashboardPage() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -432,7 +432,7 @@ export default function ShipperDashboardPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -467,7 +467,7 @@ export default function ShipperDashboardPage() {
               {pendingAcceptance.map((load) => (
                 <div
                   key={load.id}
-                  className="glass rounded-xl p-6 border-2 border-orange-300"
+                  className="glass-accent rounded-xl p-6 border-2 border-warning-300"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -516,7 +516,7 @@ export default function ShipperDashboardPage() {
                         handleAcceptLoad(load.id)
                       }}
                       disabled={isAccepting === load.id || isRejecting === load.id}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isAccepting === load.id ? 'Claiming...' : '✓ Claim in Portal'}
                     </button>
@@ -533,7 +533,7 @@ export default function ShipperDashboardPage() {
                     </button>
                     <Link
                       href={`/shipper/loads/${load.id}`}
-                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200 transition-all"
+                      className="px-6 py-3 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-all"
                       onClick={(e) => e.stopPropagation()}
                     >
                       View Details
@@ -547,7 +547,7 @@ export default function ShipperDashboardPage() {
 
         {/* All Loads List */}
         {filteredLoads.length === 0 ? (
-          <div className="glass rounded-2xl p-12 text-center">
+          <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30">
             <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -567,13 +567,13 @@ export default function ShipperDashboardPage() {
             {filteredLoads.map((load) => (
               <div
                 key={load.id}
-                className="glass p-5 rounded-2xl hover:shadow-lg transition-all relative"
+                className="glass-primary p-5 rounded-2xl hover:shadow-glass-lg transition-all relative border-2 border-blue-200/30 hover:border-blue-300/50"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Link href={`/shipper/loads/${load.id}`}>
-                        <h3 className="font-bold text-gray-900 text-lg font-mono hover:text-slate-600 transition-colors">{load.publicTrackingCode}</h3>
+                        <h3 className="font-bold text-gray-900 text-lg font-mono hover:text-blue-600 transition-colors">{load.publicTrackingCode}</h3>
                       </Link>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
                         {getStatusLabel(load.status)}
@@ -710,7 +710,7 @@ export default function ShipperDashboardPage() {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <Link
                     href={`/shipper/loads/${load.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all text-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm shadow-lg"
                   >
                     View Details
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
