@@ -36,6 +36,11 @@ export async function GET(
             lastName: true,
             phone: true,
             email: true,
+            vehicleType: true,
+            profilePicture: true,
+            yearsOfExperience: true,
+            specialties: true,
+            bio: true,
           }
         },
         vehicle: {

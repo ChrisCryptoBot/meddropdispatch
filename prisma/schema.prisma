@@ -79,6 +79,7 @@ model Shipper {
   invoices     Invoice[]
   loadTemplates LoadTemplate[]
   driverRatings DriverRating[]
+  callbackQueue CallbackQueue[]
 
   @@index([email])
   @@index([companyName])
@@ -319,6 +320,7 @@ model LoadRequest {
   driver          Driver?         @relation(fields: [driverId], references: [id])
   vehicle         Vehicle?        @relation(fields: [vehicleId], references: [id])
   invoice         Invoice?        @relation(fields: [invoiceId], references: [id])
+  callbackQueue   CallbackQueue?  // Load created from callback queue
   notifications   Notification[]
   trackingEvents  TrackingEvent[]
   documents       Document[]
@@ -501,6 +503,14 @@ model Driver {
   emergencyContact String?
   emergencyPhone   String?
 
+  // Profile Personalization
+  profilePicture   String? // Base64 or URL to profile picture
+  bio              String? // Short bio/about me
+  specialties      String? // Comma-separated specialties (e.g., "STAT, Temperature-Controlled, Long Distance")
+  yearsOfExperience Int? // Years of experience in medical courier
+  languages        String? // Languages spoken (comma-separated)
+  serviceAreas     String? // Service areas/regions (comma-separated)
+
   // Payment Settings (Optional - stored as strings for SQLite)
   paymentMethod      String? // ACH, CHECK, etc.
   bankName           String?
@@ -523,6 +533,7 @@ model Driver {
   documents    DriverDocument[]
   gpsTrackingPoints GPSTrackingPoint[]
   ratings      DriverRating[]
+  callbackQueue CallbackQueue[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -563,7 +574,7 @@ model Vehicle {
 }
 
 // DriverDocument: Driver compliance and certification documents
-// DocumentType: DRIVERS_LICENSE, VEHICLE_INSURANCE, VEHICLE_REGISTRATION, HIPAA_CERTIFICATE, UN3373_CERTIFICATE, BACKGROUND_CHECK, W9_FORM, OTHER
+// DocumentType: DRIVERS_LICENSE, VEHICLE_INSURANCE, VEHICLE_REGISTRATION, HIPAA_CERTIFICATE, UN3373_CERTIFICATE, W9_FORM, OTHER
 model DriverDocument {
   id        String   @id @default(cuid())
   driverId  String
@@ -630,4 +641,34 @@ model User {
   updatedAt    DateTime @updatedAt
 
   @@index([email])
+}
+
+// CallbackQueue: Queue for shippers requesting callback to book loads
+model CallbackQueue {
+  id            String   @id @default(cuid())
+  shipperId     String
+  driverId      String?  // Driver who called the shipper (null if not called yet)
+  loadRequestId String?  @unique // Load created from this callback (null if not created yet)
+  position      Int      // Position in queue (1 = first, 2 = second, etc.)
+  status        String   @default("PENDING") // PENDING, CALLED, COMPLETED, CANCELLED
+  priority      String   @default("NORMAL") // NORMAL, HIGH, URGENT
+  calledAt      DateTime? // When dispatch called the shipper
+  completedAt   DateTime? // When callback was completed (load created)
+  cancelledAt   DateTime? // When shipper cancelled their request
+  notes         String? // Internal notes from dispatch
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  shipper     Shipper     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  driver      Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  loadRequest LoadRequest? @relation(fields: [loadRequestId], references: [id], onDelete: SetNull)
+
+  @@index([shipperId])
+  @@index([status])
+  @@index([position])
+  @@index([createdAt])
+  @@index([driverId])
+  @@index([loadRequestId])
+  @@index([priority])
 }

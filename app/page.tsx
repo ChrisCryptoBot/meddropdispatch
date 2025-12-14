@@ -5,24 +5,36 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="glass-primary sticky top-0 z-50 border-b border-blue-200/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="glass-primary sticky top-0 z-50 border-b border-blue-200/30 flex-shrink-0">
+        <div className="w-full py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center">
+            <div className="flex items-center space-x-4 pl-4 md:pl-4">
+              <div className="w-16 h-16 flex items-center justify-center">
                 <Image
                   src="/logo-icon.png"
                   alt="MED DROP Logo"
-                  width={40}
-                  height={40}
+                  width={64}
+                  height={64}
                   className="object-contain"
                   priority
                 />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-xs text-medical">Medical Courier Services</p>
+                <h1 className="text-4xl font-bold text-gradient">MED DROP</h1>
+                <p className="text-sm font-semibold text-red-600">Medical Courier Services</p>
               </div>
+            </div>
+            <div className="pr-4 md:pr-8">
+              <a
+                href="tel:+19039140386"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span className="hidden sm:inline">(903) 914-0386</span>
+                <span className="sm:hidden">Call</span>
+              </a>
             </div>
           </div>
         </div>
@@ -40,9 +52,23 @@ export default function HomePage() {
               <p className="text-xl md:text-2xl text-medical max-w-3xl mx-auto mb-4">
                 Secure, compliant transportation for medical specimens, pharmaceuticals, and healthcare supplies
               </p>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-12">
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
                 Real-time tracking • Digital signatures • Temperature monitoring • UN3373 certified
               </p>
+              
+              {/* Emergency Call CTA */}
+              <div className="mb-12">
+                <a
+                  href="tel:+19039140386"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-urgent text-white rounded-xl font-bold text-xl hover:shadow-urgent transition-all transform hover:scale-105 shadow-lg animate-pulse"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span>Call Now: (903) 914-0386</span>
+                  <span className="text-sm font-normal opacity-90">24/7 Available</span>
+                </a>
+              </div>
               
               {/* Primary CTAs */}
               <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
@@ -366,18 +392,19 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 flex items-center justify-center">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-20 h-20 flex items-center justify-center">
                   <Image
                     src="/logo-icon.png"
                     alt="MED DROP Logo"
-                    width={40}
-                    height={40}
+                    width={80}
+                    height={80}
                     className="object-contain"
                   />
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-gradient">MED DROP</h4>
+                  <h4 className="text-3xl font-bold text-gradient">MED DROP</h4>
+                  <p className="text-sm font-semibold text-red-600 mt-1">Medical Courier Services</p>
                 </div>
               </div>
               <p className="text-sm text-medical">
@@ -427,10 +454,26 @@ export default function HomePage() {
             <div>
               <h5 className="font-bold text-gray-900 mb-4">Company</h5>
               <ul className="space-y-2 text-sm">
-                <li className="text-gray-600">About MED DROP</li>
-                <li className="text-gray-600">Contact Support</li>
-                <li className="text-gray-600">Privacy Policy</li>
-                <li className="text-gray-600">Terms of Service</li>
+                <li>
+                  <Link href="/about" className="text-medical hover:text-blue-800 transition-colors">
+                    About MED DROP
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-medical hover:text-blue-800 transition-colors">
+                    Contact Support
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="text-medical hover:text-blue-800 transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-medical hover:text-blue-800 transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

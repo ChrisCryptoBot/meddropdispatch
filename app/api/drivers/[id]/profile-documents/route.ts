@@ -11,7 +11,6 @@ const documentTypes = [
   'VEHICLE_REGISTRATION',
   'HIPAA_CERTIFICATE',
   'UN3373_CERTIFICATE',
-  'BACKGROUND_CHECK',
   'W9_FORM',
   'OTHER',
 ] as const

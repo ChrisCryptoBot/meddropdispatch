@@ -303,7 +303,6 @@ export default function ShipperDashboardPage() {
     active: loads.filter(l => ['QUOTE_ACCEPTED', 'SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length,
     delivered: loads.filter(l => l.status === 'DELIVERED').length,
     cancelled: loads.filter(l => ['CANCELLED', 'DENIED'].includes(l.status)).length,
-    cancelled: loads.filter(l => ['CANCELLED', 'DENIED'].includes(l.status)).length,
   }
 
   // Loads that are available for shipper to claim (created by drivers, not yet claimed)
@@ -323,9 +322,20 @@ export default function ShipperDashboardPage() {
   }
 
   return (
-    <div className="p-8">
-        {/* Call to Book Loads - Prominent CTA */}
-        <div className="glass-primary rounded-2xl p-6 mb-8 border-2 border-blue-200/30 shadow-glass">
+    <div className="p-8 print:p-4">
+      {/* Header */}
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Loads</h1>
+            <p className="text-gray-600 print:text-sm">Manage and track all your shipment requests</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Book Loads - Prominent CTA */}
+      <div className="sticky top-[185px] z-20 bg-gradient-medical-bg pt-4 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -334,8 +344,8 @@ export default function ShipperDashboardPage() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">Need to Book a Load?</h2>
-                <p className="text-medical mb-2">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1 print:text-xl">Need to Book a Load?</h2>
+                <p className="text-medical mb-2 print:text-sm">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
                 <a
                   href="tel:+1234567890"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
@@ -349,36 +359,31 @@ export default function ShipperDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
-            <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
-            <div className="text-sm text-medical">Total Loads</div>
-          </div>
-          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
-            <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
-            <div className="text-sm text-medical">Pending</div>
-          </div>
-          <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
-            <div className="text-3xl font-bold text-gradient mb-1">{stats.active}</div>
-            <div className="text-sm text-medical">Active</div>
-          </div>
-          <div className="glass-success rounded-2xl p-6 border-2 border-green-200/30">
-            <div className="text-3xl font-bold text-success-700 mb-1">{stats.delivered}</div>
-            <div className="text-sm text-success-700">Delivered</div>
-          </div>
-          <div className="glass-urgent rounded-2xl p-6 border-2 border-red-200/30">
-            <div className="text-3xl font-bold text-urgent-700 mb-1">{stats.cancelled}</div>
-            <div className="text-sm text-urgent-700">Cancelled</div>
-          </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+          <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
+          <div className="text-sm text-medical">Total Loads</div>
         </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Loads</h1>
-          <p className="text-gray-600">Manage and track all your shipment requests</p>
+        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+          <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
+          <div className="text-sm text-medical">Pending</div>
         </div>
+        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+          <div className="text-3xl font-bold text-gradient mb-1">{stats.active}</div>
+          <div className="text-sm text-medical">Active</div>
+        </div>
+        <div className="glass-success rounded-2xl p-6 border-2 border-green-200/30">
+          <div className="text-3xl font-bold text-success-700 mb-1">{stats.delivered}</div>
+          <div className="text-sm text-success-700">Delivered</div>
+        </div>
+        <div className="glass-urgent rounded-2xl p-6 border-2 border-red-200/30">
+          <div className="text-3xl font-bold text-urgent-700 mb-1">{stats.cancelled}</div>
+          <div className="text-sm text-urgent-700">Cancelled</div>
+        </div>
+      </div>
 
         {/* Filters, Search, and Sort */}
         <div className="glass-primary p-6 rounded-2xl mb-6 border-2 border-blue-200/30">

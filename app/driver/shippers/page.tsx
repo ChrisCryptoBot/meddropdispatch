@@ -103,42 +103,6 @@ export default function DriverShippersPage() {
     }
   }
 
-  const handleDNU = async (shipperId: string, companyName: string, email: string) => {
-    const reason = prompt(`Mark ${companyName} as DNU (Do Not Use)?\n\nThis will:\n- Permanently delete the account\n- Block the email from future signups\n\nEnter reason (optional):`)
-    
-    if (reason === null) return // User cancelled
-
-    if (!confirm(`⚠️ WARNING: This will PERMANENTLY DELETE ${companyName} and BLOCK ${email} from signing up again.\n\nThis action cannot be undone. Continue?`)) {
-      return
-    }
-
-    setDeletingId(shipperId)
-    try {
-      const response = await fetch(`/api/shippers/${shipperId}/dnu`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: reason || `DNU: ${companyName}`,
-          blockEmail: true,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to mark shipper as DNU')
-      }
-
-      showToast.success('Shipper marked as DNU and deleted. Email has been blocked.')
-      if (driver) {
-        await fetchShippers(driver.id) // Refresh the list
-      }
-    } catch (error) {
-      console.error('Error marking shipper as DNU:', error)
-      showApiError(error, 'Failed to mark shipper as DNU')
-    } finally {
-      setDeletingId(null)
-    }
-  }
 
   // Get unique client types for filter
   const clientTypes = useMemo(() => {
@@ -236,7 +200,7 @@ export default function DriverShippersPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading...</p>
           </div>
         </div>
@@ -245,139 +209,139 @@ export default function DriverShippersPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Shippers & Clients</h1>
-          <p className="text-lg text-gray-600">
-            View all shippers you've worked with and track your business relationships
-          </p>
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Total Shippers</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalShippers}</p>
-          </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Active</p>
-            <p className="text-2xl font-bold text-green-700">{stats.activeShippers}</p>
-          </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Total Loads</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalLoads}</p>
-          </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Completed</p>
-            <p className="text-2xl font-bold text-blue-700">{stats.completedLoads}</p>
-          </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-2xl font-bold text-green-700">${stats.totalRevenue.toFixed(2)}</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Shippers & Clients</h1>
+            <p className="text-gray-600 print:text-sm">View all shippers you've worked with and track your business relationships</p>
           </div>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div className="glass p-6 rounded-2xl mb-6">
-          <div className="grid md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="md:col-span-2">
-              <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2">
-                Search
-              </label>
-              <input
-                type="text"
-                id="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by company, contact, email, phone..."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-              />
-            </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 print:grid-cols-5 print:gap-2">
+        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 print:text-xl">{stats.totalShippers}</div>
+          <div className="text-sm text-gray-600 print:text-xs">Total Shippers</div>
+        </div>
+        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl lg:text-3xl font-bold text-success-600 mb-1 print:text-xl">{stats.activeShippers}</div>
+          <div className="text-sm text-gray-600 print:text-xs">Active</div>
+        </div>
+        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 print:text-xl">{stats.totalLoads}</div>
+          <div className="text-sm text-gray-600 print:text-xs">Total Loads</div>
+        </div>
+        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl lg:text-3xl font-bold text-primary-600 mb-1 print:text-xl">{stats.completedLoads}</div>
+          <div className="text-sm text-gray-600 print:text-xs">Completed</div>
+        </div>
+        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl lg:text-3xl font-bold text-success-600 mb-1 print:text-xl">${stats.totalRevenue.toFixed(2)}</div>
+          <div className="text-sm text-gray-600 print:text-xs">Total Revenue</div>
+        </div>
+      </div>
 
-            {/* Filter */}
-            <div>
-              <label htmlFor="filter" className="block text-sm font-semibold text-gray-700 mb-2">
-                Filter
-              </label>
-              <select
-                id="filter"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as FilterOption)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-              >
-                <option value="all">All Shippers</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-                <option value="with_loads">With Loads</option>
-                <option value="no_loads">No Loads</option>
-              </select>
-            </div>
-
-            {/* Client Type Filter */}
-            <div>
-              <label htmlFor="clientType" className="block text-sm font-semibold text-gray-700 mb-2">
-                Client Type
-              </label>
-              <select
-                id="clientType"
-                value={selectedClientType}
-                onChange={(e) => setSelectedClientType(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-              >
-                <option value="all">All Types</option>
-                {clientTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type.replace(/_/g, ' ')}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Filters and Search */}
+      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+        <div className="grid md:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="md:col-span-2">
+            <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2">
+              Search
+            </label>
+            <input
+              type="text"
+              id="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by company, contact, email, phone..."
+              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+            />
           </div>
 
-          {/* Sort */}
-          <div className="mt-4">
-            <label htmlFor="sort" className="block text-sm font-semibold text-gray-700 mb-2">
-              Sort By
+          {/* Filter */}
+          <div>
+            <label htmlFor="filter" className="block text-sm font-semibold text-gray-700 mb-2">
+              Filter
             </label>
             <select
-              id="sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+              id="filter"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as FilterOption)}
+              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
             >
-              <option value="recent_activity">Recent Activity (Newest)</option>
-              <option value="oldest_activity">Oldest Activity</option>
-              <option value="company_asc">Company Name (A-Z)</option>
-              <option value="company_desc">Company Name (Z-A)</option>
-              <option value="total_loads">Total Loads (High to Low)</option>
-              <option value="completed_loads">Completed Loads (High to Low)</option>
-              <option value="revenue_high">Revenue (High to Low)</option>
-              <option value="revenue_low">Revenue (Low to High)</option>
-              <option value="client_type">Client Type</option>
+              <option value="all">All Shippers</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+              <option value="with_loads">With Loads</option>
+              <option value="no_loads">No Loads</option>
+            </select>
+          </div>
+
+          {/* Client Type Filter */}
+          <div>
+            <label htmlFor="clientType" className="block text-sm font-semibold text-gray-700 mb-2">
+              Client Type
+            </label>
+            <select
+              id="clientType"
+              value={selectedClientType}
+              onChange={(e) => setSelectedClientType(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+            >
+              <option value="all">All Types</option>
+              {clientTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type.replace(/_/g, ' ')}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            Showing {filteredAndSortedShippers.length} of {shippers.length} shippers
-          </p>
+        {/* Sort */}
+        <div className="mt-4">
+          <label htmlFor="sort" className="block text-sm font-semibold text-gray-700 mb-2">
+            Sort By
+          </label>
+          <select
+            id="sort"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortField)}
+            className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+          >
+            <option value="recent_activity">Recent Activity (Newest)</option>
+            <option value="oldest_activity">Oldest Activity</option>
+            <option value="company_asc">Company Name (A-Z)</option>
+            <option value="company_desc">Company Name (Z-A)</option>
+            <option value="total_loads">Total Loads (High to Low)</option>
+            <option value="completed_loads">Completed Loads (High to Low)</option>
+            <option value="revenue_high">Revenue (High to Low)</option>
+            <option value="revenue_low">Revenue (Low to High)</option>
+            <option value="client_type">Client Type</option>
+          </select>
         </div>
+      </div>
 
-        {/* Shippers List */}
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading shippers...</p>
-            </div>
+      {/* Results Count */}
+      <div className="mb-4">
+        <p className="text-sm text-gray-600">
+          Showing {filteredAndSortedShippers.length} of {shippers.length} shippers
+        </p>
+      </div>
+
+      {/* Shippers List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading shippers...</p>
           </div>
-        ) : filteredAndSortedShippers.length === 0 ? (
-          <div className="glass p-12 rounded-2xl text-center">
+        </div>
+      ) : filteredAndSortedShippers.length === 0 ? (
+        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-3-3h-4a3 3 0 00-3 3v2zM9 10a3 3 0 100-6 3 3 0 000 6zm0 0v8a2 2 0 002 2h6a2 2 0 002-2v-8M9 10h6" />
             </svg>
@@ -393,7 +357,7 @@ export default function DriverShippersPage() {
             {filteredAndSortedShippers.map((shipper) => (
               <div
                 key={shipper.id}
-                className="glass p-6 rounded-2xl hover:shadow-lg transition-all border border-white/30"
+                className="glass-accent p-6 rounded-2xl hover:shadow-lg transition-all border-2 border-teal-200/30 shadow-medical"
               >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Left: Company Info */}
@@ -419,13 +383,13 @@ export default function DriverShippersPage() {
                       </div>
                       <div>
                         <span className="font-semibold">Phone:</span>{' '}
-                        <a href={`tel:${shipper.phone}`} className="text-slate-600 hover:text-slate-800">
+                        <a href={`tel:${shipper.phone}`} className="text-accent-600 hover:text-accent-800">
                           {shipper.phone}
                         </a>
                       </div>
                       <div>
                         <span className="font-semibold">Email:</span>{' '}
-                        <a href={`mailto:${shipper.email}`} className="text-slate-600 hover:text-slate-800">
+                        <a href={`mailto:${shipper.email}`} className="text-accent-600 hover:text-accent-800">
                           {shipper.email}
                         </a>
                       </div>
@@ -469,33 +433,19 @@ export default function DriverShippersPage() {
                     )}
                     <div className="mt-3 flex gap-2">
                       <Link
-                        href={`/driver/shippers/${shipper.id}/loads`}
-                        className="flex-1 text-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-semibold"
+                        href={`/driver/shippers/${shipper.id}`}
+                        className="flex-1 text-center px-4 py-2 bg-gradient-accent text-white rounded-lg hover:shadow-lg transition-all text-sm font-semibold"
                       >
-                        View Loads
+                        View Profile
                       </Link>
                       <button
                         onClick={() => handleDelete(shipper.id, shipper.companyName)}
                         disabled={deletingId === shipper.id}
-                        className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-warning-600 hover:bg-warning-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Deactivate shipper (soft delete)"
                       >
                         {deletingId === shipper.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                          </svg>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDNU(shipper.id, shipper.companyName, shipper.email)}
-                        disabled={deletingId === shipper.id}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Mark as DNU (permanently delete and block email)"
-                      >
-                        {deletingId === shipper.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-600"></div>
                         ) : (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -509,7 +459,6 @@ export default function DriverShippersPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   )
 }

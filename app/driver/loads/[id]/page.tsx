@@ -671,7 +671,7 @@ export default function DriverLoadDetailPage() {
               <button
                 onClick={handleCalculateRateWithDeadhead}
                 disabled={isCalculatingRate || !driverStartingLocation.trim()}
-                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isCalculatingRate ? (
                   <>

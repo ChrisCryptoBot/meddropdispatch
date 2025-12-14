@@ -18,12 +18,26 @@ export async function GET(
 
     const facilities = await prisma.facility.findMany({
       where: { shipperId: id },
+      include: {
+        _count: {
+          select: {
+            pickupLoadRequests: true,
+            dropoffLoadRequests: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
     })
 
-    return NextResponse.json({ facilities })
+    // Calculate total usage for each facility
+    const facilitiesWithUsage = facilities.map(facility => ({
+      ...facility,
+      totalUsage: facility._count.pickupLoadRequests + facility._count.dropoffLoadRequests,
+    }))
+
+    return NextResponse.json({ facilities: facilitiesWithUsage })
   } catch (error) {
     console.error('Error fetching facilities:', error)
     return NextResponse.json(

@@ -92,10 +92,14 @@ export default function DriverSecurityPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Security</h1>
-        <p className="text-gray-600">Change your password and manage security settings</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Security</h1>
+            <p className="text-gray-600 print:text-sm">Change your password and manage security settings</p>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-2xl">
@@ -123,7 +127,7 @@ export default function DriverSecurityPage() {
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                 required
               />
             </div>
@@ -136,7 +140,7 @@ export default function DriverSecurityPage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                 required
                 minLength={8}
               />
@@ -153,7 +157,7 @@ export default function DriverSecurityPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                 required
                 minLength={8}
               />
@@ -163,7 +167,7 @@ export default function DriverSecurityPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+                className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
               >
                 {isSaving ? 'Updating...' : 'Update Password'}
               </button>

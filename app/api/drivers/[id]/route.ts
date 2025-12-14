@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { createErrorResponse, NotFoundError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -19,6 +19,13 @@ const updateDriverSchema = z.object({
   vehicleYear: z.number().int().min(1900).max(2100).optional().nullable(),
   vehiclePlate: z.string().optional().nullable(),
   hasRefrigeration: z.boolean().optional(),
+  // Personalization fields
+  profilePicture: z.string().optional().nullable(),
+  bio: z.string().max(500).optional().nullable(),
+  specialties: z.string().optional().nullable(),
+  yearsOfExperience: z.number().int().min(0).max(50).optional().nullable(),
+  languages: z.string().optional().nullable(),
+  serviceAreas: z.string().optional().nullable(),
 })
 
 /**
@@ -29,13 +36,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
-    try {
-      rateLimit(RATE_LIMITS.api)(req)
-    } catch (error) {
-      return createErrorResponse(error)
-    }
+  try {
+    rateLimit(RATE_LIMITS.api)(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 
+  try {
     const { id } = await params
 
     const driver = await prisma.driver.findUnique({
@@ -59,6 +66,12 @@ export async function GET(
         hasRefrigeration: true,
         un3373Certified: true,
         hipaaTrainingDate: true,
+        profilePicture: true,
+        bio: true,
+        specialties: true,
+        yearsOfExperience: true,
+        languages: true,
+        serviceAreas: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -69,7 +82,10 @@ export async function GET(
     }
 
     return NextResponse.json({ driver })
-  })(request)
+  } catch (error) {
+    console.error('Error in GET /api/drivers/[id]:', error)
+    return createErrorResponse(error)
+  }
 }
 
 /**
@@ -80,15 +96,15 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
-    try {
-      rateLimit(RATE_LIMITS.api)(req)
-    } catch (error) {
-      return createErrorResponse(error)
-    }
+  try {
+    rateLimit(RATE_LIMITS.api)(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 
+  try {
     const { id } = await params
-    const rawData = await req.json()
+    const rawData = await request.json()
 
     // Validate request
     const validation = updateDriverSchema.safeParse(rawData)
@@ -131,6 +147,12 @@ export async function PATCH(
     if (data.vehicleYear !== undefined) updateData.vehicleYear = data.vehicleYear
     if (data.vehiclePlate !== undefined) updateData.vehiclePlate = data.vehiclePlate
     if (data.hasRefrigeration !== undefined) updateData.hasRefrigeration = data.hasRefrigeration
+    if (data.profilePicture !== undefined) updateData.profilePicture = data.profilePicture
+    if (data.bio !== undefined) updateData.bio = data.bio
+    if (data.specialties !== undefined) updateData.specialties = data.specialties
+    if (data.yearsOfExperience !== undefined) updateData.yearsOfExperience = data.yearsOfExperience
+    if (data.languages !== undefined) updateData.languages = data.languages
+    if (data.serviceAreas !== undefined) updateData.serviceAreas = data.serviceAreas
 
     // Update driver
     const updatedDriver = await prisma.driver.update({
@@ -155,6 +177,12 @@ export async function PATCH(
         hasRefrigeration: true,
         un3373Certified: true,
         hipaaTrainingDate: true,
+        profilePicture: true,
+        bio: true,
+        specialties: true,
+        yearsOfExperience: true,
+        languages: true,
+        serviceAreas: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -164,7 +192,10 @@ export async function PATCH(
       success: true,
       driver: updatedDriver,
     })
-  })(request)
+  } catch (error) {
+    console.error('Error in PATCH /api/drivers/[id]:', error)
+    return createErrorResponse(error)
+  }
 }
 
 /**
@@ -175,13 +206,13 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
-    try {
-      rateLimit(RATE_LIMITS.api)(req)
-    } catch (error) {
-      return createErrorResponse(error)
-    }
+  try {
+    rateLimit(RATE_LIMITS.api)(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 
+  try {
     const { id } = await params
 
     // Check if driver exists
@@ -233,5 +264,8 @@ export async function DELETE(
       success: true,
       message: 'Account deleted successfully',
     })
-  })(request)
+  } catch (error) {
+    console.error('Error in DELETE /api/drivers/[id]:', error)
+    return createErrorResponse(error)
+  }
 }

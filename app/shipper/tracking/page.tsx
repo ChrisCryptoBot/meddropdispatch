@@ -15,14 +15,16 @@ export default function ShipperTrackingPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Track Shipment</h1>
-          <p className="text-lg text-gray-600">
-            Enter your tracking code to view delivery status and tracking events
-          </p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Track Shipment</h1>
+            <p className="text-gray-600 print:text-sm">Enter your tracking code to view delivery status and tracking events</p>
+          </div>
         </div>
+      </div>
+      <div className="max-w-2xl mx-auto">
 
         <div className="glass rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">

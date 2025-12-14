@@ -156,7 +156,7 @@ export default function DriverMyLoadsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your loads...</p>
           </div>
         </div>
@@ -165,37 +165,41 @@ export default function DriverMyLoadsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">My Loads</h1>
-        <p className="text-gray-600">View all loads you've accepted with complete documentation and records</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Loads</h1>
+            <p className="text-gray-600 print:text-sm">View all loads you've accepted with complete documentation and records</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="glass rounded-xl p-4">
+        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
           <div className="text-2xl font-bold text-gray-900">{loads.length}</div>
           <div className="text-xs text-gray-600">Total Loads</div>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
           <div className="text-2xl font-bold text-blue-600">
             {loads.filter(l => ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
           </div>
           <div className="text-xs text-gray-600">Active</div>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
           <div className="text-2xl font-bold text-green-600">
             {loads.filter(l => l.status === 'DELIVERED').length}
           </div>
           <div className="text-xs text-gray-600">Completed</div>
         </div>
-        <div className="glass rounded-xl p-4">
-          <div className="text-2xl font-bold text-slate-600">
+        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-2xl font-bold text-accent-700">
             {loads.reduce((sum, l) => sum + l.documents.length, 0)}
           </div>
           <div className="text-xs text-gray-600">Documents</div>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
           <div className="text-2xl font-bold text-green-700">
             ${loads.reduce((sum, l) => sum + (l.quoteAmount || 0), 0).toLocaleString()}
           </div>
@@ -204,7 +208,7 @@ export default function DriverMyLoadsPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="glass p-4 rounded-xl mb-6">
+      <div className="glass-accent p-4 rounded-xl mb-6 border-2 border-teal-200/30 shadow-medical">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
@@ -214,7 +218,7 @@ export default function DriverMyLoadsPage() {
               placeholder="Search by tracking code, commodity, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             />
           </div>
 
@@ -224,7 +228,7 @@ export default function DriverMyLoadsPage() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             >
               <option value="all">All Statuses</option>
               <option value="scheduled">Scheduled</option>
@@ -241,7 +245,7 @@ export default function DriverMyLoadsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -255,7 +259,7 @@ export default function DriverMyLoadsPage() {
 
       {/* Loads List */}
       {sortedLoads.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
+        <div className="glass-accent rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-medical">
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
             fill="none"
@@ -279,7 +283,7 @@ export default function DriverMyLoadsPage() {
       ) : (
         <div className="space-y-4">
           {sortedLoads.map((load) => (
-            <div key={load.id} className="glass rounded-xl p-6">
+            <div key={load.id} className="glass-accent rounded-xl p-6 border-2 border-teal-200/30 shadow-medical">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -311,14 +315,14 @@ export default function DriverMyLoadsPage() {
                   <div className="flex items-center gap-3 justify-end">
                     <Link
                       href={`/driver/loads/${load.id}`}
-                      className="text-sm text-slate-600 hover:text-slate-700 font-medium"
+                      className="text-sm text-accent-700 hover:text-accent-800 font-medium"
                     >
                       View Details →
                     </Link>
                     {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
                       <button
                         onClick={() => handleDeleteLoad(load.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-urgent-600 hover:bg-urgent-50 rounded-lg transition-colors"
                         title="Delete this load"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,8 +337,8 @@ export default function DriverMyLoadsPage() {
               {/* Route */}
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -348,8 +352,8 @@ export default function DriverMyLoadsPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-urgent-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-urgent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -369,14 +373,14 @@ export default function DriverMyLoadsPage() {
                   <p className="text-xs text-gray-500 mb-1">Signatures</p>
                   <div className="flex gap-2">
                     {load.pickupSignature ? (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
                         Pickup ✓
                       </span>
                     ) : (
                       <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">No Pickup</span>
                     )}
                     {load.deliverySignature ? (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
                         Delivery ✓
                       </span>
                     ) : (
@@ -421,7 +425,7 @@ export default function DriverMyLoadsPage() {
                       <Link
                         key={doc.id}
                         href={`/driver/loads/${load.id}#documents`}
-                        className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors flex items-center gap-1"
+                        className="px-3 py-1 bg-accent-100 text-accent-700 rounded-lg text-xs font-medium hover:bg-accent-200 transition-colors flex items-center gap-1 border border-accent-200"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

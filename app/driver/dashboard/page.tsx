@@ -422,9 +422,18 @@ export default function DriverDashboardPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load Board</h1>
+            <p className="text-gray-600 print:text-sm">View and accept available loads</p>
+          </div>
+        </div>
+      </div>
+
       {/* Driver Info Card */}
-      <div className="glass-accent p-6 rounded-2xl mb-6 border-2 border-teal-200/30 shadow-medical">
+      <div className="sticky top-[185px] z-20 glass-accent p-6 rounded-2xl mb-4 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical print:static print:top-0">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
@@ -438,7 +447,7 @@ export default function DriverDashboardPage() {
         </div>
 
         {/* Create Manual Load Button */}
-        <div className="mb-6">
+        <div>
           <Link
             href="/driver/manual-load"
             className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-accent text-white rounded-xl font-semibold hover:shadow-lg transition-all shadow-lg"
@@ -449,22 +458,28 @@ export default function DriverDashboardPage() {
             Create Manual Load
           </Link>
         </div>
+      </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-teal-200/30">
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
           <div className="text-center">
-            <p className="text-2xl font-bold text-gradient">{allLoads.length}</p>
-            <p className="text-xs text-teal-700">All Loads</p>
+            <p className="text-3xl font-bold text-gradient mb-1">{allLoads.length}</p>
+            <p className="text-sm text-teal-700 font-medium">All Loads</p>
           </div>
+        </div>
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
           <div className="text-center">
-            <p className="text-2xl font-bold text-accent-700">{myLoads.length}</p>
-            <p className="text-xs text-teal-700">My Loads</p>
+            <p className="text-3xl font-bold text-accent-700 mb-1">{myLoads.length}</p>
+            <p className="text-sm text-teal-700 font-medium">My Loads</p>
           </div>
+        </div>
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
           <div className="text-center">
-            <p className="text-2xl font-bold text-accent-700">
+            <p className="text-3xl font-bold text-green-600 mb-1">
               {myLoads.filter(l => ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
             </p>
-            <p className="text-xs text-teal-700">Active</p>
+            <p className="text-sm text-teal-700 font-medium">Active</p>
           </div>
         </div>
       </div>
@@ -494,7 +509,7 @@ export default function DriverDashboardPage() {
       </div>
 
       {/* Filters and Sort */}
-      <div className="glass-accent p-4 rounded-xl mb-6 border-2 border-teal-200/30">
+      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
@@ -505,7 +520,7 @@ export default function DriverDashboardPage() {
                 placeholder="Search by tracking, city, facility, commodity..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-10 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 outline-none bg-white/80"
+                className="w-full px-4 py-3 pl-10 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
               />
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -529,7 +544,7 @@ export default function DriverDashboardPage() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 outline-none bg-white/80"
+                className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
             >
               <option value="all">All Statuses</option>
               <option value="new">New/Requested</option>
@@ -548,7 +563,7 @@ export default function DriverDashboardPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 outline-none bg-white/80"
+                className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>

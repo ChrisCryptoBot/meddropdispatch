@@ -27,6 +27,7 @@ export async function GET(
       select: {
         id: true,
         companyName: true,
+        shipperCode: true,
         clientType: true,
         contactName: true,
         phone: true,
@@ -41,8 +42,38 @@ export async function GET(
         billingState: true,
         billingPostalCode: true,
         stripeCustomerId: true,
+        smsNotificationsEnabled: true,
+        smsPhoneNumber: true,
+        deletedAt: true,
+        deletedBy: true,
+        deletedReason: true,
         createdAt: true,
         updatedAt: true,
+        facilities: {
+          select: {
+            id: true,
+            name: true,
+            facilityType: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            postalCode: true,
+            contactName: true,
+            contactPhone: true,
+            defaultAccessNotes: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        _count: {
+          select: {
+            loadRequests: true,
+            facilities: true,
+          },
+        },
       },
     })
 

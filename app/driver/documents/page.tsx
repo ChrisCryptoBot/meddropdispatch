@@ -143,7 +143,7 @@ export default function DriverDocumentsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading documents...</p>
           </div>
         </div>
@@ -152,14 +152,18 @@ export default function DriverDocumentsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Documents</h1>
-          <p className="text-gray-600">View all documents from your assigned loads</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Documents</h1>
+            <p className="text-gray-600 print:text-sm">View all documents from your assigned loads</p>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="glass p-4 rounded-xl mb-6">
+      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
@@ -169,7 +173,7 @@ export default function DriverDocumentsPage() {
               placeholder="Search by title, tracking code, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             />
           </div>
 
@@ -179,7 +183,7 @@ export default function DriverDocumentsPage() {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             >
               <option value="all">All Types</option>
               <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
@@ -195,7 +199,7 @@ export default function DriverDocumentsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -211,7 +215,7 @@ export default function DriverDocumentsPage() {
 
       {/* Documents List */}
       {filteredAndSortedDocuments.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
+        <div className="glass-accent rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-medical">
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
             fill="none"
@@ -238,18 +242,18 @@ export default function DriverDocumentsPage() {
             Showing {filteredAndSortedDocuments.length} of {documents.length} documents
           </div>
           {filteredAndSortedDocuments.map((doc) => (
-            <div key={doc.id} className="glass rounded-xl p-6">
+            <div key={doc.id} className="glass-accent rounded-xl p-6 border-2 border-teal-200/30 shadow-medical">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="font-bold text-gray-900 text-lg">{doc.title}</h3>
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-accent-100 text-accent-700 border border-accent-200">
                       {getDocumentTypeLabel(doc.type)}
                     </span>
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-gray-600">
-                      Load: <Link href={`/driver/loads/${doc.loadRequest.id}`} className="font-mono text-slate-600 hover:text-slate-700 underline">{doc.loadTrackingCode}</Link>
+                      Load: <Link href={`/driver/loads/${doc.loadRequest.id}`} className="font-mono text-accent-700 hover:text-accent-800 underline">{doc.loadTrackingCode}</Link>
                     </p>
                     <p className="text-xs text-gray-500">
                       Uploaded: {formatDate(doc.createdAt)}
@@ -267,12 +271,12 @@ export default function DriverDocumentsPage() {
                     url={doc.url}
                     title={doc.title}
                     type={doc.type}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold hover:from-slate-700 hover:to-slate-800 transition-all inline-block"
+                    className="px-4 py-2 rounded-lg bg-gradient-accent text-white font-semibold hover:shadow-lg transition-all shadow-medical inline-block"
                   />
                   {!doc.isLocked && (
                     <button
                       onClick={() => handleDeleteDocument(doc.id, doc.loadRequest.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-urgent-600 hover:bg-urgent-50 rounded-lg transition-colors"
                       title="Delete document"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

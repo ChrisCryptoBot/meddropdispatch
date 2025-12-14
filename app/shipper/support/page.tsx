@@ -19,10 +19,14 @@ export default function SupportPage() {
   }, [router])
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Support & Help</h1>
-        <p className="text-gray-600">Get assistance with your shipments and account</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Support & Help</h1>
+            <p className="text-gray-600 print:text-sm">Get assistance with your shipments and account</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -35,10 +39,13 @@ export default function SupportPage() {
           <h3 className="text-xl font-bold text-gray-900 mb-2">Email Support</h3>
           <p className="text-gray-600 mb-4">Send us an email and we'll get back to you within 24 hours</p>
           <a
-            href="mailto:support@meddrop.com"
-            className="text-primary-600 hover:text-primary-700 font-semibold"
+            href="mailto:meddrop.dispatch@outlook.com"
+            className="text-accent-600 hover:text-accent-700 font-semibold underline hover:no-underline transition-colors cursor-pointer inline-flex items-center gap-1"
           >
-            support@meddrop.com →
+            meddrop.dispatch@outlook.com
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </a>
         </div>
 
@@ -49,12 +56,15 @@ export default function SupportPage() {
             </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">Phone Support</h3>
-          <p className="text-gray-600 mb-4">Call us Monday-Friday, 8AM-6PM EST</p>
+          <p className="text-gray-600 mb-4">Available 24/7 for urgent medical courier needs</p>
           <a
-            href="tel:+1234567890"
-            className="text-primary-600 hover:text-primary-700 font-semibold"
+            href="tel:+19039140386"
+            className="text-accent-600 hover:text-accent-700 font-semibold underline hover:no-underline transition-colors cursor-pointer inline-flex items-center gap-1"
           >
-            (123) 456-7890 →
+            (903) 914-0386
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </a>
         </div>
 
@@ -66,12 +76,19 @@ export default function SupportPage() {
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">FAQ</h3>
           <p className="text-gray-600 mb-4">Find answers to commonly asked questions</p>
-          <Link
-            href="/shipper/support/faq"
-            className="text-primary-600 hover:text-primary-700 font-semibold"
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault()
+              alert('FAQ page coming soon!')
+            }}
+            className="text-accent-600 hover:text-accent-700 font-semibold underline hover:no-underline transition-colors cursor-pointer inline-flex items-center gap-1"
           >
-            View FAQ →
-          </Link>
+            View FAQ
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
         </div>
 
         <div className="glass rounded-2xl p-6">
@@ -82,19 +99,26 @@ export default function SupportPage() {
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">Documentation</h3>
           <p className="text-gray-600 mb-4">Learn how to use the shipper portal</p>
-          <Link
-            href="/shipper/support/docs"
-            className="text-primary-600 hover:text-primary-700 font-semibold"
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault()
+              alert('Documentation page coming soon!')
+            }}
+            className="text-accent-600 hover:text-accent-700 font-semibold underline hover:no-underline transition-colors cursor-pointer inline-flex items-center gap-1"
           >
-            View Docs →
-          </Link>
+            View Docs
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
         </div>
       </div>
 
       <div className="glass rounded-2xl p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Need Immediate Help?</h2>
         <p className="text-gray-600 mb-4">
-          For urgent shipment issues, please call our emergency line: <strong>(123) 456-7890</strong>
+          For urgent shipment issues, please call our emergency line: <strong>(903) 914-0386</strong>
         </p>
         <p className="text-sm text-gray-500">
           Available 24/7 for time-sensitive medical courier requests

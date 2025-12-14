@@ -172,6 +172,15 @@ export async function PATCH(
                   trackingUrl,
                   baseUrl,
                 })
+
+                // Update invoice status to SENT and set sentAt timestamp
+                await prisma.invoice.update({
+                  where: { id: invoiceId },
+                  data: {
+                    status: 'SENT',
+                    sentAt: new Date(),
+                  },
+                })
               }
             } catch (emailError) {
               console.error('Error sending delivery congratulations email:', emailError)

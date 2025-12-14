@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(error)
     }
 
-    const rawData = await req.json()
+    try {
+      const rawData = await req.json()
     
     // Validate request body
     const validation = await validateRequest(createLoadRequestSchema, rawData)
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data
+
+    // Extract callbackId if provided (for linking callback queue to load)
+    const callbackId = (rawData as any).callbackId || null
 
     // VALIDATE REQUIRED FIELDS - Return specific errors for missing fields
     const missingFields: string[] = []
@@ -756,17 +760,34 @@ export async function POST(request: NextRequest) {
       dropoffCity: dropoffFacility.city,
     })
 
+    // Link callback to load if callbackId was provided
+    if (callbackId) {
+      try {
+        await prisma.callbackQueue.update({
+          where: { id: callbackId },
+          data: { 
+            loadRequestId: loadRequest.id,
+            status: 'COMPLETED',
+            completedAt: new Date(),
+          },
+        })
+        console.log(`[Callback Linked] Callback ${callbackId} linked to load ${loadRequest.id}`)
+      } catch (callbackError) {
+        // Don't fail the load creation if callback linking fails
+        console.error('Error linking callback to load:', callbackError)
+      }
+    }
+
     // Log for debugging
     console.log(`[Load Request Created] ID: ${loadRequest.id}, Tracking: ${publicTrackingCode}, Shipper: ${finalShipper.id}, Status: ${loadRequest.status}`)
 
-    return NextResponse.json({
-      success: true,
-      trackingCode: publicTrackingCode,
-      loadId: loadRequest.id,
-      shipperId: finalShipper.id, // Include for verification
-    }, { status: 201 })
-
-  } catch (error) {
+      return NextResponse.json({
+        success: true,
+        trackingCode: publicTrackingCode,
+        loadId: loadRequest.id,
+        shipperId: finalShipper.id, // Include for verification
+      }, { status: 201 })
+    } catch (error) {
     console.error('Error creating load request:', error)
     
     // Extract detailed error message with specific field information
@@ -850,14 +871,15 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        message: details || errorMessage,
-        field: specificField || undefined,
-        details: error instanceof Error ? error.message : 'Unknown error occurred'
-      },
-      { status: 500 }
-    )
-  }
+      return NextResponse.json(
+        { 
+          error: errorMessage,
+          message: details || errorMessage,
+          field: specificField || undefined,
+          details: error instanceof Error ? error.message : 'Unknown error occurred'
+        },
+        { status: 500 }
+      )
+    }
+  })
 }

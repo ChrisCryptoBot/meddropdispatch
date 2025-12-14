@@ -41,7 +41,7 @@ export default function ShipperProfilePage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
@@ -53,10 +53,14 @@ export default function ShipperProfilePage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">My Profile</h1>
-        <p className="text-gray-600">View your company profile and account information</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Profile</h1>
+            <p className="text-gray-600 print:text-sm">View your company profile and account information</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
@@ -169,19 +173,19 @@ export default function ShipperProfilePage() {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/shipper/settings"
-              className="px-4 py-2 rounded-lg bg-slate-600 text-white font-semibold hover:bg-slate-700 transition-colors"
+              className="px-4 py-2 rounded-lg bg-gradient-primary text-white font-semibold hover:shadow-lg transition-all shadow-lg"
             >
               Edit Profile
             </Link>
             <Link
               href="/shipper/billing"
-              className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
+              className="px-4 py-2 rounded-lg bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
             >
               Update Billing Settings
             </Link>
             <Link
               href="/shipper/security"
-              className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors"
+              className="px-4 py-2 rounded-lg bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
             >
               Change Password
             </Link>

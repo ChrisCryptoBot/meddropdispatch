@@ -919,22 +919,66 @@ export default function ShipperLoadDetailPage() {
                     </button>
                   )}
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Driver Name</div>
-                    <div className="font-medium text-gray-900">
-                      {load.driver.firstName} {load.driver.lastName}
+                <div className="flex gap-4">
+                  {load.driver.profilePicture && (
+                    <div className="flex-shrink-0">
+                      <div className="relative rounded-full overflow-hidden border-4 border-blue-200 shadow-lg" style={{ width: '100px', height: '100px' }}>
+                        <img
+                          src={load.driver.profilePicture}
+                          alt={`${load.driver.firstName} ${load.driver.lastName}`}
+                          className="absolute inset-0 w-full h-full object-cover object-center"
+                          style={{ 
+                            objectFit: 'cover', 
+                            objectPosition: 'center',
+                            width: '100%',
+                            height: '100%',
+                            minWidth: '100%',
+                            minHeight: '100%'
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Phone</div>
-                    <a href={`tel:${load.driver.phone}`} className="font-medium text-blue-600 hover:text-blue-700">
-                      {load.driver.phone}
-                    </a>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Vehicle</div>
-                    <div className="font-medium text-gray-900">{load.driver.vehicleType}</div>
+                  )}
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Driver Name</div>
+                      <div className="font-medium text-gray-900 text-lg">
+                        {load.driver.firstName} {load.driver.lastName}
+                      </div>
+                      {load.driver.yearsOfExperience && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          {load.driver.yearsOfExperience} {load.driver.yearsOfExperience === 1 ? 'year' : 'years'} of experience
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Phone</div>
+                      <a href={`tel:${load.driver.phone}`} className="font-medium text-blue-600 hover:text-blue-700">
+                        {load.driver.phone}
+                      </a>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Vehicle</div>
+                      <div className="font-medium text-gray-900">{load.driver.vehicleType}</div>
+                    </div>
+                    {load.driver.specialties && (
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Specialties</div>
+                        <div className="flex flex-wrap gap-2">
+                          {load.driver.specialties.split(',').map((specialty, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                              {specialty.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {load.driver.bio && (
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">About</div>
+                        <p className="text-sm text-gray-700">{load.driver.bio}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

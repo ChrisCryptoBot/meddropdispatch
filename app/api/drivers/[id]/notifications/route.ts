@@ -152,3 +152,71 @@ export async function PATCH(
   })(request)
 }
 
+/**
+ * DELETE /api/drivers/[id]/notifications
+ * Delete notifications
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(req)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+    const body = await req.json()
+    const { notificationIds, deleteAll } = body
+
+    // Verify driver exists
+    const driver = await prisma.driver.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+
+    if (!driver) {
+      throw new NotFoundError('Driver')
+    }
+
+    if (deleteAll) {
+      // Delete all notifications for this driver
+      await prisma.notification.deleteMany({
+        where: {
+          driverId: id,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'All notifications deleted',
+      })
+    }
+
+    if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: 'notificationIds array is required',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete specific notifications
+    await prisma.notification.deleteMany({
+      where: {
+        id: { in: notificationIds },
+        driverId: id, // Ensure driver owns these notifications
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Notifications deleted',
+    })
+  })(request)
+}
+

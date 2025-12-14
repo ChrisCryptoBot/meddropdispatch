@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { showToast } from '@/lib/toast'
 import RateCalculator from '@/components/features/RateCalculator'
@@ -9,8 +9,9 @@ import AddressAutocomplete from '@/components/features/AddressAutocomplete'
 import FacilityAutocomplete from '@/components/features/FacilityAutocomplete'
 import ShipperAutocomplete from '@/components/features/ShipperAutocomplete'
 
-export default function DriverManualLoadPage() {
+function DriverManualLoadPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [driver, setDriver] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +22,7 @@ export default function DriverManualLoadPage() {
   const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedDocuments, setUploadedDocuments] = useState<Array<{title: string, type: string}>>([])
+  const [callbackId, setCallbackId] = useState<string | null>(null)
   const [selectedShipperId, setSelectedShipperId] = useState<string>('')
   const [selectedShipperData, setSelectedShipperData] = useState<{
     id: string
@@ -64,7 +66,41 @@ export default function DriverManualLoadPage() {
     }
     setDriver(JSON.parse(driverData))
     fetchDrivers()
-  }, [router])
+
+    // Check for callbackId and shipperId in URL params
+    const urlCallbackId = searchParams.get('callbackId')
+    const urlShipperId = searchParams.get('shipperId')
+    
+    if (urlCallbackId) {
+      setCallbackId(urlCallbackId)
+    }
+    
+    if (urlShipperId) {
+      // Fetch shipper data and pre-fill form
+      fetchShipperData(urlShipperId)
+    }
+  }, [router, searchParams])
+
+  const fetchShipperData = async (shipperId: string) => {
+    try {
+      const response = await fetch(`/api/shippers/${shipperId}`)
+      if (response.ok) {
+        const shipper = await response.json()
+        setSelectedShipperId(shipper.id)
+        setSelectedShipperData(shipper)
+        // Pre-fill new shipper data with existing shipper info
+        setNewShipperData({
+          companyName: shipper.companyName || '',
+          email: shipper.email || '',
+          contactName: shipper.contactName || '',
+          phone: shipper.phone || '',
+          clientType: shipper.clientType || 'OTHER',
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching shipper data:', error)
+    }
+  }
 
   const fetchDrivers = async () => {
     try {
@@ -102,6 +138,7 @@ export default function DriverManualLoadPage() {
     // If selectedShipperId exists, use it. Otherwise, API will create new shipper from form data
     const requestData = {
       createdVia: 'DRIVER_MANUAL',
+      callbackId: callbackId || undefined, // Link to callback if provided
       shipperId: selectedShipperId || undefined, // Only include if shipper was selected from autocomplete
       // If no shipperId, include all shipper fields for API to create new shipper
       ...(selectedShipperId ? {} : {
@@ -235,25 +272,28 @@ export default function DriverManualLoadPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-10 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4 flex-1">
             <Link
               href="/driver/documents"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-accent-700 hover:text-accent-800 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900">Record Manual Load</h1>
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Record Manual Load</h1>
+              <p className="text-gray-600 print:text-sm">
+                Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
+              </p>
+            </div>
           </div>
-          <p className="text-lg text-gray-600 ml-10">
-            Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
-          </p>
         </div>
+      </div>
+      <div className="max-w-4xl mx-auto">
 
         {/* Workflow Explanation Banner */}
         <div className="glass p-6 rounded-xl mb-6 bg-blue-50 border border-blue-200">
@@ -590,7 +630,7 @@ export default function DriverManualLoadPage() {
                     onChange={(name) => setFormData({ ...formData, pickupFacilityName: name })}
                     onFacilitySelect={(facilityData) => {
                       console.log('Pickup facility selected:', facilityData)
-                      setFormData((prev) => ({
+                      setFormData((prev: any) => ({
                         ...prev,
                         pickupFacilityName: facilityData.name,
                         pickupAddressLine1: facilityData.addressLine1,
@@ -699,7 +739,7 @@ export default function DriverManualLoadPage() {
                     onChange={(name) => setFormData({ ...formData, dropoffFacilityName: name })}
                     onFacilitySelect={(facilityData) => {
                       console.log('Dropoff facility selected:', facilityData)
-                      setFormData((prev) => ({
+                      setFormData((prev: any) => ({
                         ...prev,
                         dropoffFacilityName: facilityData.name,
                         dropoffAddressLine1: facilityData.addressLine1,
@@ -1005,7 +1045,7 @@ export default function DriverManualLoadPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-8 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-8 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -1206,6 +1246,23 @@ export default function DriverManualLoadPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function DriverManualLoadPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DriverManualLoadPageContent />
+    </Suspense>
   )
 }
 

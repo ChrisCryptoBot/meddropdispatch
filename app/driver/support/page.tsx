@@ -18,12 +18,19 @@ export default function DriverSupportPage() {
   }, [router])
 
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">Support</h1>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Support</h1>
+            <p className="text-gray-600 print:text-sm">Get help and contact our support team</p>
+          </div>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="glass p-12 rounded-2xl text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       ) : (
@@ -33,11 +40,15 @@ export default function DriverSupportPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Email</label>
-                <p className="text-lg text-gray-900">support@meddrop.com</p>
+                <a href="mailto:meddrop.dispatch@outlook.com" className="text-lg text-accent-600 hover:text-accent-700 font-semibold block">
+                  meddrop.dispatch@outlook.com
+                </a>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Phone</label>
-                <p className="text-lg text-gray-900">1-800-MED-DROP</p>
+                <a href="tel:+19039140386" className="text-lg text-accent-600 hover:text-accent-700 font-semibold block">
+                  (903) 914-0386
+                </a>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Hours</label>

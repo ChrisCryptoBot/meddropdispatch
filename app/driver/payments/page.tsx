@@ -166,7 +166,7 @@ export default function DriverPaymentsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading payment settings...</p>
           </div>
         </div>
@@ -175,10 +175,14 @@ export default function DriverPaymentsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Payments & Payouts</h1>
-        <p className="text-gray-600">Manage your payment method and payout preferences</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Payments & Payouts</h1>
+            <p className="text-gray-600 print:text-sm">Manage your payment method and payout preferences</p>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -187,7 +191,7 @@ export default function DriverPaymentsPage() {
           onClick={() => setActiveTab('settings')}
           className={`px-6 py-3 font-medium text-sm transition-all border-b-2 ${
             activeTab === 'settings'
-              ? 'border-slate-600 text-slate-700'
+              ? 'border-accent-600 text-accent-700'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -197,7 +201,7 @@ export default function DriverPaymentsPage() {
           onClick={() => setActiveTab('history')}
           className={`px-6 py-3 font-medium text-sm transition-all border-b-2 ${
             activeTab === 'history'
-              ? 'border-slate-600 text-slate-700'
+              ? 'border-accent-600 text-accent-700'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -219,7 +223,7 @@ export default function DriverPaymentsPage() {
                 <select
                   value={paymentData.paymentMethod}
                   onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   required
                 >
                   <option value="ACH">ACH (Bank Transfer)</option>
@@ -240,7 +244,7 @@ export default function DriverPaymentsPage() {
                       type="text"
                       value={paymentData.bankName}
                       onChange={(e) => setPaymentData({ ...paymentData, bankName: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                       placeholder="Chase Bank"
                       required
                     />
@@ -254,7 +258,7 @@ export default function DriverPaymentsPage() {
                       type="text"
                       value={paymentData.accountHolderName}
                       onChange={(e) => setPaymentData({ ...paymentData, accountHolderName: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                       placeholder="John Doe"
                       required
                     />
@@ -269,7 +273,7 @@ export default function DriverPaymentsPage() {
                         type="text"
                         value={paymentData.routingNumber}
                         onChange={(e) => setPaymentData({ ...paymentData, routingNumber: e.target.value.replace(/\D/g, '') })}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                        className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                         placeholder="123456789"
                         maxLength={9}
                         required
@@ -284,7 +288,7 @@ export default function DriverPaymentsPage() {
                         type="password"
                         value={paymentData.accountNumber}
                         onChange={(e) => setPaymentData({ ...paymentData, accountNumber: e.target.value.replace(/\D/g, '') })}
-                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                        className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                         placeholder="••••••••"
                         required
                       />
@@ -298,7 +302,7 @@ export default function DriverPaymentsPage() {
                     <select
                       value={paymentData.accountType}
                       onChange={(e) => setPaymentData({ ...paymentData, accountType: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                       required
                     >
                       <option value="checking">Checking</option>
@@ -319,7 +323,7 @@ export default function DriverPaymentsPage() {
                     <select
                       value={paymentData.payoutFrequency}
                       onChange={(e) => setPaymentData({ ...paymentData, payoutFrequency: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                       required
                     >
                       <option value="WEEKLY">Weekly</option>
@@ -336,7 +340,7 @@ export default function DriverPaymentsPage() {
                       type="number"
                       value={paymentData.minimumPayout}
                       onChange={(e) => setPaymentData({ ...paymentData, minimumPayout: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                       min="0"
                       step="0.01"
                     />
@@ -358,7 +362,7 @@ export default function DriverPaymentsPage() {
                     type="number"
                     value={paymentData.minimumRatePerMile}
                     onChange={(e) => setPaymentData({ ...paymentData, minimumRatePerMile: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
@@ -373,7 +377,7 @@ export default function DriverPaymentsPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+                  className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : 'Save Payment Settings'}
                 </button>
@@ -392,7 +396,7 @@ export default function DriverPaymentsPage() {
                 <select
                   value={taxData.taxIdType}
                   onChange={(e) => setTaxData({ ...taxData, taxIdType: e.target.value, taxId: '' })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   required
                 >
                   <option value="SSN">Social Security Number (SSN)</option>
@@ -408,7 +412,7 @@ export default function DriverPaymentsPage() {
                   type="text"
                   value={taxData.taxId}
                   onChange={(e) => setTaxData({ ...taxData, taxId: e.target.value.replace(/\D/g, '') })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   placeholder={taxData.taxIdType === 'SSN' ? 'XXX-XX-XXXX' : 'XX-XXXXXXX'}
                   maxLength={taxData.taxIdType === 'SSN' ? 9 : 9}
                   required
@@ -430,7 +434,7 @@ export default function DriverPaymentsPage() {
                 <button
                   type="submit"
                   disabled={isSaving || taxData.w9Submitted}
-                  className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+                  className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : taxData.w9Submitted ? 'Tax Info Submitted' : 'Submit Tax Information'}
                 </button>
@@ -469,7 +473,7 @@ export default function DriverPaymentsPage() {
             <div className="space-y-4">
               {isLoadingHistory ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-600 mx-auto mb-4"></div>
                   <p className="text-gray-600">Loading payout history...</p>
                 </div>
               ) : (

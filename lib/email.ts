@@ -383,23 +383,52 @@ MED DROP
 Medical Courier Services
   `.trim()
 
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const dashboardUrl = `${baseUrl}/shipper/dashboard`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
-    .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-    .tracking-code { font-size: 24px; font-weight: bold; margin: 10px 0; }
-    .status { background: #f0f9ff; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0ea5e9; }
-    .eta { background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #f59e0b; }
-    .quote { background: #fdf4ff; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #d946ef; }
-    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
-    .status-icon { font-size: 32px; margin-right: 10px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .status-banner { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 3px solid #0ea5e9; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1); }
+    .status-icon { font-size: 48px; margin-bottom: 15px; }
+    .status-message { font-size: 20px; color: #0369a1; font-weight: 600; margin: 10px 0; }
+    .tracking-code-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center; }
+    .tracking-code-label { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .tracking-code { font-size: 32px; font-weight: bold; color: #0369a1; font-family: 'Courier New', monospace; letter-spacing: 3px; }
+    .info-box { background: #f9fafb; border-left: 4px solid #0ea5e9; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .info-row { margin: 15px 0; display: flex; flex-wrap: wrap; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 120px; margin-bottom: 5px; }
+    .info-value { color: #111827; flex: 1; font-weight: 500; }
+    .eta-box { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 3px solid #f59e0b; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1); }
+    .eta-label { font-size: 14px; color: #92400e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .eta-value { font-size: 28px; font-weight: bold; color: #b45309; }
+    .quote-box { background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 3px solid #d946ef; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(217, 70, 239, 0.1); }
+    .quote-label { font-size: 14px; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
+    .quote-amount { font-size: 36px; font-weight: bold; color: #a21caf; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); transition: all 0.3s; }
+    .button:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3); }
+    .button-secondary { background: #6b7280; }
+    .button-secondary:hover { background: #4b5563; }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .support-box h4 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 10px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -409,39 +438,89 @@ Medical Courier Services
       <p>Medical Courier Services</p>
     </div>
     <div class="content">
-      <h2>Load Status Update</h2>
-      <p>Hello ${companyName},</p>
-      <p>${statusMessage}</p>
+      <h2 style="margin-top: 0; color: #1e40af;">Load Status Update</h2>
+      <p>Hello <strong>${companyName}</strong>,</p>
 
-      <div class="tracking-code">${statusIcon} ${trackingCode}</div>
+      <div class="status-banner">
+        <div class="status-icon">${statusIcon}</div>
+        <div class="status-message">${statusMessage}</div>
+      </div>
 
-      <div class="status">
-        <strong>Status:</strong> ${statusLabel}
-        ${driverName ? `<br><strong>Driver:</strong> ${driverName}` : ''}
-        ${pickupAddress ? `<br><strong>Pickup:</strong> ${pickupAddress}` : ''}
-        ${dropoffAddress ? `<br><strong>Delivery:</strong> ${dropoffAddress}` : ''}
+      <div class="tracking-code-box">
+        <div class="tracking-code-label">Tracking Code</div>
+        <div class="tracking-code">${trackingCode}</div>
+      </div>
+
+      <div class="info-box">
+        <h3 style="margin-top: 0; color: #0369a1; font-size: 20px;">Shipment Information</h3>
+        <div class="info-row">
+          <div class="info-label">Current Status:</div>
+          <div class="info-value"><strong style="color: #0369a1; font-size: 18px;">${statusLabel}</strong></div>
+        </div>
+        ${driverName ? `
+        <div class="info-row">
+          <div class="info-label">Assigned Driver:</div>
+          <div class="info-value"><strong>${driverName}</strong></div>
+        </div>
+        ` : ''}
+        ${pickupAddress ? `
+        <div class="info-row">
+          <div class="info-label">Pickup Location:</div>
+          <div class="info-value">${pickupAddress}</div>
+        </div>
+        ` : ''}
+        ${dropoffAddress ? `
+        <div class="info-row">
+          <div class="info-label">Delivery Location:</div>
+          <div class="info-value">${dropoffAddress}</div>
+        </div>
+        ` : ''}
       </div>
 
       ${eta ? `
-      <div class="eta">
-        <strong>⏰ Estimated Arrival:</strong> ${eta}
+      <div class="eta-box">
+        <div class="eta-label">Estimated Arrival</div>
+        <div class="eta-value">⏰ ${eta}</div>
+        <p style="margin-top: 15px; margin-bottom: 0; color: #92400e; font-size: 14px;">This is an estimated time based on current location and traffic conditions. Actual arrival may vary.</p>
       </div>
       ` : ''}
 
       ${quoteAmount ? `
-      <div class="quote">
-        <strong>Quote:</strong> ${quoteCurrency}${quoteAmount.toFixed(2)}
+      <div class="quote-box">
+        <div class="quote-label">Negotiated Rate</div>
+        <div class="quote-amount">${quoteCurrency}${quoteAmount.toFixed(2)}</div>
+        <p style="margin-top: 15px; margin-bottom: 0; color: #6b7280; font-size: 14px;">This is the agreed-upon rate for this delivery.</p>
       </div>
       ` : ''}
 
-      <a href="${trackingUrl}" class="button">Track Your Shipment</a>
-
-      <p>Thank you for choosing MED DROP for your medical courier needs.</p>
-
-      <div class="footer">
-        <p>MED DROP - Professional Medical Courier Services</p>
-        <p>This is an automated notification. Please do not reply to this email.</p>
+      <div class="button-group">
+        <a href="${trackingUrl}" class="button">Track Your Shipment</a>
+        <a href="${dashboardUrl}" class="button button-secondary">View Dashboard</a>
       </div>
+
+      <div class="support-box">
+        <h4>💬 Questions or Concerns?</h4>
+        <p style="margin-bottom: 15px; color: #1e40af;">If you have any questions about this shipment or need assistance, our support team is available 24/7:</p>
+        <div class="support-contact">
+          <strong>Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a>
+        </div>
+        <div class="support-contact">
+          <strong>Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a>
+        </div>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af; text-align: center;"><strong>Thank you for choosing MED DROP for your medical courier needs.</strong></p>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 15px;">This is an automated notification. Please do not reply to this email.</p>
+      <p style="margin-top: 10px;">
+        <a href="${trackingUrl}">Track Shipment</a> | 
+        <a href="${dashboardUrl}">View Dashboard</a> | 
+        <a href="${baseUrl}">Visit Website</a>
+      </p>
     </div>
   </div>
 </body>
@@ -481,7 +560,97 @@ Route: ${pickupCity} → ${dropoffCity}
 
 Review and quote: ${process.env.NEXTAUTH_URL}/admin/loads/${loadId}
   `.trim()
-  await sendEmail({ to: internalEmail, subject, text })
+
+  const adminUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const reviewUrl = `${adminUrl}/admin/loads/${loadId}`
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 36px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .alert-box { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 3px solid #dc2626; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.1); }
+    .alert-box h2 { margin: 0; color: #991b1b; font-size: 24px; }
+    .info-box { background: #f9fafb; border-left: 4px solid #dc2626; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .info-box h3 { margin: 0 0 20px 0; color: #991b1b; font-size: 20px; }
+    .info-row { margin: 15px 0; display: flex; flex-wrap: wrap; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 140px; margin-bottom: 5px; }
+    .info-value { color: #111827; flex: 1; font-weight: 500; }
+    .route-display { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+    .route-arrow { font-size: 24px; color: #0ea5e9; margin: 10px 0; }
+    .button { display: inline-block; background: #dc2626; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); transition: all 0.3s; }
+    .button:hover { background: #b91c1c; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(220, 38, 38, 0.3); }
+    .button-group { text-align: center; margin: 30px 0; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚨 New Load Request</h1>
+      <p>MED DROP - Internal Notification</p>
+    </div>
+    <div class="content">
+      <div class="alert-box">
+        <h2>New load request received!</h2>
+        <p style="margin: 10px 0 0 0; color: #991b1b; font-size: 16px;">Action required: Review and provide quote</p>
+      </div>
+
+      <div class="tracking-code-box" style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center;">
+        <div style="font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600;">Tracking Code</div>
+        <div style="font-size: 32px; font-weight: bold; color: #0369a1; font-family: 'Courier New', monospace; letter-spacing: 3px;">${trackingCode}</div>
+      </div>
+
+      <div class="info-box">
+        <h3>Load Information</h3>
+        <div class="info-row">
+          <div class="info-label">Company:</div>
+          <div class="info-value"><strong>${companyName}</strong></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Service Type:</div>
+          <div class="info-value">${serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+        </div>
+      </div>
+
+      <div class="route-display">
+        <div style="font-size: 18px; font-weight: 600; color: #0369a1; margin-bottom: 5px;">Route</div>
+        <div style="font-size: 20px; font-weight: bold; color: #111827;">${pickupCity}</div>
+        <div class="route-arrow">↓</div>
+        <div style="font-size: 20px; font-weight: bold; color: #111827;">${dropoffCity}</div>
+      </div>
+
+      <div class="button-group">
+        <a href="${reviewUrl}" class="button">Review and Quote</a>
+      </div>
+
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 6px;">
+        <p style="margin: 0; color: #78350f;"><strong>⏰ Action Required:</strong> Please review this load request and provide a quote as soon as possible. The shipper is waiting for pricing information.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Internal Notification System</p>
+      <p>This is an automated notification for the dispatch team.</p>
+      <p style="margin-top: 10px;">
+        <a href="${reviewUrl}" style="color: #dc2626; text-decoration: none; font-weight: 600;">Review Load Request</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to: internalEmail, subject, text, html })
 }
 
 /**
@@ -514,28 +683,221 @@ export async function sendDriverLoadStatusEmail({
 }) {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const portalUrl = driverPortalUrl || `${baseUrl}/driver/loads`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
   const subject = `MED DROP - Load ${trackingCode} Update: ${statusLabel}`
+
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'Not specified'
+    return new Date(date).toLocaleString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  let statusMessage = ''
+  let statusIcon = '📦'
+  let statusColor = '#0ea5e9'
+  
+  switch (status) {
+    case 'EN_ROUTE':
+      statusMessage = 'You are en route to the pickup location. Safe travels!'
+      statusIcon = '🛣️'
+      statusColor = '#0ea5e9'
+      break
+    case 'PICKED_UP':
+      statusMessage = 'Great! The shipment has been picked up. Proceed to the delivery location.'
+      statusIcon = '✅'
+      statusColor = '#10b981'
+      break
+    case 'IN_TRANSIT':
+      statusMessage = 'Your shipment is in transit. Continue to the delivery location.'
+      statusIcon = '🚚'
+      statusColor = '#0ea5e9'
+      break
+    case 'DELIVERED':
+      statusMessage = 'Excellent work! The shipment has been successfully delivered.'
+      statusIcon = '🎉'
+      statusColor = '#10b981'
+      break
+    default:
+      statusMessage = 'Your load status has been updated.'
+  }
+
   const text = `
 Hello ${driverName},
 
 Your assigned load ${trackingCode} has been updated.
 
-Status: ${statusLabel}
-Shipper: ${companyName}
-Pickup: ${pickupAddress}
-Delivery: ${dropoffAddress}
-${readyTime ? `Ready Time: ${readyTime.toLocaleString()}` : ''}
-${deliveryDeadline ? `Delivery Deadline: ${deliveryDeadline.toLocaleString()}` : ''}
+STATUS: ${statusLabel}
+${statusMessage}
 
-View in driver portal: ${portalUrl}
+LOAD INFORMATION:
+- Tracking Code: ${trackingCode}
+- Shipper: ${companyName}
+- Pickup Location: ${pickupAddress}
+- Delivery Location: ${dropoffAddress}
+${readyTime ? `- Ready Time: ${formatDate(readyTime)}` : ''}
+${deliveryDeadline ? `- Delivery Deadline: ${formatDate(deliveryDeadline)}` : ''}
 
-Thank you for your service with MED DROP.
+NEXT STEPS:
+${status === 'EN_ROUTE' ? 'Proceed to the pickup location. Ensure you have all required documentation and equipment.' : ''}
+${status === 'PICKED_UP' ? 'Proceed to the delivery location. Maintain proper temperature control if applicable.' : ''}
+${status === 'IN_TRANSIT' ? 'Continue to the delivery location. Update status when you arrive.' : ''}
+${status === 'DELIVERED' ? 'Great job! Please ensure all documents are uploaded and the load is marked as complete in the portal.' : ''}
+
+VIEW IN DRIVER PORTAL:
+${portalUrl}
+
+SUPPORT:
+If you have any questions or need assistance, contact us:
+- Email: ${supportEmail}
+- Phone: ${supportPhone}
+- Available 24/7
+
+Thank you for your service with MED DROP!
 
 ---
 MED DROP
 Medical Courier Services
+Professional. Reliable. Trusted.
   `.trim()
-  await sendEmail({ to, subject, text })
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .status-banner { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 3px solid ${statusColor}; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1); }
+    .status-icon { font-size: 48px; margin-bottom: 15px; }
+    .status-message { font-size: 20px; color: ${statusColor}; font-weight: 600; margin: 10px 0; }
+    .tracking-code-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center; }
+    .tracking-code-label { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .tracking-code { font-size: 32px; font-weight: bold; color: #0369a1; font-family: 'Courier New', monospace; letter-spacing: 3px; }
+    .info-box { background: #f9fafb; border-left: 4px solid #0ea5e9; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .info-row { margin: 15px 0; display: flex; flex-wrap: wrap; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 140px; margin-bottom: 5px; }
+    .info-value { color: #111827; flex: 1; font-weight: 500; }
+    .next-steps-box { background: #f0fdf4; border-left: 4px solid #10b981; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .next-steps-box h4 { margin: 0 0 15px 0; color: #047857; }
+    .next-steps-box p { margin: 0; color: #065f46; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); }
+    .button:hover { background: #0284c7; }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .support-box h4 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 10px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MED DROP</h1>
+      <p>Medical Courier Services</p>
+    </div>
+    <div class="content">
+      <h2 style="margin-top: 0; color: #1e40af;">Load Status Update</h2>
+      <p>Hello <strong>${driverName}</strong>,</p>
+
+      <div class="status-banner">
+        <div class="status-icon">${statusIcon}</div>
+        <div class="status-message">${statusMessage}</div>
+        <p style="margin-top: 15px; margin-bottom: 0; color: #6b7280; font-size: 16px;">Status: <strong>${statusLabel}</strong></p>
+      </div>
+
+      <div class="tracking-code-box">
+        <div class="tracking-code-label">Tracking Code</div>
+        <div class="tracking-code">${trackingCode}</div>
+      </div>
+
+      <div class="info-box">
+        <h3 style="margin-top: 0; color: #0369a1; font-size: 20px;">Load Information</h3>
+        <div class="info-row">
+          <div class="info-label">Shipper:</div>
+          <div class="info-value"><strong>${companyName}</strong></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Pickup Location:</div>
+          <div class="info-value">${pickupAddress}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Delivery Location:</div>
+          <div class="info-value">${dropoffAddress}</div>
+        </div>
+        ${readyTime ? `
+        <div class="info-row">
+          <div class="info-label">Ready Time:</div>
+          <div class="info-value">${formatDate(readyTime)}</div>
+        </div>
+        ` : ''}
+        ${deliveryDeadline ? `
+        <div class="info-row">
+          <div class="info-label">Delivery Deadline:</div>
+          <div class="info-value"><strong style="color: #dc2626;">${formatDate(deliveryDeadline)}</strong></div>
+        </div>
+        ` : ''}
+      </div>
+
+      ${status === 'EN_ROUTE' || status === 'PICKED_UP' || status === 'IN_TRANSIT' || status === 'DELIVERED' ? `
+      <div class="next-steps-box">
+        <h4>📋 Next Steps</h4>
+        ${status === 'EN_ROUTE' ? '<p>Proceed to the pickup location. Ensure you have all required documentation, equipment, and temperature monitoring devices if applicable.</p>' : ''}
+        ${status === 'PICKED_UP' ? '<p>Proceed to the delivery location. Maintain proper temperature control throughout transit if applicable. Update status when you arrive at the delivery location.</p>' : ''}
+        ${status === 'IN_TRANSIT' ? '<p>Continue to the delivery location. Update status when you arrive and complete the delivery process.</p>' : ''}
+        ${status === 'DELIVERED' ? '<p>Excellent work! Please ensure all documents are uploaded (proof of delivery, signatures, temperature logs if applicable) and the load is marked as complete in the portal.</p>' : ''}
+      </div>
+      ` : ''}
+
+      <div class="button-group">
+        <a href="${portalUrl}" class="button">View Load in Portal</a>
+      </div>
+
+      <div class="support-box">
+        <h4>💬 Need Help?</h4>
+        <p style="margin-bottom: 15px; color: #1e40af;">If you have any questions or need assistance, our support team is available 24/7:</p>
+        <div class="support-contact">
+          <strong>Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a>
+        </div>
+        <div class="support-contact">
+          <strong>Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a>
+        </div>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af; text-align: center;"><strong>Thank you for your service with MED DROP!</strong></p>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 15px;">This is an automated notification. Please do not reply to this email.</p>
+      <p style="margin-top: 10px;">
+        <a href="${portalUrl}">View Driver Portal</a> | 
+        <a href="${baseUrl}">Visit Website</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
 }
 
 /**
@@ -965,20 +1327,62 @@ MED DROP
 Medical Courier Services
   `.trim()
 
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'Not specified'
+    return new Date(date).toLocaleString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+  const formatServiceType = (type: string) => {
+    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
+
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
-    .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-    .tracking-code { font-size: 28px; font-weight: bold; margin: 20px 0; text-align: center; color: #0369a1; }
-    .section { margin: 20px 0; padding: 15px; background: #f9fafb; border-radius: 6px; }
-    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .success-banner { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 3px solid #10b981; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1); }
+    .success-banner h2 { margin: 0 0 10px 0; color: #059669; font-size: 24px; }
+    .success-banner p { margin: 0; color: #047857; font-size: 16px; }
+    .tracking-code-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center; }
+    .tracking-code-label { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .tracking-code { font-size: 32px; font-weight: bold; color: #0369a1; font-family: 'Courier New', monospace; letter-spacing: 3px; }
+    .info-box { background: #f9fafb; border-left: 4px solid #0ea5e9; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .info-box h3 { margin: 0 0 20px 0; color: #0369a1; font-size: 20px; }
+    .info-row { margin: 15px 0; display: flex; flex-wrap: wrap; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 140px; margin-bottom: 5px; }
+    .info-value { color: #111827; flex: 1; font-weight: 500; }
+    .address { line-height: 1.8; }
+    .rate-box { background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 3px solid #d946ef; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(217, 70, 239, 0.1); }
+    .rate-label { font-size: 14px; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
+    .rate-amount { font-size: 36px; font-weight: bold; color: #a21caf; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); transition: all 0.3s; }
+    .button:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3); }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .support-box h4 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 10px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -988,53 +1392,107 @@ Medical Courier Services
       <p>MED DROP - Medical Courier Services</p>
     </div>
     <div class="content">
+      <div class="success-banner">
+        <h2>Load Successfully Added!</h2>
+        <p>Your load has been successfully added to the MED DROP load board</p>
+      </div>
+
       <p>Hello <strong>${driverName}</strong>,</p>
-      <p>Thank you for submitting your load to the MED DROP system! Your load has been successfully added to the load board.</p>
+      <p>Thank you for submitting your load to the MED DROP system! Your load has been successfully added to the load board and is now available for tracking.</p>
 
-      <div class="tracking-code">${trackingCode}</div>
+      <div class="tracking-code-box">
+        <div class="tracking-code-label">Tracking Code</div>
+        <div class="tracking-code">${trackingCode}</div>
+      </div>
 
-      <div class="section">
+      <div class="info-box">
         <h3>Load Details</h3>
-        <p><strong>Service Type:</strong> ${loadDetails.serviceType.replace(/_/g, ' ')}</p>
-        ${loadDetails.commodityDescription ? `<p><strong>Commodity:</strong> ${loadDetails.commodityDescription}</p>` : ''}
-        ${loadDetails.readyTime ? `<p><strong>Ready Time:</strong> ${loadDetails.readyTime.toLocaleString()}</p>` : ''}
-        ${loadDetails.deliveryDeadline ? `<p><strong>Delivery Deadline:</strong> ${loadDetails.deliveryDeadline.toLocaleString()}</p>` : ''}
-        ${loadDetails.shipperName ? `<p><strong>Shipper:</strong> ${loadDetails.shipperName}</p>` : ''}
+        <div class="info-row">
+          <div class="info-label">Service Type:</div>
+          <div class="info-value">${formatServiceType(loadDetails.serviceType)}</div>
+        </div>
+        ${loadDetails.commodityDescription ? `
+        <div class="info-row">
+          <div class="info-label">Commodity:</div>
+          <div class="info-value">${loadDetails.commodityDescription}</div>
+        </div>
+        ` : ''}
+        ${loadDetails.readyTime ? `
+        <div class="info-row">
+          <div class="info-label">Ready Time:</div>
+          <div class="info-value">${formatDate(loadDetails.readyTime)}</div>
+        </div>
+        ` : ''}
+        ${loadDetails.deliveryDeadline ? `
+        <div class="info-row">
+          <div class="info-label">Delivery Deadline:</div>
+          <div class="info-value"><strong style="color: #dc2626;">${formatDate(loadDetails.deliveryDeadline)}</strong></div>
+        </div>
+        ` : ''}
+        ${loadDetails.shipperName ? `
+        <div class="info-row">
+          <div class="info-label">Shipper:</div>
+          <div class="info-value"><strong>${loadDetails.shipperName}</strong></div>
+        </div>
+        ` : ''}
       </div>
 
-      <div class="section">
+      <div class="info-box">
         <h3>Pickup Location</h3>
-        <p><strong>${loadDetails.pickupFacility.name}</strong><br>
-        ${loadDetails.pickupFacility.addressLine1}<br>
-        ${loadDetails.pickupFacility.city}, ${loadDetails.pickupFacility.state} ${loadDetails.pickupFacility.postalCode}</p>
+        <div class="info-value address">
+          <strong>${loadDetails.pickupFacility.name}</strong><br>
+          ${loadDetails.pickupFacility.addressLine1}<br>
+          ${loadDetails.pickupFacility.city}, ${loadDetails.pickupFacility.state} ${loadDetails.pickupFacility.postalCode}
+        </div>
       </div>
 
-      <div class="section">
+      <div class="info-box">
         <h3>Delivery Location</h3>
-        <p><strong>${loadDetails.dropoffFacility.name}</strong><br>
-        ${loadDetails.dropoffFacility.addressLine1}<br>
-        ${loadDetails.dropoffFacility.city}, ${loadDetails.dropoffFacility.state} ${loadDetails.dropoffFacility.postalCode}</p>
+        <div class="info-value address">
+          <strong>${loadDetails.dropoffFacility.name}</strong><br>
+          ${loadDetails.dropoffFacility.addressLine1}<br>
+          ${loadDetails.dropoffFacility.city}, ${loadDetails.dropoffFacility.state} ${loadDetails.dropoffFacility.postalCode}
+        </div>
       </div>
 
       ${rateInfo && (rateInfo.quoteAmount || rateInfo.ratePerMile) ? `
-      <div class="section" style="background: #fdf4ff; border-left: 4px solid #d946ef;">
-        <h3>Rate Information</h3>
-        ${rateInfo.quoteAmount ? `<p style="font-size: 24px; font-weight: bold; color: #d946ef;">$${rateInfo.quoteAmount.toFixed(2)}</p>` : ''}
-        ${rateInfo.ratePerMile ? `<p><strong>Rate:</strong> $${rateInfo.ratePerMile.toFixed(2)}/mile</p>` : ''}
-        ${rateInfo.totalDistance ? `<p><strong>Total Distance:</strong> ${rateInfo.totalDistance.toFixed(1)} miles</p>` : ''}
+      <div class="rate-box">
+        <div class="rate-label">Rate Information</div>
+        ${rateInfo.quoteAmount ? `
+        <div class="rate-amount">$${rateInfo.quoteAmount.toFixed(2)}</div>
+        ` : rateInfo.ratePerMile ? `
+        <div class="rate-amount">$${rateInfo.ratePerMile.toFixed(2)}/mile</div>
+        ${rateInfo.totalDistance ? `<div style="margin-top: 10px; color: #6b7280; font-size: 14px;">Total Distance: ${rateInfo.totalDistance.toFixed(1)} miles</div>` : ''}
+        ` : ''}
       </div>
       ` : ''}
 
-      <div style="text-align: center;">
+      <div class="button-group">
         <a href="${viewLoadUrl}" class="button">View Your Load</a>
       </div>
 
-      <p>Thank you for using MED DROP! We appreciate your service.</p>
-
-      <div class="footer">
-        <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
-        <p>This is an automated confirmation email. Please do not reply to this email.</p>
+      <div class="support-box">
+        <h4>💬 Need Help?</h4>
+        <p style="margin-bottom: 15px; color: #1e40af;">If you have any questions or need assistance, our support team is available 24/7:</p>
+        <div class="support-contact">
+          <strong>Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a>
+        </div>
+        <div class="support-contact">
+          <strong>Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a>
+        </div>
       </div>
+
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af; text-align: center;"><strong>Thank you for using MED DROP! We appreciate your service.</strong></p>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 15px;">This is an automated confirmation email. Please do not reply to this email.</p>
+      <p style="margin-top: 10px;">
+        <a href="${viewLoadUrl}">View Load</a> | 
+        <a href="${baseUrl}">Visit Website</a>
+      </p>
     </div>
   </div>
 </body>
@@ -1072,8 +1530,20 @@ export async function sendDeliveryCongratulationsEmail({
 }) {
   const subject = `🎉 Delivery Complete! Invoice Attached - ${trackingCode}`
   const invoiceBase64 = invoicePdfBuffer.toString('base64')
+  const invoiceUrl = `${baseUrl}/shipper/invoices`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
 
   const recipientInfo = recipientName ? `\nRECEIVED BY: ${recipientName}` : ''
+  const formattedDeliveryTime = deliveryTime.toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
 
   const text = `
 🎉 Congratulations, ${companyName}!
@@ -1081,20 +1551,47 @@ export async function sendDeliveryCongratulationsEmail({
 Your shipment has been successfully delivered!
 
 TRACKING CODE: ${trackingCode}
-DELIVERY TIME: ${deliveryTime.toLocaleString()}${recipientInfo}
+DELIVERY TIME: ${formattedDeliveryTime}${recipientInfo}
 
-Your invoice is attached to this email.
+DELIVERY CONFIRMATION:
+Your medical courier shipment has been completed and delivered. All required documentation, including proof of delivery, has been recorded in our system.
+
+INVOICE INFORMATION:
+Your invoice has been automatically generated and is attached to this email.
 
 Invoice Number: ${invoiceNumber}
 Total Amount: $${invoiceTotal.toFixed(2)}
 
-Track your shipment: ${trackingUrl}
+The invoice reflects the negotiated rate for this delivery. Payment terms are net 30 days from the invoice date.
 
-Thank you for choosing MED DROP for your medical courier needs. We appreciate your business!
+NEXT STEPS:
+1. Review the attached invoice PDF
+2. Access your invoice portal: ${invoiceUrl}
+3. Download additional copies or view payment history in your shipper dashboard
+
+PAYMENT OPTIONS:
+- ACH Transfer (preferred)
+- Check
+- Wire Transfer
+
+For payment questions or to update payment information, please contact our billing department.
+
+TRACK YOUR SHIPMENT:
+View complete delivery details, tracking timeline, and all documentation:
+${trackingUrl}
+
+SUPPORT:
+If you have any questions about this delivery or need assistance, please contact us:
+- Email: ${supportEmail}
+- Phone: ${supportPhone}
+- Available 24/7 for urgent medical courier needs
+
+Thank you for choosing MED DROP for your medical courier needs. We appreciate your business and look forward to serving you again!
 
 ---
 MED DROP
 Medical Courier Services
+Professional. Reliable. Trusted.
   `.trim()
 
   const html = `
@@ -1102,53 +1599,162 @@ Medical Courier Services
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
-    .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-    .success-box { background: #d1fae5; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
-    .tracking-code { font-size: 28px; font-weight: bold; margin: 10px 0; color: #059669; }
-    .invoice-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 20px 0; }
-    .button { display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 36px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .success-box { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 3px solid #10b981; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1); }
+    .success-box h2 { margin: 0 0 10px 0; color: #059669; font-size: 28px; }
+    .success-box p { margin: 0; font-size: 18px; color: #047857; font-weight: 500; }
+    .tracking-code-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center; }
+    .tracking-code-label { font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+    .tracking-code { font-size: 32px; font-weight: bold; color: #0369a1; font-family: 'Courier New', monospace; letter-spacing: 3px; }
+    .delivery-info { background: #f9fafb; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 6px; }
+    .delivery-info-row { margin: 12px 0; display: flex; }
+    .delivery-info-label { font-weight: 600; color: #6b7280; min-width: 140px; }
+    .delivery-info-value { color: #111827; flex: 1; }
+    .invoice-box { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 3px solid #0ea5e9; border-radius: 12px; padding: 30px; margin: 30px 0; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1); }
+    .invoice-box h3 { margin: 0 0 20px 0; color: #0369a1; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+    .invoice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+    .invoice-detail { }
+    .invoice-detail-label { font-size: 14px; color: #6b7280; font-weight: 600; margin-bottom: 5px; }
+    .invoice-detail-value { font-size: 18px; color: #111827; font-weight: 600; }
+    .invoice-total { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #0ea5e9; }
+    .invoice-total-label { font-size: 16px; color: #6b7280; margin-bottom: 8px; }
+    .invoice-total-amount { font-size: 42px; font-weight: bold; color: #0369a1; }
+    .payment-info { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 6px; }
+    .payment-info h4 { margin: 0 0 12px 0; color: #92400e; }
+    .payment-info ul { margin: 10px 0; padding-left: 20px; }
+    .payment-info li { margin: 8px 0; color: #78350f; }
+    .next-steps { background: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 6px; }
+    .next-steps h4 { margin: 0 0 12px 0; color: #047857; }
+    .next-steps ol { margin: 10px 0; padding-left: 20px; }
+    .next-steps li { margin: 8px 0; color: #065f46; }
+    .button { display: inline-block; background: #10b981; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); transition: all 0.3s; }
+    .button:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
+    .button-secondary { background: #0ea5e9; }
+    .button-secondary:hover { background: #0284c7; }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .support-box h4 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 10px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1 style="margin: 0; font-size: 32px;">🎉 Delivery Complete!</h1>
-      <p style="margin: 10px 0 0 0;">MED DROP - Medical Courier Services</p>
+      <h1>🎉 Delivery Complete!</h1>
+      <p>MED DROP - Medical Courier Services</p>
     </div>
     <div class="content">
       <div class="success-box">
-        <h2 style="margin: 0; color: #059669;">Congratulations, ${companyName}!</h2>
-        <p style="margin: 10px 0 0 0; font-size: 18px;">Your shipment has been successfully delivered!</p>
+        <h2>Congratulations, ${companyName}!</h2>
+        <p>Your shipment has been successfully delivered!</p>
       </div>
 
-      <div class="tracking-code">${trackingCode}</div>
+      <div class="tracking-code-box">
+        <div class="tracking-code-label">Tracking Code</div>
+        <div class="tracking-code">${trackingCode}</div>
+      </div>
 
-      <p><strong>Delivery Time:</strong> ${deliveryTime.toLocaleString()}</p>
-      ${recipientName ? `<p><strong>Received By:</strong> ${recipientName}</p>` : ''}
+      <div class="delivery-info">
+        <h3 style="margin-top: 0; color: #059669; font-size: 20px;">Delivery Confirmation</h3>
+        <p style="margin-bottom: 15px; color: #047857;">Your medical courier shipment has been completed and delivered. All required documentation, including proof of delivery, has been recorded in our system.</p>
+        <div class="delivery-info-row">
+          <div class="delivery-info-label">Delivery Time:</div>
+          <div class="delivery-info-value">${formattedDeliveryTime}</div>
+        </div>
+        ${recipientName ? `
+        <div class="delivery-info-row">
+          <div class="delivery-info-label">Received By:</div>
+          <div class="delivery-info-value"><strong>${recipientName}</strong></div>
+        </div>
+        ` : ''}
+      </div>
 
       <div class="invoice-box">
-        <h3 style="margin-top: 0; color: #0369a1;">📄 Invoice Attached</h3>
-        <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
-        <p><strong>Total Amount:</strong> <span style="font-size: 24px; font-weight: bold; color: #0369a1;">$${invoiceTotal.toFixed(2)}</span></p>
-        <p style="margin-bottom: 0;">Your invoice PDF is attached to this email for your records.</p>
+        <h3>
+          <span style="font-size: 28px;">📄</span>
+          Invoice Attached
+        </h3>
+        <p style="margin-bottom: 20px; color: #1e40af;">Your invoice has been automatically generated and is attached to this email. The invoice reflects the negotiated rate for this delivery.</p>
+        
+        <div class="invoice-details">
+          <div class="invoice-detail">
+            <div class="invoice-detail-label">Invoice Number</div>
+            <div class="invoice-detail-value">${invoiceNumber}</div>
+          </div>
+          <div class="invoice-detail">
+            <div class="invoice-detail-label">Payment Terms</div>
+            <div class="invoice-detail-value">Net 30 Days</div>
+          </div>
+        </div>
+
+        <div class="invoice-total">
+          <div class="invoice-total-label">Total Amount Due</div>
+          <div class="invoice-total-amount">$${invoiceTotal.toFixed(2)}</div>
+        </div>
+
+        <p style="margin-top: 20px; margin-bottom: 0; font-size: 14px; color: #6b7280;">Your invoice PDF is attached to this email for your records and accounting purposes.</p>
       </div>
 
-      <div style="text-align: center;">
-        <a href="${trackingUrl}" class="button">View Delivery Details</a>
+      <div class="next-steps">
+        <h4>📋 Next Steps</h4>
+        <ol>
+          <li>Review the attached invoice PDF</li>
+          <li>Access your invoice portal to download additional copies or view payment history</li>
+          <li>Payment is due within 30 days of the invoice date</li>
+          <li>Contact our billing department if you need to update payment information</li>
+        </ol>
       </div>
 
-      <p>Thank you for choosing MED DROP for your medical courier needs. We appreciate your business and look forward to serving you again!</p>
-
-      <div class="footer">
-        <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
-        <p>This is an automated notification. Please do not reply to this email.</p>
-        <p>Questions? Contact us at support@meddrop.com</p>
+      <div class="payment-info">
+        <h4>💳 Payment Options</h4>
+        <ul>
+          <li><strong>ACH Transfer</strong> (preferred method)</li>
+          <li><strong>Check</strong> - Mail to address on invoice</li>
+          <li><strong>Wire Transfer</strong> - Contact billing for details</li>
+        </ul>
+        <p style="margin: 15px 0 0 0; font-size: 14px; color: #78350f;">For payment questions or to update payment information, please contact our billing department.</p>
       </div>
+
+      <div class="button-group">
+        <a href="${trackingUrl}" class="button">View Complete Delivery Details</a>
+        <a href="${invoiceUrl}" class="button button-secondary">Access Invoice Portal</a>
+      </div>
+
+      <div class="support-box">
+        <h4>💬 Need Help?</h4>
+        <p style="margin-bottom: 15px; color: #1e40af;">If you have any questions about this delivery or need assistance, our support team is available 24/7:</p>
+        <div class="support-contact">
+          <strong>Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a>
+        </div>
+        <div class="support-contact">
+          <strong>Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a>
+        </div>
+        <p style="margin-top: 15px; margin-bottom: 0; font-size: 14px; color: #6b7280;">Available 24/7 for urgent medical courier needs</p>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af; text-align: center;"><strong>Thank you for choosing MED DROP. We appreciate your business and look forward to serving you again!</strong></p>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 15px;">This is an automated notification. Please do not reply to this email.</p>
+      <p style="margin-top: 10px;">
+        <a href="${trackingUrl}">Track Shipment</a> | 
+        <a href="${baseUrl}">Visit Website</a> | 
+        <a href="${invoiceUrl}">View Invoices</a>
+      </p>
     </div>
   </div>
 </body>
@@ -1294,6 +1900,149 @@ If you have questions, contact support@meddrop.com
       <p style="margin: 5px 0;">Professional. Reliable. Trusted.</p>
       <p style="margin: 15px 0 0 0; font-size: 12px;">This is an automated email. Please do not reply to this email.</p>
       <p style="margin: 5px 0; font-size: 12px;">If you have questions, contact support@meddrop.com</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
+ * Send callback notification email to shipper when driver calls them
+ */
+export async function sendCallbackCalledEmail({
+  to,
+  companyName,
+  contactName,
+  driverName,
+  driverPhone,
+  callbackQueueUrl,
+  baseUrl,
+}: {
+  to: string
+  companyName: string
+  contactName: string
+  driverName: string
+  driverPhone: string
+  callbackQueueUrl: string
+  baseUrl: string
+}) {
+  const subject = `📞 MED DROP - Driver is Calling You Now!`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+
+  const text = `
+Hello ${contactName} at ${companyName},
+
+A MED DROP driver is calling you now!
+
+DRIVER INFORMATION:
+Name: ${driverName}
+Phone: ${driverPhone}
+
+Please answer your phone - the driver is ready to discuss your load requirements and create your load request.
+
+If you miss the call, the driver will try again, or you can check your callback status:
+${callbackQueueUrl}
+
+Thank you for choosing MED DROP!
+
+---
+MED DROP
+Medical Courier Services
+${supportPhone}
+${supportEmail}
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .alert-box { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 3px solid #f59e0b; border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.9; } }
+    .alert-box h2 { margin: 0; color: #92400e; font-size: 24px; }
+    .phone-icon { font-size: 48px; margin-bottom: 15px; }
+    .driver-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; }
+    .driver-box h3 { margin: 0 0 15px 0; color: #0369a1; font-size: 20px; }
+    .info-row { margin: 15px 0; display: flex; flex-wrap: wrap; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 120px; margin-bottom: 5px; }
+    .info-value { color: #111827; flex: 1; font-weight: 500; font-size: 18px; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); transition: all 0.3s; }
+    .button:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(14, 165, 233, 0.3); }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0; }
+    .support-box h4 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 10px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📞 MED DROP</h1>
+      <p>Medical Courier Services</p>
+    </div>
+    <div class="content">
+      <h2 style="margin-top: 0; color: #1e40af;">Driver is Calling You Now!</h2>
+      <p>Hello <strong>${contactName}</strong> at <strong>${companyName}</strong>,</p>
+
+      <div class="alert-box">
+        <div class="phone-icon">📞</div>
+        <h2>Answer Your Phone!</h2>
+        <p style="margin: 10px 0 0 0; color: #92400e; font-size: 18px; font-weight: 600;">A MED DROP driver is calling you right now to discuss your load requirements.</p>
+      </div>
+
+      <div class="driver-box">
+        <h3>Driver Information</h3>
+        <div class="info-row">
+          <div class="info-label">Driver Name:</div>
+          <div class="info-value">${driverName}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Phone Number:</div>
+          <div class="info-value">
+            <a href="tel:${driverPhone}" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">${driverPhone}</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 6px;">
+        <p style="margin: 0; color: #78350f;"><strong>⏰ Important:</strong> Please answer your phone when the driver calls. They're ready to discuss your load requirements, negotiate pricing, and create your load request.</p>
+      </div>
+
+      <div class="button-group">
+        <a href="${callbackQueueUrl}" class="button">Check Callback Status</a>
+      </div>
+
+      <div class="support-box">
+        <h4>Need Help?</h4>
+        <div class="support-contact">
+          <p style="margin: 5px 0;"><strong>Support Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a></p>
+          <p style="margin: 5px 0;"><strong>Support Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 10px;">
+        <a href="${baseUrl}/shipper/dashboard">Access Your Dashboard</a>
+      </p>
     </div>
   </div>
 </body>

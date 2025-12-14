@@ -93,7 +93,7 @@ export default function ShipperBillingPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading billing settings...</p>
           </div>
         </div>
@@ -102,10 +102,14 @@ export default function ShipperBillingPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
-        <p className="text-gray-600">Manage your payment terms and billing information</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Billing & Payments</h1>
+            <p className="text-gray-600 print:text-sm">Manage your payment terms and billing information</p>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-3xl">
@@ -120,7 +124,7 @@ export default function ShipperBillingPage() {
               <select
                 value={formData.paymentTerms}
                 onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                 required
               >
                 <option value="NET_7">Net 7 Days</option>
@@ -150,7 +154,7 @@ export default function ShipperBillingPage() {
                     type="text"
                     value={formData.billingContactName}
                     onChange={(e) => setFormData({ ...formData, billingContactName: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                     placeholder="Leave blank to use main contact"
                   />
                 </div>
@@ -163,7 +167,7 @@ export default function ShipperBillingPage() {
                     type="email"
                     value={formData.billingContactEmail}
                     onChange={(e) => setFormData({ ...formData, billingContactEmail: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                     placeholder="Invoices will be sent to this email"
                   />
                 </div>
@@ -185,7 +189,7 @@ export default function ShipperBillingPage() {
                     type="text"
                     value={formData.billingAddressLine1}
                     onChange={(e) => setFormData({ ...formData, billingAddressLine1: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                   />
                 </div>
 
@@ -197,7 +201,7 @@ export default function ShipperBillingPage() {
                     type="text"
                     value={formData.billingAddressLine2}
                     onChange={(e) => setFormData({ ...formData, billingAddressLine2: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                   />
                 </div>
 
@@ -210,7 +214,7 @@ export default function ShipperBillingPage() {
                       type="text"
                       value={formData.billingCity}
                       onChange={(e) => setFormData({ ...formData, billingCity: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                     />
                   </div>
 
@@ -222,7 +226,7 @@ export default function ShipperBillingPage() {
                       type="text"
                       value={formData.billingState}
                       onChange={(e) => setFormData({ ...formData, billingState: e.target.value })}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                       maxLength={2}
                       placeholder="TX"
                     />
@@ -237,7 +241,7 @@ export default function ShipperBillingPage() {
                     type="text"
                     value={formData.billingPostalCode}
                     onChange={(e) => setFormData({ ...formData, billingPostalCode: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
                     placeholder="77001"
                   />
                 </div>
@@ -249,7 +253,7 @@ export default function ShipperBillingPage() {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>

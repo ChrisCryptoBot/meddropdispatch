@@ -165,7 +165,7 @@ export default function DriverVehiclePage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading vehicles...</p>
           </div>
         </div>
@@ -174,31 +174,33 @@ export default function DriverVehiclePage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Vehicle Management</h1>
-          <p className="text-gray-600">Manage your vehicles</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Vehicle Management</h1>
+            <p className="text-gray-600 print:text-sm">Manage your vehicles</p>
+          </div>
+          <button
+            onClick={() => {
+              resetForm()
+              setShowAddModal(true)
+            }}
+            className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical flex items-center gap-2 mr-6"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Vehicle
+          </button>
         </div>
-        <button
-          onClick={() => {
-            resetForm()
-            setShowAddModal(true)
-          }}
-          className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add Vehicle
-        </button>
       </div>
 
       {/* Active Vehicles */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Active Vehicles</h2>
         {activeVehicles.length === 0 ? (
-          <div className="glass rounded-2xl p-8 text-center">
+          <div className="glass-accent rounded-2xl p-8 text-center border-2 border-teal-200/30 shadow-medical">
             <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
@@ -208,7 +210,7 @@ export default function DriverVehiclePage() {
                 resetForm()
                 setShowAddModal(true)
               }}
-              className="px-4 py-2 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+              className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical"
             >
               Add Your First Vehicle
             </button>
@@ -216,7 +218,7 @@ export default function DriverVehiclePage() {
         ) : (
           <div className="grid gap-4">
             {activeVehicles.map((vehicle) => (
-              <div key={vehicle.id} className="glass rounded-2xl p-6">
+              <div key={vehicle.id} className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -224,7 +226,7 @@ export default function DriverVehiclePage() {
                         {vehicle.nickname || `${vehicle.vehicleType.replace(/_/g, ' ')}`}
                       </h3>
                       {vehicle.hasRefrigeration && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                        <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
                           Refrigerated
                         </span>
                       )}
@@ -246,13 +248,13 @@ export default function DriverVehiclePage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(vehicle)}
-                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors"
+                      className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(vehicle)}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
+                      className="px-4 py-2 bg-urgent-100 text-urgent-700 rounded-lg font-semibold hover:bg-urgent-200 transition-colors border border-urgent-200"
                     >
                       Delete
                     </button>
@@ -270,7 +272,7 @@ export default function DriverVehiclePage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Inactive Vehicles</h2>
           <div className="grid gap-4">
             {inactiveVehicles.map((vehicle) => (
-              <div key={vehicle.id} className="glass rounded-2xl p-6 opacity-60">
+              <div key={vehicle.id} className="glass-accent rounded-2xl p-6 opacity-60 border-2 border-teal-200/30 shadow-medical">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -301,7 +303,7 @@ export default function DriverVehiclePage() {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-2xl w-full rounded-2xl p-6">
+          <div className="glass-accent max-w-2xl w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
             </h2>
@@ -350,7 +352,7 @@ export default function DriverVehiclePage() {
                   type="text"
                   value={formData.vehicleMake}
                   onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   placeholder="e.g., Ford"
                 />
               </div>
@@ -363,7 +365,7 @@ export default function DriverVehiclePage() {
                   type="text"
                   value={formData.vehicleModel}
                   onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   placeholder="e.g., Transit"
                 />
               </div>
@@ -378,7 +380,7 @@ export default function DriverVehiclePage() {
                   type="number"
                   value={formData.vehicleYear}
                   onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   placeholder="2024"
                   min="1900"
                   max="2100"
@@ -393,7 +395,7 @@ export default function DriverVehiclePage() {
                   type="text"
                   value={formData.vehiclePlate}
                   onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
                   placeholder="ABC-1234"
                     required
                 />
@@ -406,7 +408,7 @@ export default function DriverVehiclePage() {
                   type="checkbox"
                   checked={formData.hasRefrigeration}
                   onChange={(e) => setFormData({ ...formData, hasRefrigeration: e.target.checked })}
-                  className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                  className="w-5 h-5 rounded border-teal-300 text-teal-600 focus:ring-teal-500"
                 />
                 <span className="text-sm font-semibold text-gray-700">
                   Vehicle has refrigeration capability
@@ -431,7 +433,7 @@ export default function DriverVehiclePage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+                  className="flex-1 px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>

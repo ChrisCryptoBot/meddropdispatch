@@ -119,17 +119,17 @@ export default function ShipperTemplatesPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 print:p-4">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Load Templates</h1>
-            <p className="text-gray-600">Save and reuse common load configurations</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load Templates</h1>
+            <p className="text-gray-600 print:text-sm">Save and reuse common load configurations</p>
           </div>
           <Link
             href="/shipper/request-load"
-            className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-primary-800 transition-base"
+            className="px-6 py-3 bg-gradient-primary text-white font-semibold rounded-lg hover:shadow-lg transition-all shadow-glass mr-6"
           >
             Create New Template
           </Link>
@@ -151,7 +151,7 @@ export default function ShipperTemplatesPage() {
           <p className="text-gray-500 text-sm mb-6">Create templates to quickly book recurring loads</p>
           <Link
             href="/shipper/request-load"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-primary-800 transition-base"
+            className="inline-block px-6 py-3 bg-gradient-primary text-white font-semibold rounded-lg hover:shadow-lg transition-all shadow-glass"
           >
             Create Your First Template
           </Link>

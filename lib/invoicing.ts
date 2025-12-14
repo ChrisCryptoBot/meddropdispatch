@@ -279,23 +279,202 @@ export async function sendInvoiceEmail(invoiceId: string): Promise<void> {
   const pdfBuffer = await generateInvoicePDF(invoiceId)
   const pdfBase64 = pdfBuffer.toString('base64')
 
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const invoiceUrl = `${baseUrl}/shipper/invoices`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+  const dueDateFormatted = invoice.dueDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const invoiceDateFormatted = invoice.invoiceDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   // Send email
   await sendEmail({
     to: invoice.shipper.email,
-    subject: `Invoice ${invoice.invoiceNumber} - MED DROP`,
+    subject: `Invoice ${invoice.invoiceNumber} - MED DROP - Payment Due: $${invoice.total.toFixed(2)}`,
+    text: `
+Invoice ${invoice.invoiceNumber} - MED DROP
+
+Dear ${invoice.shipper.companyName},
+
+Please find attached your invoice for medical courier services.
+
+INVOICE DETAILS:
+Invoice Number: ${invoice.invoiceNumber}
+Invoice Date: ${invoiceDateFormatted}
+Due Date: ${dueDateFormatted}
+Subtotal: $${invoice.subtotal.toFixed(2)}
+${invoice.tax > 0 ? `Tax: $${invoice.tax.toFixed(2)}` : ''}
+Total Amount Due: $${invoice.total.toFixed(2)}
+
+PAYMENT INFORMATION:
+This invoice reflects the negotiated rate for the completed delivery services. Payment terms are net 30 days from the invoice date.
+
+Payment is due by: ${dueDateFormatted}
+
+PAYMENT OPTIONS:
+- ACH Transfer (preferred)
+- Check
+- Wire Transfer
+
+For payment questions or to update payment information, please contact our billing department.
+
+ACCESS YOUR INVOICES:
+View and download this invoice, along with your complete invoice history:
+${invoiceUrl}
+
+SUPPORT:
+If you have any questions about this invoice, please contact us:
+- Email: ${supportEmail}
+- Phone: ${supportPhone}
+- Available 24/7 for urgent needs
+
+Thank you for your business!
+
+---
+MED DROP
+Medical Courier Services
+Professional. Reliable. Trusted.
+    `.trim(),
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Invoice ${invoice.invoiceNumber}</h2>
-        <p>Dear ${invoice.shipper.companyName},</p>
-        <p>Please find attached your invoice for medical courier services.</p>
-        <p><strong>Invoice Date:</strong> ${invoice.invoiceDate.toLocaleDateString()}</p>
-        <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
-        <p><strong>Total Amount:</strong> $${invoice.total.toFixed(2)}</p>
-        <p>If you have any questions, please contact us.</p>
-        <p>Thank you for your business!</p>
-        <p>MED DROP</p>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: bold; }
+    .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .invoice-header { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; padding: 25px; margin: 25px 0; text-align: center; }
+    .invoice-number { font-size: 28px; font-weight: bold; color: #0369a1; margin: 10px 0; }
+    .invoice-details-box { background: #f9fafb; border-left: 4px solid #0ea5e9; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .invoice-detail-row { display: flex; justify-content: space-between; margin: 15px 0; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+    .invoice-detail-row:last-child { border-bottom: none; }
+    .invoice-detail-label { font-weight: 600; color: #6b7280; }
+    .invoice-detail-value { color: #111827; font-weight: 600; }
+    .invoice-total-box { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 3px solid #0ea5e9; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center; }
+    .invoice-total-label { font-size: 18px; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
+    .invoice-total-amount { font-size: 48px; font-weight: bold; color: #0369a1; }
+    .payment-info { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 25px; margin: 25px 0; border-radius: 6px; }
+    .payment-info h3 { margin: 0 0 15px 0; color: #92400e; }
+    .payment-info ul { margin: 10px 0; padding-left: 20px; }
+    .payment-info li { margin: 10px 0; color: #78350f; font-size: 16px; }
+    .rate-note { background: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 6px; }
+    .rate-note p { margin: 0; color: #047857; font-size: 15px; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; margin: 15px 10px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); }
+    .button:hover { background: #0284c7; }
+    .button-group { text-align: center; margin: 30px 0; }
+    .support-box { background: #eff6ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 25px; margin: 25px 0; }
+    .support-box h3 { margin: 0 0 15px 0; color: #0369a1; }
+    .support-contact { margin: 12px 0; }
+    .support-contact a { color: #0ea5e9; text-decoration: none; font-weight: 600; }
+    .footer { background: #f9fafb; padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 8px 0; }
+    .footer a { color: #0ea5e9; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MED DROP</h1>
+      <p>Medical Courier Services</p>
+    </div>
+    <div class="content">
+      <h2 style="margin-top: 0; color: #1e40af;">Invoice for Payment</h2>
+      <p>Dear ${invoice.shipper.companyName},</p>
+      <p>Please find attached your invoice for medical courier services. This invoice reflects the negotiated rate for completed delivery services.</p>
+
+      <div class="invoice-header">
+        <div style="font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Invoice Number</div>
+        <div class="invoice-number">${invoice.invoiceNumber}</div>
       </div>
-    `,
+
+      <div class="invoice-details-box">
+        <h3 style="margin-top: 0; color: #0369a1; font-size: 20px;">Invoice Details</h3>
+        <div class="invoice-detail-row">
+          <div class="invoice-detail-label">Invoice Date</div>
+          <div class="invoice-detail-value">${invoiceDateFormatted}</div>
+        </div>
+        <div class="invoice-detail-row">
+          <div class="invoice-detail-label">Due Date</div>
+          <div class="invoice-detail-value"><strong style="color: #dc2626;">${dueDateFormatted}</strong></div>
+        </div>
+        <div class="invoice-detail-row">
+          <div class="invoice-detail-label">Subtotal</div>
+          <div class="invoice-detail-value">$${invoice.subtotal.toFixed(2)}</div>
+        </div>
+        ${invoice.tax > 0 ? `
+        <div class="invoice-detail-row">
+          <div class="invoice-detail-label">Tax</div>
+          <div class="invoice-detail-value">$${invoice.tax.toFixed(2)}</div>
+        </div>
+        ` : ''}
+      </div>
+
+      <div class="rate-note">
+        <p><strong>📋 Rate Information:</strong> This invoice reflects the negotiated rate for the completed delivery services. Payment terms are net 30 days from the invoice date.</p>
+      </div>
+
+      <div class="invoice-total-box">
+        <div class="invoice-total-label">Total Amount Due</div>
+        <div class="invoice-total-amount">$${invoice.total.toFixed(2)}</div>
+        <p style="margin-top: 15px; margin-bottom: 0; color: #6b7280; font-size: 16px;">Payment due by: <strong>${dueDateFormatted}</strong></p>
+      </div>
+
+      <div class="payment-info">
+        <h3>💳 Payment Options</h3>
+        <p style="margin-bottom: 15px; color: #78350f;">Please remit payment using one of the following methods:</p>
+        <ul>
+          <li><strong>ACH Transfer</strong> (preferred method) - Contact billing for account details</li>
+          <li><strong>Check</strong> - Mail to address provided on invoice PDF</li>
+          <li><strong>Wire Transfer</strong> - Contact billing department for wire instructions</li>
+        </ul>
+        <p style="margin-top: 15px; margin-bottom: 0; font-size: 14px; color: #78350f;">For payment questions or to update payment information, please contact our billing department.</p>
+      </div>
+
+      <div class="button-group">
+        <a href="${invoiceUrl}" class="button">View Invoice Portal</a>
+      </div>
+
+      <div class="support-box">
+        <h3>💬 Questions About This Invoice?</h3>
+        <p style="margin-bottom: 15px; color: #1e40af;">If you have any questions about this invoice or need assistance, our support team is available:</p>
+        <div class="support-contact">
+          <strong>Email:</strong> <a href="mailto:${supportEmail}">${supportEmail}</a>
+        </div>
+        <div class="support-contact">
+          <strong>Phone:</strong> <a href="tel:${supportPhone}">${supportPhone}</a>
+        </div>
+        <p style="margin-top: 15px; margin-bottom: 0; font-size: 14px; color: #6b7280;">Available 24/7 for urgent medical courier needs</p>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 16px; color: #1e40af; text-align: center;"><strong>Thank you for your business!</strong></p>
+    </div>
+
+    <div class="footer">
+      <p><strong>MED DROP</strong> - Professional Medical Courier Services</p>
+      <p>Professional. Reliable. Trusted.</p>
+      <p style="margin-top: 15px;">This invoice is attached as a PDF to this email for your records.</p>
+      <p style="margin-top: 10px;">
+        <a href="${invoiceUrl}">View Invoice Portal</a> | 
+        <a href="${baseUrl}">Visit Website</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+    `.trim(),
     attachments: [
       {
         filename: `invoice-${invoice.invoiceNumber}.pdf`,

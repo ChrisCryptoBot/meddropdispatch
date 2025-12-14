@@ -167,11 +167,15 @@ export default function ShipperInvoicesPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 print:p-4">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Invoices</h1>
-        <p className="text-gray-600">View and download your invoices</p>
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Invoices</h1>
+            <p className="text-gray-600 print:text-sm">View and download your invoices</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}

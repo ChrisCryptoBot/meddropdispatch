@@ -105,14 +105,18 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Documents & Invoices</h1>
-        <p className="text-gray-600">View and download Bill of Lading, invoices, and proof of delivery</p>
+    <div className="p-8 print:p-4">
+      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Documents & Invoices</h1>
+            <p className="text-gray-600 print:text-sm">View and download Bill of Lading, invoices, and proof of delivery</p>
+          </div>
+        </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="glass p-4 rounded-xl mb-6">
+      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30 shadow-glass">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
@@ -122,7 +126,7 @@ export default function DocumentsPage() {
               placeholder="Search by title, tracking code, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
             />
           </div>
 
@@ -132,7 +136,7 @@ export default function DocumentsPage() {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
             >
               <option value="all">All Types</option>
               <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
@@ -148,7 +152,7 @@ export default function DocumentsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -163,7 +167,7 @@ export default function DocumentsPage() {
       </div>
 
       {filteredAndSortedDocuments.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
+        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
           <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -184,11 +188,11 @@ export default function DocumentsPage() {
             Showing {filteredAndSortedDocuments.length} of {documents.length} documents
           </div>
           {filteredAndSortedDocuments.map((doc) => (
-            <div key={doc.id} className="glass rounded-xl p-6">
+            <div key={doc.id} className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
@@ -208,7 +212,7 @@ export default function DocumentsPage() {
                   url={doc.url}
                   title={doc.title}
                   type={doc.type}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex-shrink-0 ml-4"
+                  className="px-4 py-2 bg-gradient-primary text-white rounded-lg hover:shadow-lg transition-all shadow-lg flex-shrink-0 ml-4"
                 >
                   View/Download
                 </DocumentViewButton>

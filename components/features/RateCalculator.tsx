@@ -193,7 +193,7 @@ export default function RateCalculator({
       <button
         onClick={handleCalculate}
         disabled={isCalculating || (showDeadhead && !driverStartingLocation && loadId)}
-        className="w-full px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+        className="w-full px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
       >
         {isCalculating ? (
           <>
