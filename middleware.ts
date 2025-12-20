@@ -1,23 +1,48 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAuthSession } from '@/lib/auth-session'
+
+/**
+ * Edge-compatible session reading from cookies
+ * Middleware runs in Edge Runtime, so we can't use Node.js APIs
+ */
+function getSessionFromRequest(request: NextRequest): { userId: string; userType: 'driver' | 'shipper' | 'admin'; email: string } | null {
+  const sessionCookie = request.cookies.get('auth_session')
+  
+  if (!sessionCookie?.value) {
+    return null
+  }
+
+  try {
+    const session = JSON.parse(sessionCookie.value)
+    
+    // Check if session is expired
+    if (session.expiresAt) {
+      const expiresAt = new Date(session.expiresAt)
+      if (expiresAt < new Date()) {
+        return null
+      }
+    }
+    
+    return {
+      userId: session.userId,
+      userType: session.userType,
+      email: session.email,
+    }
+  } catch (error) {
+    return null
+  }
+}
 
 /**
  * Middleware for route protection
  * Protects driver, shipper, and admin routes
+ * Runs in Edge Runtime - must be Edge-compatible
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Safely get session - if it fails, treat as no session
-  let session = null
-  try {
-    session = await getAuthSession(request)
-  } catch (error) {
-    console.error('Error getting auth session in middleware:', error)
-    // Continue without session - user will need to log in
-    session = null
-  }
+  // Get session from cookies (Edge-compatible)
+  const session = getSessionFromRequest(request)
 
   // Driver routes
   if (pathname.startsWith('/driver')) {
