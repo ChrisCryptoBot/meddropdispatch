@@ -26,6 +26,11 @@
   "exclude": [
     "node_modules",
     "**/api/test/**",
-    "**/api/debug/**"
+    "**/api/debug/**",
+    "tests/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }
