@@ -32,6 +32,12 @@ const nextConfig = {
   
   // Webpack optimizations (simplified for dev stability)
   webpack: (config, { isServer }) => {
+    // Ensure path aliases work correctly
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname),
+    }
+    
     if (!isServer) {
       // Client-side: add fallbacks for Node.js modules
       config.resolve.fallback = {
