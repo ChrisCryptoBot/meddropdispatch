@@ -42,21 +42,6 @@ const nextConfig = {
       }
     }
     
-    // Exclude test/debug routes from production builds
-    if (process.env.NODE_ENV === 'production') {
-      config.module = config.module || {}
-      config.module.rules = config.module.rules || []
-      // Add rule to exclude test routes
-      config.module.rules.push({
-        test: /\.(ts|tsx|js|jsx)$/,
-        include: [
-          /app\/api\/test/,
-          /app\/api\/debug/,
-        ],
-        use: 'null-loader', // Effectively excludes these files
-      })
-    }
-    
     // Only apply optimizations in production
     if (!isServer && process.env.NODE_ENV === 'production') {
       config.optimization = {
