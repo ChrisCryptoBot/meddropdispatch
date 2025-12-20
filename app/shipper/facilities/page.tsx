@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
+import { showToast } from '@/lib/toast'
 
 interface Facility {
   id: string
@@ -29,6 +30,9 @@ export default function SavedFacilitiesPage() {
   const [filterType, setFilterType] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'usage' | 'date'>('name')
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null)
+  const [editingFacility, setEditingFacility] = useState<Facility | null>(null)
+  const [deletingFacilityId, setDeletingFacilityId] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     const shipperData = localStorage.getItem('shipper')
@@ -109,6 +113,107 @@ export default function SavedFacilitiesPage() {
     return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
   }
 
+  const facilityTypeOptions = [
+    { value: 'CLINIC', label: 'Clinic' },
+    { value: 'LAB', label: 'Laboratory' },
+    { value: 'HOSPITAL', label: 'Hospital' },
+    { value: 'PHARMACY', label: 'Pharmacy' },
+    { value: 'DIALYSIS', label: 'Dialysis Center' },
+    { value: 'IMAGING', label: 'Imaging Center' },
+    { value: 'GOVERNMENT', label: 'Government Facility' },
+    { value: 'OTHER', label: 'Other' },
+  ]
+
+  const handleEditFacility = (facility: Facility, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    setEditingFacility({ ...facility })
+    setSelectedFacility(null)
+  }
+
+  const handleSaveFacility = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingFacility || !shipper) return
+
+    try {
+      setIsSaving(true)
+      const response = await fetch(`/api/shippers/${shipper.id}/facilities`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facilityId: editingFacility.id,
+          name: editingFacility.name,
+          facilityType: editingFacility.facilityType,
+          addressLine1: editingFacility.addressLine1,
+          addressLine2: editingFacility.addressLine2,
+          city: editingFacility.city,
+          state: editingFacility.state,
+          postalCode: editingFacility.postalCode,
+          contactName: editingFacility.contactName,
+          contactPhone: editingFacility.contactPhone,
+          defaultAccessNotes: editingFacility.defaultAccessNotes,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Update local state
+        setFacilities((prev) =>
+          prev.map((f) => (f.id === editingFacility.id ? { ...editingFacility } : f))
+        )
+        setEditingFacility(null)
+        showToast.success('Facility updated successfully')
+      } else {
+        showToast.error(data.error || 'Failed to update facility')
+      }
+    } catch (error) {
+      console.error('Error updating facility:', error)
+      showToast.error('Failed to update facility')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteFacility = async (facilityId: string, facilityName: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent opening the modal when clicking delete
+
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete "${facilityName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    if (!shipper) return
+
+    try {
+      setDeletingFacilityId(facilityId)
+      const response = await fetch(`/api/shippers/${shipper.id}/facilities?facilityId=${facilityId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Remove from local state
+        setFacilities((prev) => prev.filter((f) => f.id !== facilityId))
+        // Close modal if the deleted facility was selected
+        if (selectedFacility?.id === facilityId) {
+          setSelectedFacility(null)
+        }
+        showToast.success('Facility deleted successfully')
+      } else {
+        // Show error message from API
+        showToast.error(data.message || data.error || 'Failed to delete facility')
+      }
+    } catch (error) {
+      console.error('Error deleting facility:', error)
+      showToast.error('Failed to delete facility')
+    } finally {
+      setDeletingFacilityId(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full min-h-screen">
@@ -122,7 +227,7 @@ export default function SavedFacilitiesPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Saved Facilities</h1>
@@ -229,13 +334,40 @@ export default function SavedFacilitiesPage() {
             <div
               key={facility.id}
               onClick={() => setSelectedFacility(facility)}
-              className="glass-primary rounded-xl p-6 hover:shadow-glass-lg transition-all border-2 border-blue-200/30 hover:border-blue-300/50 shadow-glass cursor-pointer"
+              className="glass-primary rounded-xl p-6 hover:shadow-glass-lg transition-all border-2 border-blue-200/30 hover:border-blue-300/50 shadow-glass cursor-pointer relative"
             >
               <div className="flex items-start justify-between mb-3">
                 <h3 className="text-lg font-bold text-gray-900 flex-1">{facility.name}</h3>
-                <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded border border-primary-200 ml-2">
-                  {getFacilityTypeLabel(facility.facilityType)}
-                </span>
+                <div className="flex items-center gap-2 ml-2">
+                  <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded border border-primary-200">
+                    {getFacilityTypeLabel(facility.facilityType)}
+                  </span>
+                  <button
+                    onClick={(e) => handleEditFacility(facility, e)}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                    title="Edit facility"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteFacility(facility.id, facility.name, e)}
+                    disabled={deletingFacilityId === facility.id}
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Delete facility"
+                  >
+                    {deletingFacilityId === facility.id ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Address */}
@@ -381,16 +513,230 @@ export default function SavedFacilitiesPage() {
                 </div>
               </div>
 
-              {/* Close Button */}
-              <div className="flex justify-end pt-4 border-t border-gray-200">
+              {/* Actions */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                 <button
-                  onClick={() => setSelectedFacility(null)}
-                  className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (selectedFacility) {
+                      handleEditFacility(selectedFacility, e)
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2"
                 >
-                  Close
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Facility
                 </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (selectedFacility) {
+                        handleDeleteFacility(selectedFacility.id, selectedFacility.name, e)
+                        setSelectedFacility(null)
+                      }
+                    }}
+                    disabled={deletingFacilityId === selectedFacility?.id}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {deletingFacilityId === selectedFacility?.id ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setSelectedFacility(null)}
+                    className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Facility Modal */}
+      {editingFacility && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setEditingFacility(null)}>
+          <div className="glass-primary max-w-2xl w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Facility</h2>
+              <button
+                onClick={() => setEditingFacility(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFacility} className="space-y-4">
+              {/* Facility Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Facility Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFacility.name}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, name: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                />
+              </div>
+
+              {/* Facility Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Facility Type *</label>
+                <select
+                  required
+                  value={editingFacility.facilityType}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, facilityType: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                >
+                  {facilityTypeOptions.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Address Line 1 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFacility.addressLine1}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, addressLine1: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                />
+              </div>
+
+              {/* Address Line 2 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                <input
+                  type="text"
+                  value={editingFacility.addressLine2 || ''}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, addressLine2: e.target.value || null })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                />
+              </div>
+
+              {/* City, State, Postal Code */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingFacility.city}
+                    onChange={(e) => setEditingFacility({ ...editingFacility, city: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={2}
+                    value={editingFacility.state}
+                    onChange={(e) => setEditingFacility({ ...editingFacility, state: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingFacility.postalCode}
+                    onChange={(e) => setEditingFacility({ ...editingFacility, postalCode: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  />
+                </div>
+              </div>
+
+              {/* Contact Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFacility.contactName}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, contactName: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                />
+              </div>
+
+              {/* Contact Phone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone *</label>
+                <input
+                  type="tel"
+                  required
+                  value={editingFacility.contactPhone}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, contactPhone: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                />
+              </div>
+
+              {/* Access Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Default Access Notes</label>
+                <textarea
+                  value={editingFacility.defaultAccessNotes || ''}
+                  onChange={(e) => setEditingFacility({ ...editingFacility, defaultAccessNotes: e.target.value || null })}
+                  rows={3}
+                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  placeholder="Enter default access instructions for this facility..."
+                />
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setEditingFacility(null)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

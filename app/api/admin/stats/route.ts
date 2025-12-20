@@ -11,10 +11,11 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
  * Get comprehensive dashboard statistics for admin
  */
 export async function GET(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    const nextReq = req as NextRequest
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }

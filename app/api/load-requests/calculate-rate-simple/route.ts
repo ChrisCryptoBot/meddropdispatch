@@ -10,10 +10,10 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
  * Calculate rate without requiring a load ID (for manual loads, quotes, etc.)
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }

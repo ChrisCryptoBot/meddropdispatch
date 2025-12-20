@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { createErrorResponse } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 
@@ -14,14 +14,14 @@ const createBlockedEmailSchema = z.object({
  * Get all blocked emails (DNU list)
  */
 export async function GET(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
-    try {
-      rateLimit(RATE_LIMITS.api)(req)
-    } catch (error) {
-      return createErrorResponse(error)
-    }
+  try {
+    rateLimit(RATE_LIMITS.api)(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 
-    const { searchParams } = new URL(req.url)
+  try {
+    const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('activeOnly') === 'true'
 
     const blockedEmails = await prisma.blockedEmail.findMany({
@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ blockedEmails })
-  })(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 }
 
 /**
@@ -38,14 +40,14 @@ export async function GET(request: NextRequest) {
  * Add an email to the DNU list
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
-    try {
-      rateLimit(RATE_LIMITS.api)(req)
-    } catch (error) {
-      return createErrorResponse(error)
-    }
+  try {
+    rateLimit(RATE_LIMITS.api)(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 
-    const rawData = await req.json()
+  try {
+    const rawData = await request.json()
     const validation = createBlockedEmailSchema.safeParse(rawData)
 
     if (!validation.success) {
@@ -100,7 +102,9 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ blockedEmail }, { status: 201 })
-  })(request)
+  } catch (error) {
+    return createErrorResponse(error)
+  }
 }
 
 

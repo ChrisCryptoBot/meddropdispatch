@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { createHash } from 'crypto'
-import { createErrorResponse, withErrorHandling, ValidationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, ValidationError, AuthorizationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { verifyDocumentUploadAccess } from '@/lib/authorization'
 
 /**
  * POST /api/load-requests/[id]/documents
@@ -13,23 +14,41 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request) => {
+    const nextReq = req as NextRequest
     // Apply stricter rate limiting for upload routes
     try {
-      rateLimit(RATE_LIMITS.upload)(req)
+      rateLimit(RATE_LIMITS.upload)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
-    const formData = await req.formData()
+    console.log('[Document Upload] Starting upload for load:', id)
     
+    const formData = await nextReq.formData()
+    console.log('[Document Upload] FormData parsed successfully')
+  
     const file = formData.get('file') as File
     const documentType = formData.get('type') as string
     const title = formData.get('title') as string
     const uploadedBy = formData.get('uploadedBy') as string // 'driver' or 'shipper'
 
+    console.log('[Document Upload] File info:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      documentType,
+      title,
+      uploadedBy,
+    })
+
     if (!file || !documentType || !title) {
+      console.error('[Document Upload] Missing required fields:', {
+        hasFile: !!file,
+        documentType,
+        title,
+      })
       throw new ValidationError('File, type, and title are required')
     }
 
@@ -91,6 +110,22 @@ export async function POST(
       )
     }
 
+    // AUTHORIZATION: Verify user has permission to upload documents to this load
+    try {
+      console.log('[Document Upload] Verifying upload access...')
+      await verifyDocumentUploadAccess(nextReq, id)
+      console.log('[Document Upload] Access verified')
+    } catch (authError) {
+      console.error('[Document Upload] Authorization error:', authError)
+      if (authError instanceof AuthorizationError) {
+        return NextResponse.json(
+          { error: 'AuthorizationError', message: authError.message },
+          { status: 403 }
+        )
+      }
+      throw authError
+    }
+
     // POD LOCKING: Check if load is DELIVERED and require admin override for new uploads
     // Exception: DRIVER_MANUAL loads allow drivers to upload documents even if status is DELIVERED
     const isDriverManual = loadRequest.createdVia === 'DRIVER_MANUAL'
@@ -114,23 +149,31 @@ export async function POST(
     const lockedAt = isLocked ? new Date() : null
 
     // Create document record
-    const document = await prisma.document.create({
-      data: {
-        loadRequestId: id,
-        type: documentType,
-        title,
-        url: dataUrl, // Stored as base64 data URL
-        mimeType: file.type,
-        fileSize: file.size,
-        fileHash: fileHash, // SHA-256 hash for immutability verification
-        uploadedBy: uploadedBy || 'unknown',
-        isLocked: isLocked,
-        lockedAt: lockedAt,
-        adminOverride: adminOverride || false,
-        adminOverrideBy: adminOverride ? adminOverrideBy : null,
-        adminOverrideNotes: adminOverride ? adminOverrideNotes : null,
-      }
-    })
+    console.log('[Document Upload] Creating document record...')
+    let document
+    try {
+      document = await prisma.document.create({
+        data: {
+          loadRequestId: id,
+          type: documentType,
+          title,
+          url: dataUrl, // Stored as base64 data URL
+          mimeType: file.type,
+          fileSize: file.size,
+          fileHash: fileHash, // SHA-256 hash for immutability verification
+          uploadedBy: uploadedBy || 'unknown',
+          isLocked: isLocked,
+          lockedAt: lockedAt,
+          adminOverride: adminOverride || false,
+          adminOverrideBy: adminOverride ? adminOverrideBy : null,
+          adminOverrideNotes: adminOverride ? adminOverrideNotes : null,
+        }
+      })
+      console.log('[Document Upload] Document created successfully:', document.id)
+    } catch (dbError) {
+      console.error('[Document Upload] Database error:', dbError)
+      throw new Error(`Failed to save document: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`)
+    }
 
     // If driver uploaded, send email to shipper with attachment
     if (uploadedBy === 'driver') {

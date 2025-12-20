@@ -5,8 +5,17 @@ import { sendEmail } from '@/lib/email-service'
 /**
  * POST /api/test/send-welcome-email
  * Test endpoint to manually send welcome email
+ * Development only - disabled in production
  */
 export async function POST(request: NextRequest) {
+  // Disable in production for security
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'This endpoint is not available in production' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { email, firstName, lastName } = await request.json()
 

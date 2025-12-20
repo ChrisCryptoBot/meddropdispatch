@@ -78,10 +78,12 @@ export const createLoadRequestSchema = z.object({
 })
 
 export const updateLoadRequestSchema = z.object({
+  // Quote fields
   quoteAmount: positiveNumberSchema.optional(),
   quoteNotes: z.string().optional(),
   driverQuoteAmount: positiveNumberSchema.optional(),
   driverQuoteNotes: z.string().optional(),
+  // Status
   status: z.enum([
     'NEW',
     'REQUESTED',
@@ -97,17 +99,36 @@ export const updateLoadRequestSchema = z.object({
     'CANCELLED',
     'DENIED',
   ]).optional(),
+  // Load details (editable before PICKED_UP)
+  serviceType: z.string().optional(),
+  commodityDescription: z.string().optional(),
+  specimenCategory: z.string().optional(),
+  temperatureRequirement: z.string().optional(),
+  estimatedContainers: z.number().int().positive().optional(),
+  estimatedWeightKg: z.number().positive().optional(),
+  declaredValue: z.number().positive().optional(),
+  readyTime: dateSchema.optional(),
+  deliveryDeadline: dateSchema.optional(),
+  accessNotes: z.string().optional(),
+  driverInstructions: z.string().optional(),
+  preferredContactMethod: z.string().optional(),
+  priorityLevel: z.enum(['NORMAL', 'HIGH', 'CRITICAL']).optional(),
+  poNumber: z.string().optional(),
+  // Signatures
   pickupSignature: z.string().optional(),
   pickupSignerName: z.string().optional(),
   pickupSignatureDriverId: z.string().optional(),
   deliverySignature: z.string().optional(),
   deliverySignerName: z.string().optional(),
   deliverySignatureDriverId: z.string().optional(),
+  // Temperature
   pickupTemperature: z.number().optional(),
   deliveryTemperature: z.number().optional(),
+  // Timing
   actualPickupTime: dateSchema.optional(),
   actualDeliveryTime: dateSchema.optional(),
   locationText: z.string().optional(),
+  // Driver assignment
   driverId: z.string().optional(),
 })
 
@@ -178,19 +199,7 @@ export const updateDriverVehicleSchema = z.object({
   hasRefrigeration: z.boolean().optional(),
 })
 
-export const driverPaymentSettingsSchema = z.object({
-  paymentMethod: z.enum(['ACH', 'CHECK']).optional(),
-  bankName: z.string().optional(),
-  accountHolderName: z.string().optional(),
-  routingNumber: z.string().optional(),
-  accountNumber: z.string().optional(),
-  accountType: z.enum(['checking', 'savings']).optional(),
-  payoutFrequency: z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']).optional(),
-  minimumPayout: positiveNumberSchema.optional(),
-  taxId: z.string().optional(),
-  taxIdType: z.enum(['SSN', 'EIN']).optional(),
-  w9Submitted: z.boolean().optional(),
-})
+// Payment settings schema removed - MedDrop does not handle payments
 
 // Shipper Validation
 export const updateShipperSchema = z.object({

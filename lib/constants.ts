@@ -3,28 +3,74 @@
 
 import type { LoadStatus, TrackingEventCode, DriverDenialReason } from './types'
 
-// Status display configurations
-export const LOAD_STATUS_LABELS: Record<LoadStatus, string> = {
+// Extended LoadStatus type to include all possible statuses
+export type ExtendedLoadStatus = LoadStatus | 
+  'NEW' |
+  'QUOTED' |
+  'QUOTE_ACCEPTED' |
+  'DRIVER_QUOTE_PENDING' |
+  'DRIVER_QUOTE_SUBMITTED' |
+  'QUOTE_NEGOTIATION' |
+  'CANCELLED' |
+  'COMPLETED' |
+  'ACCEPTED'
+
+// Status display configurations - includes all possible statuses
+export const LOAD_STATUS_LABELS: Record<string, string> = {
+  // Core statuses
   QUOTE_REQUESTED: 'Quote Requested',
   REQUESTED: 'Scheduling Request',
+  NEW: 'New Request',
   SCHEDULED: 'Scheduled',
   EN_ROUTE: 'En Route to Pickup',
   PICKED_UP: 'Picked Up',
   IN_TRANSIT: 'In Transit',
   DELIVERED: 'Delivered',
+  COMPLETED: 'Completed',
   DENIED: 'Not Scheduled',
+  CANCELLED: 'Cancelled',
+  ACCEPTED: 'Accepted',
+  
+  // Quote-related statuses
+  QUOTED: 'Quoted',
+  QUOTE_ACCEPTED: 'Quote Accepted',
+  DRIVER_QUOTE_PENDING: 'Driver Quote Pending',
+  DRIVER_QUOTE_SUBMITTED: 'Driver Quote Submitted',
+  QUOTE_NEGOTIATION: 'Quote Negotiation',
 }
 
-// Enhanced load status colors with medical context
-export const LOAD_STATUS_COLORS: Record<LoadStatus, string> = {
+// Enhanced load status colors with medical context - includes all possible statuses
+export const LOAD_STATUS_COLORS: Record<string, string> = {
+  // Core statuses
   QUOTE_REQUESTED: 'bg-blue-50 text-blue-700 border-blue-200 border-2',
   REQUESTED: 'bg-indigo-50 text-indigo-700 border-indigo-200 border-2',
+  NEW: 'bg-blue-50 text-blue-700 border-blue-200 border-2',
   SCHEDULED: 'bg-teal-50 text-teal-700 border-teal-200 border-2',
   EN_ROUTE: 'bg-purple-50 text-purple-700 border-purple-200 border-2',
   PICKED_UP: 'bg-orange-50 text-orange-700 border-orange-200 border-2',
   IN_TRANSIT: 'bg-amber-50 text-amber-700 border-amber-200 border-2',
   DELIVERED: 'bg-green-50 text-green-700 border-green-200 border-2',
+  COMPLETED: 'bg-green-50 text-green-700 border-green-200 border-2',
   DENIED: 'bg-red-50 text-red-700 border-red-200 border-2',
+  CANCELLED: 'bg-red-50 text-red-700 border-red-200 border-2',
+  ACCEPTED: 'bg-green-50 text-green-700 border-green-200 border-2',
+  
+  // Quote-related statuses
+  QUOTED: 'bg-yellow-50 text-yellow-700 border-yellow-200 border-2',
+  QUOTE_ACCEPTED: 'bg-green-50 text-green-700 border-green-200 border-2',
+  DRIVER_QUOTE_PENDING: 'bg-yellow-50 text-yellow-700 border-yellow-200 border-2',
+  DRIVER_QUOTE_SUBMITTED: 'bg-amber-50 text-amber-700 border-amber-200 border-2',
+  QUOTE_NEGOTIATION: 'bg-orange-50 text-orange-700 border-orange-200 border-2',
+}
+
+// Helper function to get status label (with fallback)
+export function getLoadStatusLabel(status: string): string {
+  return LOAD_STATUS_LABELS[status] || status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+}
+
+// Helper function to get status color (with fallback)
+export function getLoadStatusColor(status: string): string {
+  return LOAD_STATUS_COLORS[status] || 'bg-gray-50 text-gray-700 border-gray-200 border-2'
 }
 
 // Service type priority colors

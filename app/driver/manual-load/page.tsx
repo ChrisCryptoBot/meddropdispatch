@@ -57,6 +57,9 @@ function DriverManualLoadPageContent() {
     serviceType: 'OTHER',
     quotedRate: '', // Final negotiated rate
   })
+  const [draftId, setDraftId] = useState<string | null>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -64,7 +67,8 @@ function DriverManualLoadPageContent() {
       router.push('/driver/login')
       return
     }
-    setDriver(JSON.parse(driverData))
+    const parsedDriver = JSON.parse(driverData)
+    setDriver(parsedDriver)
     fetchDrivers()
 
     // Check for callbackId and shipperId in URL params
@@ -78,8 +82,116 @@ function DriverManualLoadPageContent() {
     if (urlShipperId) {
       // Fetch shipper data and pre-fill form
       fetchShipperData(urlShipperId)
+    } else {
+      // Load most recent draft if no shipperId in URL
+      loadMostRecentDraft(parsedDriver.id)
     }
   }, [router, searchParams])
+
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (!driver) return
+
+    const autoSaveInterval = setInterval(() => {
+      saveDraft()
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(autoSaveInterval)
+  }, [driver, formData, newShipperData, selectedShipperId, selectedDriverId, callbackId])
+
+  const loadMostRecentDraft = async (driverId: string) => {
+    try {
+      const response = await fetch(`/api/load-requests/draft?driverId=${driverId}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.drafts && data.drafts.length > 0) {
+          const mostRecentDraft = data.drafts[0]
+          setDraftId(mostRecentDraft.id)
+          
+          // Restore form data
+          if (mostRecentDraft.data) {
+            const draftData = mostRecentDraft.data
+            setFormData(draftData.formData || formData)
+            setNewShipperData(draftData.newShipperData || newShipperData)
+            setSelectedShipperId(draftData.selectedShipperId || '')
+            setSelectedDriverId(draftData.selectedDriverId || '')
+            setCallbackId(draftData.callbackId || null)
+            
+            // If shipper was selected, fetch shipper data
+            if (draftData.selectedShipperId) {
+              fetchShipperData(draftData.selectedShipperId)
+            }
+            
+            showToast.info('Draft loaded', 'Your previous draft has been restored')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading draft:', error)
+    }
+  }
+
+  const saveDraft = async () => {
+    if (!driver || isSavingDraft) return
+
+    // Don't save if form is empty
+    if (!formData.pickupFacilityName && !formData.dropoffFacilityName) {
+      return
+    }
+
+    try {
+      setIsSavingDraft(true)
+      const draftData = {
+        formData,
+        newShipperData,
+        selectedShipperId,
+        selectedDriverId,
+        callbackId,
+      }
+
+      if (draftId) {
+        // Update existing draft
+        await fetch(`/api/load-requests/draft/${draftId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: draftData }),
+        })
+      } else {
+        // Create new draft
+        const response = await fetch('/api/load-requests/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            driverId: driver.id,
+            data: draftData,
+          }),
+        })
+        if (response.ok) {
+          const result = await response.json()
+          setDraftId(result.draft.id)
+        }
+      }
+      setLastSavedAt(new Date())
+    } catch (error) {
+      console.error('Error saving draft:', error)
+    } finally {
+      setIsSavingDraft(false)
+    }
+  }
+
+  const deleteDraft = async () => {
+    if (!draftId) return
+
+    try {
+      await fetch(`/api/load-requests/draft/${draftId}`, {
+        method: 'DELETE',
+      })
+      setDraftId(null)
+      setLastSavedAt(null)
+    } catch (error) {
+      console.error('Error deleting draft:', error)
+    }
+  }
 
   const fetchShipperData = async (shipperId: string) => {
     try {
@@ -126,6 +238,9 @@ function DriverManualLoadPageContent() {
     // Merge with state formData to include facility names from autocomplete
     const data = { ...formEntries, ...formData }
     setFormData(data) // Store for rate calculator
+    
+    // Auto-save draft on form change
+    saveDraft()
 
     // Validate shipper fields
     if (!newShipperData.companyName || !newShipperData.email || !newShipperData.contactName || !newShipperData.phone) {
@@ -210,6 +325,12 @@ function DriverManualLoadPageContent() {
       const result = await response.json()
       setLoadId(result.loadId || result.id)
       showToast.success(`Load record created: ${result.trackingCode}`)
+      
+      // Delete draft after successful submission
+      if (draftId) {
+        await deleteDraft()
+      }
+      
       setShowDocumentUpload(true)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Something went wrong'
@@ -273,7 +394,7 @@ function DriverManualLoadPageContent() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-10 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4 flex-1">
             <Link

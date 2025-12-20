@@ -11,7 +11,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     const { id } = await params
 
     // Verify driver exists
@@ -24,8 +24,8 @@ export async function GET(
       throw new NotFoundError('Driver')
     }
 
-    // Get query parameters
-    const searchParams = req.nextUrl.searchParams
+    // Get query parameters (use request parameter which is always NextRequest)
+    const searchParams = request.nextUrl.searchParams
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -83,9 +83,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -160,9 +160,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }

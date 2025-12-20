@@ -18,10 +18,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -57,10 +57,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -106,10 +106,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }

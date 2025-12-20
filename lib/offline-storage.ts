@@ -74,7 +74,7 @@ export async function getUnsyncedItems(): Promise<OfflineItem[]> {
     const index = store.index('synced')
 
     return new Promise((resolve, reject) => {
-      const request = index.getAll(false)
+      const request = index.getAll(IDBKeyRange.only(false))
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })

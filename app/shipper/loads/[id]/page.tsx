@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
 import GPSTrackingMap from '@/components/features/GPSTrackingMap'
+import { getLoadStatusColor, getLoadStatusLabel } from '@/lib/constants'
 
 interface LoadRequest {
   id: string
@@ -71,6 +72,7 @@ export default function ShipperLoadDetailPage() {
   const [load, setLoad] = useState<LoadRequest | null>(null)
   const [documents, setDocuments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isAccepting, setIsAccepting] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
@@ -93,7 +95,7 @@ export default function ShipperLoadDetailPage() {
   const [wouldRecommend, setWouldRecommend] = useState(true)
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
   const [existingRating, setExistingRating] = useState<any>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [showFullScreenMap, setShowFullScreenMap] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -114,22 +116,59 @@ export default function ShipperLoadDetailPage() {
   }, [router, params])
 
   useEffect(() => {
-    // Fetch existing rating if load is delivered
-    if (load?.status === 'DELIVERED' && params?.id) {
+    // Fetch existing rating if load is delivered or completed
+    if ((load?.status === 'DELIVERED' || load?.status === 'COMPLETED') && load?.driver && params?.id) {
       fetchExistingRating()
     }
-  }, [load?.status, params?.id])
+  }, [load?.status, load?.driver, params?.id])
 
   const fetchLoad = async () => {
-    if (!params?.id) return
+    if (!params?.id) {
+      setError('Load ID is missing')
+      setIsLoading(false)
+      return
+    }
+    
     try {
+      setError(null)
       const response = await fetch(`/api/load-requests/${params.id}`)
-      if (!response.ok) throw new Error('Failed to fetch load')
+      
+      if (!response.ok) {
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          errorData = { message: `Server error: ${response.status} ${response.statusText}` }
+        }
+        
+        const errorMessage = errorData.message || errorData.error || `Failed to fetch load (${response.status})`
+        console.error('Error fetching load:', response.status, errorData)
+        setError(errorMessage)
+        showApiError(new Error(errorMessage))
+        
+        // If 404, redirect to loads list after a delay
+        if (response.status === 404) {
+          setTimeout(() => {
+            router.push('/shipper/loads')
+          }, 3000)
+        }
+        
+        return
+      }
 
       const data = await response.json()
+      
+      // Validate response structure
+      if (!data || !data.id) {
+        throw new Error('Invalid response format from server')
+      }
+      
       setLoad(data)
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load load details'
       console.error('Error fetching load:', error)
+      setError(errorMessage)
+      showApiError(error, 'Failed to load load details')
     } finally {
       setIsLoading(false)
     }
@@ -274,21 +313,36 @@ export default function ShipperLoadDetailPage() {
     
     setIsCancelling(true)
     try {
+      // Prepare cancellation data - ensure all fields match schema requirements
+      const cancellationData: any = {
+        cancellationReason: cancelReason,
+        cancelledBy: 'SHIPPER' as const,
+        cancelledById: shipper.id,
+      }
+      
+      // Only include optional fields if they have values
+      if (cancelBillingRule) {
+        cancellationData.cancellationBillingRule = cancelBillingRule
+      }
+      if (cancelNotes && cancelNotes.trim()) {
+        cancellationData.notes = cancelNotes.trim()
+      }
+      
       const response = await fetch(`/api/load-requests/${params.id}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cancellationReason: cancelReason,
-          cancelledBy: 'SHIPPER',
-          cancelledById: shipper.id,
-          cancellationBillingRule: cancelBillingRule,
-          notes: cancelNotes || null,
-        }),
+        body: JSON.stringify(cancellationData),
       })
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to cancel load')
+        console.error('[Cancel Load] Validation error details:', error)
+        // Show more detailed error message if validation failed
+        if (error.error === 'ValidationError' && error.errors) {
+          const errorMessages = error.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ')
+          throw new Error(`Validation failed: ${errorMessages}`)
+        }
+        throw new Error(error.message || error.error || 'Failed to cancel load')
       }
       
       await fetchLoad()
@@ -317,10 +371,18 @@ export default function ShipperLoadDetailPage() {
           setRating(data.rating.rating)
           setFeedback(data.rating.feedback || '')
           setWouldRecommend(data.rating.wouldRecommend)
+        } else {
+          // Reset to defaults if no rating exists
+          setExistingRating(null)
+          setRating(5)
+          setFeedback('')
+          setWouldRecommend(true)
         }
       }
     } catch (error) {
       console.error('Error fetching rating:', error)
+      // On error, still allow rating (don't block the UI)
+      setExistingRating(null)
     }
   }
 
@@ -345,7 +407,9 @@ export default function ShipperLoadDetailPage() {
         throw new Error(error.error || 'Failed to submit rating')
       }
       
+      // Refresh rating and load data to ensure UI stays in sync
       await fetchExistingRating()
+      await fetchLoad()
       setShowRatingModal(false)
       showToast.success('Rating submitted successfully!', 'Thank you for your feedback.')
     } catch (error) {
@@ -356,33 +420,6 @@ export default function ShipperLoadDetailPage() {
     }
   }
 
-  const handleDeleteLoad = async () => {
-    if (!params?.id || !shipper) return
-    
-    if (!confirm('Are you sure you want to permanently remove this load? This action cannot be undone and will delete all associated data including documents, tracking events, and ratings.')) {
-      return
-    }
-    
-    setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/load-requests/${params.id}`, {
-        method: 'DELETE',
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete load')
-      }
-      
-      showToast.success('Load permanently removed')
-      router.push('/shipper/dashboard')
-    } catch (error) {
-      console.error('Error deleting load:', error)
-      showApiError(error, 'Failed to delete load. Please try again.')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
 
   const handleRequestCall = async () => {
     if (!params?.id) return
@@ -412,44 +449,50 @@ export default function ShipperLoadDetailPage() {
   // Check if load can be cancelled
   const canCancel = load && !['DELIVERED', 'CANCELLED', 'DENIED'].includes(load.status)
 
+  // Use centralized status colors and labels
   const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      'REQUESTED': 'bg-blue-100 text-blue-800 border-blue-200',
-      'NEW': 'bg-blue-100 text-blue-800 border-blue-200',
-      'QUOTED': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'QUOTE_ACCEPTED': 'bg-green-100 text-green-800 border-green-200',
-      'DRIVER_QUOTE_PENDING': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'DRIVER_QUOTE_SUBMITTED': 'bg-amber-100 text-amber-800 border-amber-200',
-      'QUOTE_NEGOTIATION': 'bg-orange-100 text-orange-800 border-orange-200',
-      'SCHEDULED': 'bg-purple-100 text-purple-800 border-purple-200',
-      'EN_ROUTE': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'PICKED_UP': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'IN_TRANSIT': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      'DELIVERED': 'bg-green-100 text-green-800 border-green-200',
-      'CANCELLED': 'bg-red-100 text-red-800 border-red-200',
-      'DENIED': 'bg-red-100 text-red-800 border-red-200',
-    }
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+    return getLoadStatusColor(status)
   }
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      'REQUESTED': 'Scheduling Request',
-      'NEW': 'New Request',
-      'QUOTED': 'Quote Pending',
-      'QUOTE_ACCEPTED': 'Quote Accepted',
-      'DRIVER_QUOTE_PENDING': 'Driver Quote Pending',
-      'DRIVER_QUOTE_SUBMITTED': 'Quote Submitted - Awaiting Approval',
-      'QUOTE_NEGOTIATION': 'Quote Negotiation',
-      'SCHEDULED': 'Scheduled',
-      'EN_ROUTE': 'En Route to Pickup',
-      'PICKED_UP': 'Picked Up',
-      'IN_TRANSIT': 'In Transit',
-      'DELIVERED': 'Delivered',
-      'CANCELLED': 'Cancelled',
-      'DENIED': 'Not Scheduled',
-    }
-    return labels[status] || status
+    return getLoadStatusLabel(status)
+  }
+
+  // Show error state
+  if (error && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-20">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="glass-primary rounded-2xl p-8 border-2 border-red-200/30 shadow-glass text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Load Load</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => {
+                  setError(null)
+                  setIsLoading(true)
+                  fetchLoad()
+                }}
+                className="px-6 py-3 rounded-lg bg-gradient-primary text-white font-semibold hover:shadow-lg transition-all"
+              >
+                Try Again
+              </button>
+              <Link
+                href="/shipper/loads"
+                className="px-6 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Back to Loads
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -487,7 +530,7 @@ export default function ShipperLoadDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{load.publicTrackingCode}</h1>
-              <p className="text-sm text-gray-600 mt-1">{load.serviceType?.replace(/_/g, ' ')}</p>
+              <p className="text-sm text-gray-600 mt-1">{(load as any).serviceType?.replace(/_/g, ' ') || 'Service'}</p>
             </div>
             <div className="flex items-center gap-3">
               <span className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(load.status)}`}>
@@ -509,7 +552,7 @@ export default function ShipperLoadDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Quote Acceptance */}
             {load.status === 'QUOTED' && load.quoteAmount && (
-              <div className="glass rounded-2xl p-6 border-2 border-yellow-300 bg-gradient-to-r from-yellow-50/80 to-orange-50/80">
+              <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass bg-gradient-to-r from-yellow-50/80 to-orange-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -540,7 +583,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Driver Quote Submission - Awaiting Approval */}
             {load.status === 'DRIVER_QUOTE_SUBMITTED' && load.driverQuoteAmount && (
-              <div className="glass rounded-2xl p-6 border-2 border-amber-300 bg-gradient-to-r from-amber-50/80 to-yellow-50/80">
+              <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass bg-gradient-to-r from-amber-50/80 to-yellow-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -614,7 +657,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Driver Denial Display */}
             {load.driverDenialReason && (
-              <div className="glass rounded-2xl p-6 border border-red-200 bg-red-50/80">
+              <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass bg-red-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,7 +691,7 @@ export default function ShipperLoadDetailPage() {
 
             {/* Quote Accepted Confirmation */}
             {load.status === 'QUOTE_ACCEPTED' && (
-              <div className="glass rounded-2xl p-6 border border-green-200 bg-green-50/80">
+              <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass bg-green-50/80">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -671,7 +714,7 @@ export default function ShipperLoadDetailPage() {
             )}
 
             {/* Route Information */}
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Route Information</h3>
 
               <div className="space-y-6">
@@ -756,7 +799,7 @@ export default function ShipperLoadDetailPage() {
             </div>
 
             {/* Load Details */}
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Load Details</h3>
 
               <div className="grid sm:grid-cols-2 gap-4">
@@ -790,20 +833,77 @@ export default function ShipperLoadDetailPage() {
               )}
             </div>
 
-            {/* GPS Tracking Map - Only show if enabled and driver is assigned */}
-            {load && load.driver && load.gpsTrackingEnabled && (
-              <div className="mb-6">
-                <GPSTrackingMap
-                  loadId={load.id}
-                  pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
-                  dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
-                  enabled={load.gpsTrackingEnabled}
+            {/* GPS Tracking Map - Show for active loads with driver assigned - Uber Style */}
+            {load && load.driver && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+              <div id="gps-tracking" className="mb-6 scroll-mt-24">
+                      {load.gpsTrackingEnabled ? (
+                  <div className="relative">
+                    <GPSTrackingMap
+                      loadId={load.id}
+                      pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                      dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                      enabled={load.gpsTrackingEnabled}
+                      driver={load.driver}
+                      uberStyle={true}
+                      onCallDriver={() => {
+                        if (load.driver?.phone) {
+                          window.location.href = `tel:${load.driver.phone.replace(/\D/g, '')}`
+                        }
+                      }}
+                    />
+                    {/* Full Screen Button - Floating */}
+                      <button
+                        onClick={() => setShowFullScreenMap(true)}
+                      className="absolute top-4 right-4 z-30 px-4 py-2 rounded-lg bg-white/95 backdrop-blur-sm hover:bg-white text-gray-700 font-medium transition-colors shadow-lg flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        Full Screen
+                      </button>
+                  </div>
+                ) : (
+                  <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
+                    <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                      <div className="text-center">
+                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p className="text-gray-600 font-medium">Waiting for driver to enable GPS tracking</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          The driver will share their location once they start the route
+                        </p>
+                      </div>
+                      </div>
+                    </div>
+                  )}
+              </div>
+            )}
+
+            {/* Full Screen Map Modal - Uber Style */}
+            {showFullScreenMap && load && load.gpsTrackingEnabled && (
+              <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
+                    <GPSTrackingMap
+                      loadId={load.id}
+                      pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                      dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                      enabled={load.gpsTrackingEnabled}
+                      fullScreen={true}
+                      onCloseFullScreen={() => setShowFullScreenMap(false)}
+                  driver={load.driver}
+                  uberStyle={true}
+                  onCallDriver={() => {
+                    if (load.driver?.phone) {
+                      window.location.href = `tel:${load.driver.phone.replace(/\D/g, '')}`
+                    }
+                  }}
                 />
               </div>
             )}
 
             {/* Tracking Timeline */}
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
               <h3 className="text-lg font-bold text-gray-900 mb-6">Tracking Timeline</h3>
 
               {load.trackingEvents.length === 0 ? (
@@ -847,7 +947,7 @@ export default function ShipperLoadDetailPage() {
             </div>
 
             {/* Documents Section */}
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">Documents</h3>
                 <button
@@ -903,7 +1003,7 @@ export default function ShipperLoadDetailPage() {
           <div className="space-y-6">
             {/* Driver Information */}
             {load.driver && (
-              <div className="glass rounded-2xl p-6">
+              <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-900">Driver Information</h3>
                   {['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
@@ -920,11 +1020,11 @@ export default function ShipperLoadDetailPage() {
                   )}
                 </div>
                 <div className="flex gap-4">
-                  {load.driver.profilePicture && (
+                  {(load.driver as any)?.profilePicture && (
                     <div className="flex-shrink-0">
                       <div className="relative rounded-full overflow-hidden border-4 border-blue-200 shadow-lg" style={{ width: '100px', height: '100px' }}>
                         <img
-                          src={load.driver.profilePicture}
+                          src={(load.driver as any).profilePicture}
                           alt={`${load.driver.firstName} ${load.driver.lastName}`}
                           className="absolute inset-0 w-full h-full object-cover object-center"
                           style={{ 
@@ -945,9 +1045,9 @@ export default function ShipperLoadDetailPage() {
                       <div className="font-medium text-gray-900 text-lg">
                         {load.driver.firstName} {load.driver.lastName}
                       </div>
-                      {load.driver.yearsOfExperience && (
+                      {(load.driver as any)?.yearsOfExperience && (
                         <div className="text-sm text-gray-600 mt-1">
-                          {load.driver.yearsOfExperience} {load.driver.yearsOfExperience === 1 ? 'year' : 'years'} of experience
+                          {(load.driver as any).yearsOfExperience} {(load.driver as any).yearsOfExperience === 1 ? 'year' : 'years'} of experience
                         </div>
                       )}
                     </div>
@@ -961,11 +1061,11 @@ export default function ShipperLoadDetailPage() {
                       <div className="text-xs text-gray-500 mb-1">Vehicle</div>
                       <div className="font-medium text-gray-900">{load.driver.vehicleType}</div>
                     </div>
-                    {load.driver.specialties && (
+                    {(load.driver as any)?.specialties && (
                       <div>
                         <div className="text-xs text-gray-500 mb-1">Specialties</div>
                         <div className="flex flex-wrap gap-2">
-                          {load.driver.specialties.split(',').map((specialty, idx) => (
+                          {(load.driver as any).specialties.split(',').map((specialty: string, idx: number) => (
                             <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                               {specialty.trim()}
                             </span>
@@ -973,10 +1073,10 @@ export default function ShipperLoadDetailPage() {
                         </div>
                       </div>
                     )}
-                    {load.driver.bio && (
+                    {(load.driver as any)?.bio && (
                       <div>
                         <div className="text-xs text-gray-500 mb-1">About</div>
-                        <p className="text-sm text-gray-700">{load.driver.bio}</p>
+                        <p className="text-sm text-gray-700">{(load.driver as any).bio}</p>
                       </div>
                     )}
                   </div>
@@ -984,12 +1084,17 @@ export default function ShipperLoadDetailPage() {
               </div>
             )}
 
-            {/* Rate Your Driver - Only for delivered loads */}
-            {load.status === 'DELIVERED' && load.driver && (
-              <div className="glass rounded-2xl p-6 border-2 border-green-200 bg-gradient-to-r from-green-50/80 to-emerald-50/80">
+            {/* Rate Your Driver - Only for delivered/completed loads */}
+            {(load.status === 'DELIVERED' || load.status === 'COMPLETED') && load.driver && (
+              <div className="glass-primary rounded-2xl p-6 border-2 border-green-200/30 shadow-glass bg-gradient-to-r from-green-50/80 to-emerald-50/80">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Rate Your Driver</h3>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      Rate Your Driver
+                    </h3>
                     <p className="text-sm text-gray-600">
                       {existingRating 
                         ? 'You have already rated this driver. You can update your rating below.'
@@ -1028,7 +1133,7 @@ export default function ShipperLoadDetailPage() {
 
                 <button
                   onClick={() => setShowRatingModal(true)}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -1038,35 +1143,8 @@ export default function ShipperLoadDetailPage() {
               </div>
             )}
 
-            {/* Permanently Remove Load Button */}
-            <div className="glass rounded-2xl p-6 border-2 border-red-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Danger Zone</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Permanently remove this load from the system. This action cannot be undone and will delete all associated data.
-              </p>
-              <button
-                onClick={handleDeleteLoad}
-                disabled={isDeleting}
-                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isDeleting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Removing...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Permanently Remove This Load
-                  </>
-                )}
-              </button>
-            </div>
-
             {/* Quick Info */}
-            <div className="glass rounded-2xl p-6">
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Info</h3>
               <div className="space-y-3">
                 <div>
@@ -1105,7 +1183,7 @@ export default function ShipperLoadDetailPage() {
       {/* Document Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-2xl w-full rounded-3xl p-6">
+          <div className="glass-primary max-w-2xl w-full rounded-3xl p-6 border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Upload Document</h3>
 
             <form onSubmit={handleDocumentUpload} className="space-y-6">
@@ -1207,7 +1285,7 @@ export default function ShipperLoadDetailPage() {
       {/* Reject Driver Quote Modal */}
       {showRejectQuoteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowRejectQuoteModal(false)}>
-          <div className="glass max-w-md w-full rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="glass-primary max-w-md w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Reject Driver Quote</h3>
             <p className="text-sm text-gray-600 mb-4">
               Rejecting this quote will make the load available for other drivers again.
@@ -1345,7 +1423,7 @@ export default function ShipperLoadDetailPage() {
       {/* Rating Modal */}
       {showRatingModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-md w-full rounded-2xl p-6">
+          <div className="glass-primary max-w-md w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               {existingRating ? 'Update Your Rating' : 'Rate Your Driver'}
             </h3>

@@ -15,6 +15,9 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const search = searchParams.get('search')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100 per page
+    const skip = (page - 1) * limit
 
     // Build where clause
     const where: any = {
@@ -55,6 +58,7 @@ export async function GET(
         },
         trackingEvents: {
           orderBy: { createdAt: 'desc' },
+          take: 1, // Only get latest tracking event
         },
         documents: {
           orderBy: { createdAt: 'desc' },
@@ -64,12 +68,13 @@ export async function GET(
             title: true,
             createdAt: true,
             uploadedBy: true,
-          }
+          },
+          take: 5, // Limit documents per load
         },
       },
       orderBy: {
         createdAt: 'desc', // Most recent first
-      }
+      },
     })
 
     // Client-side search filtering (since SQLite doesn't support case-insensitive)
@@ -87,7 +92,22 @@ export async function GET(
       })
     }
 
-    return NextResponse.json({ loads })
+    // Get total count (before pagination)
+    const total = loads.length
+
+    // Apply pagination after filtering
+    const paginatedLoads = loads.slice(skip, skip + limit)
+
+    return NextResponse.json({
+      loads: paginatedLoads,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + limit < total,
+      },
+    })
   } catch (error) {
     console.error('Error fetching driver my loads:', error)
     return NextResponse.json(

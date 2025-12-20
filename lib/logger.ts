@@ -42,8 +42,12 @@ class Logger {
     
     // In production, send warnings to error tracking service
     if (this.isProduction && error) {
-      // TODO: Integrate with Sentry or similar
-      // Sentry.captureException(error, { level: 'warning', contexts: context })
+      try {
+        const { captureException } = require('./sentry')
+        captureException(error, context)
+      } catch {
+        // Sentry not available, continue without it
+      }
     }
   }
 
@@ -53,21 +57,33 @@ class Logger {
     
     // In production, send errors to error tracking service
     if (this.isProduction) {
-      // TODO: Integrate with Sentry or similar
-      // Sentry.captureException(error || new Error(message), { level: 'error', contexts: context })
+      try {
+        const { captureException } = require('./sentry')
+        captureException(error || new Error(message), context)
+      } catch {
+        // Sentry not available, continue without it
+      }
     }
   }
 
   // Request logging helper
   logRequest(method: string, path: string, statusCode: number, duration: number, context?: LogContext) {
     const level: LogLevel = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info'
-    this[level](`${method} ${path} ${statusCode} ${duration}ms`, {
+    const logContext = {
       method,
       path,
       statusCode,
       duration,
       ...context,
-    })
+    }
+    
+    if (level === 'error') {
+      this.error(`${method} ${path} ${statusCode} ${duration}ms`, undefined, logContext)
+    } else if (level === 'warn') {
+      this.warn(`${method} ${path} ${statusCode} ${duration}ms`, logContext)
+    } else {
+      this.info(`${method} ${path} ${statusCode} ${duration}ms`, logContext)
+    }
   }
 
   // API error logging helper

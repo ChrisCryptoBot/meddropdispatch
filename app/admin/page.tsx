@@ -93,7 +93,7 @@ export default function AdminPage() {
       const complianceResponse = await fetch('/api/compliance/reminders')
       if (complianceResponse.ok) {
         const complianceData = await complianceResponse.json()
-        setComplianceReminders(complianceData.reminders || [])
+        // Compliance reminders fetched
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -153,7 +153,7 @@ export default function AdminPage() {
       {stats && (
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           {/* Today's Loads */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Today's Loads</p>
@@ -173,7 +173,7 @@ export default function AdminPage() {
           </div>
 
           {/* Active Loads */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Active Loads</p>
@@ -188,7 +188,7 @@ export default function AdminPage() {
           </div>
 
           {/* Pending Quotes */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Pending Quotes</p>
@@ -203,7 +203,7 @@ export default function AdminPage() {
           </div>
 
           {/* Completed Today */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Completed Today</p>
@@ -240,7 +240,7 @@ export default function AdminPage() {
         </div>
 
         {quoteRequests.length === 0 ? (
-          <div className="glass p-12 rounded-2xl text-center">
+          <div className="glass-primary p-12 rounded-2xl text-center border-2 border-blue-200/30 shadow-glass">
             <svg
               className="w-16 h-16 mx-auto mb-4 text-gray-400"
               fill="none"
@@ -267,7 +267,7 @@ export default function AdminPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="glass p-6 rounded-2xl">
+      <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid md:grid-cols-3 gap-4">
           <Link

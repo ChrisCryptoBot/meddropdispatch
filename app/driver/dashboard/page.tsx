@@ -8,6 +8,9 @@ import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
 import RateCalculator from '@/components/features/RateCalculator'
 import { showToast, showApiError } from '@/lib/toast'
+import { getAllRouteUrls } from '@/lib/gps-routes'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyStates } from '@/components/ui/EmptyState'
 
 interface Driver {
   id: string
@@ -329,7 +332,7 @@ export default function DriverDashboardPage() {
         load.dropoffFacility.state.toLowerCase().includes(query) ||
         load.dropoffFacility.addressLine1?.toLowerCase().includes(query) ||
         load.commodityDescription?.toLowerCase().includes(query) ||
-        load.serviceType.toLowerCase().includes(query) ||
+        (load.serviceType || '').toLowerCase().includes(query) ||
         (load.driver && `${load.driver.firstName} ${load.driver.lastName}`.toLowerCase().includes(query))
       )
     }
@@ -423,7 +426,7 @@ export default function DriverDashboardPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load Board</h1>
@@ -628,22 +631,13 @@ export default function DriverDashboardPage() {
         </div>
 
         {isLoading ? (
-          <div className="glass-accent p-8 rounded-2xl text-center border-2 border-teal-200/30">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading loads...</p>
-          </div>
+          <LoadingSpinner portal="driver" label="Loading loads..." />
         ) : filteredLoads.length === 0 ? (
-          <div className="glass-accent p-8 rounded-2xl text-center border-2 border-teal-200/30">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p className="text-lg font-medium text-gray-700 mb-2">
-              {searchQuery || filterBy !== 'all' ? 'No loads match your filters' : activeTab === 'my' ? 'No accepted loads yet' : 'No loads available'}
-            </p>
-            <p className="text-sm text-gray-500">
-              {searchQuery || filterBy !== 'all' ? 'Try adjusting your search or filters' : 'New requests will appear here as they come in'}
-            </p>
-          </div>
+          <EmptyStates.NoLoads
+            portal="driver"
+            title={searchQuery || filterBy !== 'all' ? 'No loads match your filters' : activeTab === 'my' ? 'No accepted loads yet' : 'No loads available'}
+            description={searchQuery || filterBy !== 'all' ? 'Try adjusting your search or filters' : 'New requests will appear here as they come in'}
+          />
         ) : (
           <div className="space-y-4">
             {filteredLoads.map((load) => {
@@ -689,7 +683,7 @@ export default function DriverDashboardPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
+                    <p className="text-sm text-gray-600">{(load.serviceType || 'N/A').replace(/_/g, ' ')}</p>
                   </div>
                   <div className="text-right">
                     {load.quoteAmount && (
@@ -840,11 +834,44 @@ export default function DriverDashboardPage() {
                   )}
                 </div>
 
-                {/* Arrow */}
-                <div className="flex justify-end mt-3">
-                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                {/* Actions */}
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      const urls = getAllRouteUrls(
+                        {
+                          addressLine1: load.pickupFacility.addressLine1,
+                          city: load.pickupFacility.city,
+                          state: load.pickupFacility.state,
+                          postalCode: '',
+                          name: load.pickupFacility.name,
+                        },
+                        {
+                          addressLine1: load.dropoffFacility.addressLine1,
+                          city: load.dropoffFacility.city,
+                          state: load.dropoffFacility.state,
+                          postalCode: '',
+                          name: load.dropoffFacility.name,
+                        }
+                      )
+                      window.open(urls.google, '_blank', 'noopener,noreferrer')
+                    }}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium transition-colors flex items-center gap-1"
+                    title="Open route in Google Maps"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    Maps
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">View Details</span>
+                    <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
                   </Link>
                 </div>
@@ -1202,7 +1229,7 @@ export default function DriverDashboardPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-semibold text-gray-900">
-                          {vehicle.nickname || `${vehicle.vehicleType.replace(/_/g, ' ')}`}
+                          {vehicle.nickname || `${(vehicle.vehicleType || 'N/A').replace(/_/g, ' ')}`}
                         </p>
                         {vehicle.hasRefrigeration && (
                           <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
@@ -1213,7 +1240,7 @@ export default function DriverDashboardPage() {
                       <p className="text-sm text-gray-600">
                         {vehicle.vehicleYear && vehicle.vehicleMake && vehicle.vehicleModel
                           ? `${vehicle.vehicleYear} ${vehicle.vehicleMake} ${vehicle.vehicleModel}`
-                          : vehicle.vehicleType.replace(/_/g, ' ')}
+                          : (vehicle.vehicleType || 'N/A').replace(/_/g, ' ')}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Plate: {vehicle.vehiclePlate}</p>
                     </div>

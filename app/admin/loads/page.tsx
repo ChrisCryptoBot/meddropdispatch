@@ -5,37 +5,35 @@ import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import type { LoadStatus } from '@/lib/types'
-import SearchBar from '@/components/features/SearchBar'
-import BulkActions from '@/components/features/BulkActions'
 
-async function getLoads() {
-  const loads = await prisma.loadRequest.findMany({
-    include: {
-      shipper: true,
-      pickupFacility: true,
-      dropoffFacility: true,
-      _count: {
-        select: {
-          trackingEvents: true,
-          documents: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100, // Limit for now
-  })
+export default function AdminLoadsPage() {
+  const [loads, setLoads] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  return loads
-}
+  useEffect(() => {
+    fetchLoads()
+  }, [])
 
-export default async function AdminLoadsPage() {
-  const loads = await getLoads()
+  const fetchLoads = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/admin/loads')
+      if (response.ok) {
+        const data = await response.json()
+        setLoads(data.loads || [])
+      }
+    } catch (error) {
+      console.error('Error fetching loads:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Group loads by status
   const activeStatuses = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED', 'PICKED_UP', 'IN_TRANSIT']
-  const activeLoads = filteredLoads.filter((load) => activeStatuses.includes(load.status))
-  const completedLoads = filteredLoads.filter((load) => load.status === 'DELIVERED')
-  const cancelledLoads = filteredLoads.filter((load) => load.status === 'CANCELLED')
+  const activeLoads = loads.filter((load) => activeStatuses.includes(load.status))
+  const completedLoads = loads.filter((load) => load.status === 'DELIVERED')
+  const filteredLoads = loads // For now, no filtering
 
   if (isLoading) {
     return (
@@ -71,7 +69,7 @@ export default async function AdminLoadsPage() {
 
       {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Active Loads</p>
@@ -85,7 +83,7 @@ export default async function AdminLoadsPage() {
           </div>
         </div>
 
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Completed</p>
@@ -99,7 +97,7 @@ export default async function AdminLoadsPage() {
           </div>
         </div>
 
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">New Requests</p>
@@ -115,7 +113,7 @@ export default async function AdminLoadsPage() {
           </div>
         </div>
 
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Loads</p>
@@ -131,7 +129,7 @@ export default async function AdminLoadsPage() {
       </div>
 
       {/* Loads Table */}
-      <div className="glass rounded-2xl overflow-hidden">
+      <div className="glass-primary rounded-2xl overflow-hidden border-2 border-blue-200/30 shadow-glass">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

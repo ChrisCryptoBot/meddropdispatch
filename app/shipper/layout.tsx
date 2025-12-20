@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
 import MobileBottomNav from '@/components/features/MobileBottomNav'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function ShipperLayout({
   children,
@@ -20,6 +20,7 @@ export default function ShipperLayout({
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const dismissedNotificationsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     // Don't check auth on login or signup pages
@@ -33,25 +34,49 @@ export default function ShipperLayout({
       return
     }
 
-    // Check if shipper is logged in
-    try {
-      const shipperData = localStorage.getItem('shipper')
-      if (shipperData) {
-        setShipper(JSON.parse(shipperData))
-        setIsChecking(false)
-      } else {
-        // Only redirect if we're not already on login or signup page
-        if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
-          router.push('/shipper/login')
+    // Check authentication via API (httpOnly cookies)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check')
+        const data = await response.json()
+
+        if (data.authenticated && data.user && data.user.userType === 'shipper') {
+          // Store in localStorage for backward compatibility with existing code
+          localStorage.setItem('shipper', JSON.stringify(data.user))
+          setShipper(data.user)
+          setIsChecking(false)
+        } else {
+          // Clear any stale localStorage data
+          localStorage.removeItem('shipper')
+          setIsChecking(false)
+          // Only redirect if we're not already on login/signup page
+          if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
+            router.push('/shipper/login')
+          }
         }
-      }
-    } catch (error) {
-      console.error('Error checking shipper auth:', error)
-      setIsChecking(false)
-      if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
-        router.push('/shipper/login')
+      } catch (error) {
+        console.error('Error checking shipper auth:', error)
+        // Fallback to localStorage check for backward compatibility
+        try {
+          const shipperData = localStorage.getItem('shipper')
+          if (shipperData) {
+            setShipper(JSON.parse(shipperData))
+          } else {
+            if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
+              router.push('/shipper/login')
+            }
+          }
+        } catch (localError) {
+          console.error('Error with localStorage fallback:', localError)
+          if (pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
+            router.push('/shipper/login')
+          }
+        }
+        setIsChecking(false)
       }
     }
+
+    checkAuth()
   }, [pathname, router])
 
   // Close dropdown when route changes
@@ -60,25 +85,53 @@ export default function ShipperLayout({
     setNotificationDropdownOpen(false)
   }, [pathname])
 
-  // Fetch notifications (placeholder - shipper notifications API may need to be created)
+  // Fetch notifications
   useEffect(() => {
     if (!shipper?.id) return
 
     const fetchNotifications = async () => {
       try {
-        // TODO: Create shipper notifications API endpoint
-        // For now, using empty array
-        setNotifications([])
-        setUnreadCount(0)
+        const response = await fetch(`/api/shippers/${shipper.id}/notifications?limit=5`)
+        if (response.ok) {
+          const data = await response.json()
+          const allNotifications = data.notifications || []
+          // Filter out dismissed notifications from dropdown
+          const filteredNotifications = allNotifications.filter(
+            (n: any) => !dismissedNotificationsRef.current.has(n.id)
+          )
+          setNotifications(filteredNotifications)
+          // Count unread from all notifications (not filtered) - this is the total unread count
+          const unread = allNotifications.filter((n: any) => !n.isRead).length
+          setUnreadCount(unread)
+        } else {
+          // Fallback if API doesn't exist yet
+          setNotifications([])
+          setUnreadCount(0)
+        }
       } catch (error) {
         console.error('Error fetching notifications:', error)
+        setNotifications([])
+        setUnreadCount(0)
       }
     }
 
     fetchNotifications()
     const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
+    
+    // Listen for notification deletion events from notification page
+    const handleNotificationDeleted = (event: CustomEvent) => {
+      // Remove from dismissed list if it was dismissed, so it won't reappear
+      dismissedNotificationsRef.current.delete(event.detail.notificationId)
+      fetchNotifications()
+    }
+    window.addEventListener('notificationDeleted', handleNotificationDeleted as EventListener)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('notificationDeleted', handleNotificationDeleted as EventListener)
+    }
   }, [shipper?.id])
+
 
   // Show loading while checking auth
   if (isChecking && pathname !== '/shipper/login' && pathname !== '/shipper/signup') {
@@ -176,7 +229,7 @@ export default function ShipperLayout({
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-sm font-semibold text-red-600">Medical Courier Services</p>
+                <p className="text-sm font-semibold text-red-600">Superior One Logistics Software</p>
               </div>
             </div>
             <nav className="flex items-center space-x-3 pr-4">
@@ -219,7 +272,7 @@ export default function ShipperLayout({
                                 e.preventDefault()
                                 setNotificationDropdownOpen(false)
                                 
-                                // Mark as read via API
+                                // Mark as read via API (if unread)
                                 if (!notification.isRead && shipper?.id) {
                                   try {
                                     await fetch(`/api/shippers/${shipper.id}/notifications`, {
@@ -227,21 +280,17 @@ export default function ShipperLayout({
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ notificationIds: [notification.id] }),
                                     })
-                                    
-                                    // Update local state: mark as read and remove from dropdown
-                                    setNotifications(prev => 
-                                      prev.filter(n => n.id !== notification.id)
-                                    )
                                     setUnreadCount(prev => Math.max(0, prev - 1))
                                   } catch (error) {
                                     console.error('Error marking notification as read:', error)
                                   }
-                                } else {
-                                  // Even if already read, remove from dropdown
-                                  setNotifications(prev => 
-                                    prev.filter(n => n.id !== notification.id)
-                                  )
                                 }
+                                
+                                // Dismiss from dropdown (but keep on notification page)
+                                dismissedNotificationsRef.current.add(notification.id)
+                                setNotifications(prev => 
+                                  prev.filter(n => n.id !== notification.id)
+                                )
                                 
                                 // Navigate to the link
                                 if (notification.link) {
@@ -358,8 +407,16 @@ export default function ShipperLayout({
                         </div>
                       </Link> */}
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          try {
+                            // Call logout API to clear httpOnly cookie
+                            await fetch('/api/auth/logout', { method: 'POST' })
+                          } catch (error) {
+                            console.error('Error during logout:', error)
+                          }
+                          // Clear localStorage for backward compatibility
                           localStorage.removeItem('shipper')
+                          setShipper(null)
                           setProfileDropdownOpen(false)
                           router.push('/shipper/login')
                         }}
@@ -443,7 +500,9 @@ export default function ShipperLayout({
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
       <main className="md:ml-64 bg-gradient-medical-bg min-h-screen pb-16 md:pb-0 pt-[73px]">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Navigation */}

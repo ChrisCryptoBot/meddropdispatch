@@ -2,13 +2,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { sendDriverWelcomeEmail } from '@/lib/email'
+import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { driverSignupSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/auth/driver/signup
  * Create a new driver account
  */
 export async function POST(request: NextRequest) {
-  try {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    const nextReq = req as NextRequest
+    // Apply rate limiting (stricter for signup)
+    try {
+      rateLimit(RATE_LIMITS.auth)(nextReq)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const rawData = await req.json()
+
+    // Validate request body
+    const validation = await validateRequest(driverSignupSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+        },
+        { status: 400 }
+      )
+    }
+
     const {
       email,
       password,
@@ -22,15 +49,7 @@ export async function POST(request: NextRequest) {
       vehicleYear,
       vehiclePlate,
       hasRefrigeration,
-    } = await request.json()
-
-    // Validation
-    if (!email || !password || !firstName || !lastName || !phone) {
-      return NextResponse.json(
-        { error: 'Email, password, first name, last name, and phone are required' },
-        { status: 400 }
-      )
-    }
+    } = validation.data
 
     // Check if driver already exists
     const existing = await prisma.driver.findUnique({
@@ -59,10 +78,10 @@ export async function POST(request: NextRequest) {
         vehicleType: vehicleType || null,
         vehicleMake: vehicleMake || null,
         vehicleModel: vehicleModel || null,
-        vehicleYear: vehicleYear ? parseInt(vehicleYear) : null,
+        vehicleYear: vehicleYear ? (typeof vehicleYear === 'string' ? parseInt(vehicleYear) : vehicleYear) : null,
         vehiclePlate: vehiclePlate || null,
         hasRefrigeration: hasRefrigeration || false,
-        status: 'AVAILABLE',
+        status: 'PENDING_APPROVAL',
       },
     })
 
@@ -96,13 +115,6 @@ export async function POST(request: NextRequest) {
       driver: driverWithoutPassword,
       message: 'Driver account created successfully',
     }, { status: 201 })
-
-  } catch (error) {
-    console.error('Driver signup error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create account', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

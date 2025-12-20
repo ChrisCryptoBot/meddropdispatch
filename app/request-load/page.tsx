@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import ShipperAutocomplete from '@/components/features/ShipperAutocomplete'
+import LocationForm, { LocationData } from '@/components/features/LocationForm'
 
 export default function RequestLoadPage() {
   const router = useRouter()
@@ -19,6 +20,101 @@ export default function RequestLoadPage() {
     phone: string
     clientType: string
   } | null>(null)
+  
+  // Multiple locations support
+  const [pickupLocations, setPickupLocations] = useState<LocationData[]>([
+    {
+      facilityName: '',
+      facilityType: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      contactName: '',
+      contactPhone: '',
+      accessNotes: '',
+      readyTime: '',
+    },
+  ])
+  
+  const [dropoffLocations, setDropoffLocations] = useState<LocationData[]>([
+    {
+      facilityName: '',
+      facilityType: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      contactName: '',
+      contactPhone: '',
+      accessNotes: '',
+      readyTime: '',
+    },
+  ])
+  
+  const addPickupLocation = () => {
+    setPickupLocations([
+      ...pickupLocations,
+      {
+        facilityName: '',
+        facilityType: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        contactName: '',
+        contactPhone: '',
+        accessNotes: '',
+        readyTime: '',
+      },
+    ])
+  }
+  
+  const addDropoffLocation = () => {
+    setDropoffLocations([
+      ...dropoffLocations,
+      {
+        facilityName: '',
+        facilityType: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        contactName: '',
+        contactPhone: '',
+        accessNotes: '',
+        readyTime: '',
+      },
+    ])
+  }
+  
+  const updatePickupLocation = (index: number, data: LocationData) => {
+    const updated = [...pickupLocations]
+    updated[index] = data
+    setPickupLocations(updated)
+  }
+  
+  const updateDropoffLocation = (index: number, data: LocationData) => {
+    const updated = [...dropoffLocations]
+    updated[index] = data
+    setDropoffLocations(updated)
+  }
+  
+  const removePickupLocation = (index: number) => {
+    if (pickupLocations.length > 1) {
+      setPickupLocations(pickupLocations.filter((_, i) => i !== index))
+    }
+  }
+  
+  const removeDropoffLocation = (index: number) => {
+    if (dropoffLocations.length > 1) {
+      setDropoffLocations(dropoffLocations.filter((_, i) => i !== index))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -26,7 +122,53 @@ export default function RequestLoadPage() {
     setError(null)
 
     const formData = new FormData(e.currentTarget)
-    const data = Object.fromEntries(formData.entries())
+    const baseData = Object.fromEntries(formData.entries())
+    
+    // Use first pickup/dropoff for backward compatibility
+    const firstPickup = pickupLocations[0]
+    const firstDropoff = dropoffLocations[0]
+    
+    // Build data object with first location for backward compatibility
+    const data = {
+      ...baseData,
+      // First pickup location (backward compatibility)
+      pickupFacilityName: firstPickup.facilityName,
+      pickupFacilityType: firstPickup.facilityType,
+      pickupAddressLine1: firstPickup.addressLine1,
+      pickupAddressLine2: firstPickup.addressLine2,
+      pickupCity: firstPickup.city,
+      pickupState: firstPickup.state,
+      pickupPostalCode: firstPickup.postalCode,
+      pickupContactName: firstPickup.contactName,
+      pickupContactPhone: firstPickup.contactPhone,
+      pickupAccessNotes: firstPickup.accessNotes,
+      readyTime: firstPickup.readyTime,
+      // First dropoff location (backward compatibility)
+      dropoffFacilityName: firstDropoff.facilityName,
+      dropoffFacilityType: firstDropoff.facilityType,
+      dropoffAddressLine1: firstDropoff.addressLine1,
+      dropoffAddressLine2: firstDropoff.addressLine2,
+      dropoffCity: firstDropoff.city,
+      dropoffState: firstDropoff.state,
+      dropoffPostalCode: firstDropoff.postalCode,
+      dropoffContactName: firstDropoff.contactName,
+      dropoffContactPhone: firstDropoff.contactPhone,
+      dropoffAccessNotes: firstDropoff.accessNotes,
+      deliveryDeadline: firstDropoff.readyTime,
+      // Multiple locations
+      locations: [
+        ...pickupLocations.map((loc, idx) => ({
+          ...loc,
+          locationType: 'PICKUP' as const,
+          sequence: idx + 1,
+        })),
+        ...dropoffLocations.map((loc, idx) => ({
+          ...loc,
+          locationType: 'DROPOFF' as const,
+          sequence: idx + 1,
+        })),
+      ],
+    }
 
     try {
       const response = await fetch('/api/load-requests', {
@@ -230,331 +372,55 @@ export default function RequestLoadPage() {
 
           {/* Pickup Information */}
           <div className="glass p-8 rounded-2xl">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Pickup Details</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label htmlFor="pickupFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Facility Name *
-                </label>
-                <input
-                  type="text"
-                  id="pickupFacilityName"
-                  name="pickupFacilityName"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Main Clinic Location"
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">Pickup Locations</h3>
+              <button
+                type="button"
+                onClick={addPickupLocation}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+              >
+                + Add Pickup Location
+              </button>
+            </div>
+            <div className="space-y-4">
+              {pickupLocations.map((location, index) => (
+                <LocationForm
+                  key={`pickup-${index}`}
+                  locationType="PICKUP"
+                  index={index}
+                  location={location}
+                  onChange={updatePickupLocation}
+                  onRemove={removePickupLocation}
+                  canRemove={pickupLocations.length > 1}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="pickupFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Facility Type *
-                </label>
-                <select
-                  id="pickupFacilityType"
-                  name="pickupFacilityType"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                >
-                  <option value="">Select type...</option>
-                  <option value="CLINIC">Clinic</option>
-                  <option value="LAB">Laboratory</option>
-                  <option value="HOSPITAL">Hospital</option>
-                  <option value="PHARMACY">Pharmacy</option>
-                  <option value="DIALYSIS">Dialysis Center</option>
-                  <option value="IMAGING">Imaging Center</option>
-                  <option value="GOVERNMENT">Government Facility</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  id="pickupAddressLine1"
-                  name="pickupAddressLine1"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="123 Main St"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="pickupAddressLine2" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Suite/Unit (Optional)
-                </label>
-                <input
-                  type="text"
-                  id="pickupAddressLine2"
-                  name="pickupAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Suite 200"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="pickupCity" className="block text-sm font-semibold text-gray-700 mb-2">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  id="pickupCity"
-                  name="pickupCity"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Los Angeles"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="pickupState" className="block text-sm font-semibold text-gray-700 mb-2">
-                  State *
-                </label>
-                <input
-                  type="text"
-                  id="pickupState"
-                  name="pickupState"
-                  required
-                  maxLength={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
-                  placeholder="CA"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="pickupPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  id="pickupPostalCode"
-                  name="pickupPostalCode"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="90001"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="pickupContactName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Name *
-                </label>
-                <input
-                  type="text"
-                  id="pickupContactName"
-                  name="pickupContactName"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Jane Doe"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="pickupContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Phone *
-                </label>
-                <input
-                  type="tel"
-                  id="pickupContactPhone"
-                  name="pickupContactPhone"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="(555) 987-6543"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="readyTime" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Ready for Pickup At
-                </label>
-                <input
-                  type="datetime-local"
-                  id="readyTime"
-                  name="readyTime"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="pickupAccessNotes" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Access Notes / Instructions
-                </label>
-                <textarea
-                  id="pickupAccessNotes"
-                  name="pickupAccessNotes"
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="e.g., Use rear entrance, ring bell for loading dock"
-                />
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Dropoff Information */}
           <div className="glass p-8 rounded-2xl">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Delivery Details</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label htmlFor="dropoffFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Facility Name *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffFacilityName"
-                  name="dropoffFacilityName"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Central Lab"
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">Delivery Locations</h3>
+              <button
+                type="button"
+                onClick={addDropoffLocation}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+              >
+                + Add Delivery Location
+              </button>
+            </div>
+            <div className="space-y-4">
+              {dropoffLocations.map((location, index) => (
+                <LocationForm
+                  key={`dropoff-${index}`}
+                  locationType="DROPOFF"
+                  index={index}
+                  location={location}
+                  onChange={updateDropoffLocation}
+                  onRemove={removeDropoffLocation}
+                  canRemove={dropoffLocations.length > 1}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Facility Type *
-                </label>
-                <select
-                  id="dropoffFacilityType"
-                  name="dropoffFacilityType"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                >
-                  <option value="">Select type...</option>
-                  <option value="CLINIC">Clinic</option>
-                  <option value="LAB">Laboratory</option>
-                  <option value="HOSPITAL">Hospital</option>
-                  <option value="PHARMACY">Pharmacy</option>
-                  <option value="DIALYSIS">Dialysis Center</option>
-                  <option value="IMAGING">Imaging Center</option>
-                  <option value="GOVERNMENT">Government Facility</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="dropoffAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffAddressLine1"
-                  name="dropoffAddressLine1"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="456 Lab Ave"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="dropoffAddressLine2" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Suite/Unit (Optional)
-                </label>
-                <input
-                  type="text"
-                  id="dropoffAddressLine2"
-                  name="dropoffAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Building B"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffCity" className="block text-sm font-semibold text-gray-700 mb-2">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffCity"
-                  name="dropoffCity"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Santa Monica"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffState" className="block text-sm font-semibold text-gray-700 mb-2">
-                  State *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffState"
-                  name="dropoffState"
-                  required
-                  maxLength={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
-                  placeholder="CA"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffPostalCode"
-                  name="dropoffPostalCode"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="90401"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffContactName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Name *
-                </label>
-                <input
-                  type="text"
-                  id="dropoffContactName"
-                  name="dropoffContactName"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="Lab Manager"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="dropoffContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Contact Phone *
-                </label>
-                <input
-                  type="tel"
-                  id="dropoffContactPhone"
-                  name="dropoffContactPhone"
-                  required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="(555) 111-2222"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="deliveryDeadline" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Must Deliver By
-                </label>
-                <input
-                  type="datetime-local"
-                  id="deliveryDeadline"
-                  name="deliveryDeadline"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="dropoffAccessNotes" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Access Notes / Instructions
-                </label>
-                <textarea
-                  id="dropoffAccessNotes"
-                  name="dropoffAccessNotes"
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
-                  placeholder="e.g., Deliver to receiving department on 2nd floor"
-                />
-              </div>
+              ))}
             </div>
           </div>
 

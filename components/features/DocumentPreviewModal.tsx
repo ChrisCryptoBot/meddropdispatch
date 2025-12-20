@@ -87,7 +87,7 @@ export default function DocumentPreviewModal({
   // Handle escape key
   useEffect(() => {
     // Ensure we're in the browser environment
-    if (typeof window === 'undefined' || typeof document === 'undefined' || !document.addEventListener) {
+    if (typeof window === 'undefined' || typeof window.document === 'undefined' || !window.document.addEventListener) {
       return
     }
     
@@ -98,10 +98,10 @@ export default function DocumentPreviewModal({
     }
     
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
+      window.document.addEventListener('keydown', handleEscape)
       return () => {
-        if (typeof document !== 'undefined' && document.removeEventListener) {
-          document.removeEventListener('keydown', handleEscape)
+        if (typeof window.document !== 'undefined' && window.document.removeEventListener) {
+          window.document.removeEventListener('keydown', handleEscape)
         }
       }
     }

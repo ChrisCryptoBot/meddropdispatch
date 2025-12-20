@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       contactName,
       phone,
       clientType,
+      subscriptionTier,
     } = await request.json()
 
     // Validation
@@ -70,9 +71,27 @@ export async function POST(request: NextRequest) {
         contactName,
         phone,
         clientType: clientType || 'CLINIC',
+        subscriptionTier: subscriptionTier || 'STANDARD',
         isActive: true,
       },
     })
+
+    // If BROKERAGE tier selected, trigger internal notification (email to admins)
+    if (subscriptionTier === 'BROKERAGE') {
+      try {
+        // TODO: Send "New Enterprise Lead" email to admins
+        // This will be implemented when email service is fully configured
+        console.log('🚨 NEW BROKERAGE SIGNUP:', {
+          companyName: shipper.companyName,
+          contactName: shipper.contactName,
+          email: shipper.email,
+          phone: shipper.phone,
+        })
+      } catch (error) {
+        console.error('Failed to send brokerage notification:', error)
+        // Don't fail signup if notification fails
+      }
+    }
 
     // Remove password hash from response
     const { passwordHash: _, ...shipperWithoutPassword } = shipper

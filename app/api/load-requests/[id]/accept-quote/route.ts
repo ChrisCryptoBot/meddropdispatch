@@ -4,6 +4,7 @@ import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError 
 import { acceptQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { sendDriverLoadStatusEmail } from '@/lib/email'
 
 /**
  * POST /api/load-requests/[id]/accept-quote
@@ -13,17 +14,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
     const rawData = await req.json()
-    
+
     // Validate request body (empty for accept-quote, but validate structure)
     const validation = await validateRequest(acceptQuoteSchema, rawData)
     if (!validation.success) {
@@ -67,6 +68,7 @@ export async function POST(
         shipper: true,
         pickupFacility: true,
         dropoffFacility: true,
+        driver: true,
       },
     })
 
@@ -80,6 +82,29 @@ export async function POST(
         locationText: updatedLoad.shipper?.companyName || 'Shipper Portal',
       },
     })
+
+    // Send notification to driver if assigned
+    if (updatedLoad.driverId && updatedLoad.driver) {
+      try {
+        await sendDriverLoadStatusEmail({
+          to: updatedLoad.driver.email,
+          driverName: `${updatedLoad.driver.firstName} ${updatedLoad.driver.lastName}`,
+          trackingCode: updatedLoad.publicTrackingCode,
+          status: 'SCHEDULED', // Map QUOTE_ACCEPTED to SCHEDULED for driver context
+          statusLabel: 'Quote Approved - Load Scheduled',
+          companyName: updatedLoad.shipper.companyName,
+          pickupAddress: `${updatedLoad.pickupFacility.addressLine1}, ${updatedLoad.pickupFacility.city}`,
+          dropoffAddress: `${updatedLoad.dropoffFacility.addressLine1}, ${updatedLoad.dropoffFacility.city}`,
+          readyTime: updatedLoad.readyTime,
+          deliveryDeadline: updatedLoad.deliveryDeadline,
+          driverPortalUrl: `${process.env.NEXTAUTH_URL}/driver/loads/${updatedLoad.id}`,
+        })
+        logger.info('Driver notified of quote acceptance', { driverId: updatedLoad.driverId })
+      } catch (error) {
+        logger.error('Failed to notify driver of quote acceptance', error as Error)
+        // Non-blocking error
+      }
+    }
 
     logger.info('Quote accepted by shipper', {
       loadId: id,

@@ -9,6 +9,7 @@ import { formatDateTime } from '@/lib/utils'
 import LoadNotes from '@/components/features/LoadNotes'
 import { showToast, showApiError } from '@/lib/toast'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
+import GPSTrackingMap from '@/components/features/GPSTrackingMap'
 
 type LoadData = any // We'll get this from the API
 
@@ -39,6 +40,19 @@ export default function AdminLoadDetailPage() {
   // Invoice generation
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false)
   const [invoice, setInvoice] = useState<any>(null)
+
+  // Admin user
+  const [adminUser, setAdminUser] = useState<any>(null)
+
+  // Document upload
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadTitle, setUploadTitle] = useState('')
+  const [uploadType, setUploadType] = useState('PROOF_OF_PICKUP')
+  const [isUploading, setIsUploading] = useState(false)
+
+  // GPS Map full-screen
+  const [showFullScreenMap, setShowFullScreenMap] = useState(false)
 
   // Load data
   useEffect(() => {
@@ -267,7 +281,7 @@ export default function AdminLoadDetailPage() {
   if (error || !load) {
     return (
       <div className="p-8">
-        <div className="glass p-8 rounded-2xl text-center">
+        <div className="glass-primary p-8 rounded-2xl text-center border-2 border-blue-200/30 shadow-glass">
           <p className="text-red-600 mb-4">{error || 'Load not found'}</p>
           <Link href="/admin/loads" className="text-primary-600 hover:text-primary-700 font-medium">
             ← Back to Loads
@@ -308,7 +322,7 @@ export default function AdminLoadDetailPage() {
         {/* Main Content - Left 2/3 */}
         <div className="lg:col-span-2 space-y-8">
           {/* Shipper & Facility Info */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipper & Locations</h2>
 
             {/* Shipper */}
@@ -412,7 +426,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Load Details */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipment Details</h2>
             <div className="grid md:grid-cols-2 gap-6 text-sm">
               <div>
@@ -459,7 +473,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Tracking Events */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Tracking Events</h2>
             {load.trackingEvents.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No tracking events yet</p>
@@ -490,7 +504,7 @@ export default function AdminLoadDetailPage() {
         {/* Sidebar - Right 1/3 */}
         <div className="space-y-8">
           {/* Driver Assignment */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Driver Assignment</h3>
             {load.driver ? (
               <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
@@ -536,7 +550,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Quote Management */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Quote & Pricing</h3>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <div>
@@ -573,7 +587,7 @@ export default function AdminLoadDetailPage() {
 
           {/* Invoice Generation */}
           {load.status === 'DELIVERED' && (
-            <div className="glass p-6 rounded-2xl">
+            <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice</h3>
               {load.invoiceId ? (
                 <div className="space-y-4">
@@ -639,7 +653,7 @@ export default function AdminLoadDetailPage() {
           )}
 
           {/* Status Update */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Update Status</h3>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
@@ -700,7 +714,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Notes */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Notes</h3>
             <LoadNotes
               loadRequestId={load.id}
@@ -711,7 +725,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Documents */}
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Documents</h3>
             {load.documents.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">No documents yet</p>
@@ -743,8 +757,45 @@ export default function AdminLoadDetailPage() {
               Upload Document
             </button>
           </div>
+
+          {/* GPS Tracking Map */}
+          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">GPS Tracking</h3>
+              {load.gpsTrackingEnabled && (
+                <button
+                  onClick={() => setShowFullScreenMap(true)}
+                  className="px-3 py-1 text-sm rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium transition-colors"
+                >
+                  Full Screen
+                </button>
+              )}
+            </div>
+            <GPSTrackingMap
+              loadId={load.id}
+              pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+              dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+              enabled={load.gpsTrackingEnabled || false}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Full-Screen GPS Map Modal */}
+      {showFullScreenMap && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="w-full h-full max-w-7xl">
+            <GPSTrackingMap
+              loadId={load.id}
+              pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+              dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+              enabled={load.gpsTrackingEnabled || false}
+              fullScreen={true}
+              onCloseFullScreen={() => setShowFullScreenMap(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

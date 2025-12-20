@@ -10,27 +10,6 @@ import GPSTrackingMap from '@/components/features/GPSTrackingMap'
 async function getLoadByTrackingCode(code: string) {
   const load = await prisma.loadRequest.findUnique({
     where: { publicTrackingCode: code.toUpperCase() },
-    include: {
-      shipper: true,
-      pickupFacility: true,
-      dropoffFacility: true,
-      driver: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          vehicleType: true,
-        }
-      },
-      vehicle: true, // Include vehicle info
-      trackingEvents: {
-        orderBy: { createdAt: 'asc' }
-      },
-      documents: {
-        orderBy: { createdAt: 'desc' }
-      }
-    },
     select: {
       id: true,
       publicTrackingCode: true,
@@ -52,9 +31,27 @@ async function getLoadByTrackingCode(code: string) {
       },
       vehicle: true,
       trackingEvents: {
+        select: {
+          id: true,
+          code: true,
+          label: true,
+          description: true,
+          locationText: true,
+          createdAt: true,
+        },
         orderBy: { createdAt: 'asc' }
       },
       documents: {
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          url: true,
+          mimeType: true,
+          fileSize: true,
+          createdAt: true,
+          uploadedBy: true,
+        },
         orderBy: { createdAt: 'desc' }
       }
     }
@@ -344,6 +341,18 @@ export default async function TrackingDetailPage({
             </div>
           </div>
         </div>
+
+        {/* GPS Tracking Map */}
+        {load.gpsTrackingEnabled && load.status !== 'REQUESTED' && load.status !== 'DENIED' && (
+          <div className="glass p-8 rounded-2xl mb-8" id="gps-tracking-map">
+            <GPSTrackingMap
+              loadId={load.id}
+              pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+              dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+              enabled={load.gpsTrackingEnabled}
+            />
+          </div>
+        )}
 
         {/* Documents */}
         {load.documents.length > 0 && (

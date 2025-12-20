@@ -240,9 +240,9 @@ export async function notifyAllDriversCompanyEmailReceived({
 }) {
   const { prisma } = await import('./prisma')
   
-  // Get all active drivers
+  // Get all active drivers (not deleted)
   const drivers = await prisma.driver.findMany({
-    where: { isActive: true },
+    where: { isDeleted: false },
     select: { id: true },
   })
 
@@ -255,7 +255,7 @@ export async function notifyAllDriversCompanyEmailReceived({
         message: `Email received from ${fromEmail}. This may be a potential lead requesting a shipment.${trackingCode ? ` Tracking: ${trackingCode}` : ''}`,
         link: loadRequestId ? `/driver/loads/${loadRequestId}` : '/driver/dashboard',
         driverId: driver.id,
-        loadRequestId: loadRequestId || null,
+        loadRequestId: loadRequestId || undefined,
         metadata: {
           fromEmail,
           subject,

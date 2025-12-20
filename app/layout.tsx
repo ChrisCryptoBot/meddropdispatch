@@ -10,20 +10,27 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'MED DROP - Medical Courier Services',
+  title: 'MED DROP - Superior One Logistics Software',
   description: 'Professional medical courier and logistics services for healthcare facilities',
   manifest: '/manifest.json',
   themeColor: '#0ea5e9',
+  icons: {
+    icon: '/logo-icon.png',
+    apple: '/logo-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'MED DROP',
   },
+  other: {
+    'mobile-web-app-capable': 'yes', // Modern standard (replaces deprecated apple-mobile-web-app-capable)
+  },
   viewport: {
     width: 'device-width',
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    maximumScale: 5,
+    userScalable: true,
   },
 }
 
@@ -34,15 +41,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0ea5e9" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="MED DROP" />
-        <link rel="apple-touch-icon" href="/logo-icon.png" />
-      </head>
       <body className="min-h-screen bg-gradient-medical-bg antialiased">
         <ToastProvider />
         {children}

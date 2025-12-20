@@ -29,7 +29,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     const { id } = await params
 
     const driver = await prisma.driver.findUnique({
@@ -61,10 +61,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.upload)(req)
+      rateLimit(RATE_LIMITS.upload)(request)
     } catch (error) {
       return createErrorResponse(error)
     }

@@ -131,7 +131,7 @@ export function calculateRate(
   const maxRate = baseMaxRate + afterHoursMax
   
   // Ensure we meet minimum threshold for routine loads
-  const minimumThreshold = normalizedServiceType === 'ROUTINE' && rateConfig.minimumThreshold 
+  const minimumThreshold = normalizedServiceType === 'ROUTINE' && 'minimumThreshold' in rateConfig && rateConfig.minimumThreshold 
     ? rateConfig.minimumThreshold 
     : rateConfig.min
   const minimumRate = distance * minimumThreshold

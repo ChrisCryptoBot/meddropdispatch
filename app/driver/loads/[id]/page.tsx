@@ -13,6 +13,8 @@ import { getCurrentLocation } from '@/lib/gps'
 import { storeOffline, isOnline } from '@/lib/offline-storage'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
 import AddressAutocomplete from '@/components/features/AddressAutocomplete'
+import { openRouteInGPS, getAllRouteUrls, type GPSApp } from '@/lib/gps-routes'
+import GPSTrackingMap from '@/components/features/GPSTrackingMap'
 
 interface Load {
   id: string
@@ -89,10 +91,11 @@ export default function DriverLoadDetailPage() {
   const [load, setLoad] = useState<Load | null>(null)
   const [driver, setDriver] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [showSignatureCapture, setShowSignatureCapture] = useState<'pickup' | null>(null)
-  const [showDeliveryConfirm, setShowDeliveryConfirm] = useState(false)
-  const [signerName, setSignerName] = useState('')
-  const [recipientName, setRecipientName] = useState('')
+  const [showSignatureCapture, setShowSignatureCapture] = useState<'pickup' | 'delivery' | null>(null)
+  const [pickupSignerFirstName, setPickupSignerFirstName] = useState('')
+  const [pickupSignerLastName, setPickupSignerLastName] = useState('')
+  const [deliverySignerFirstName, setDeliverySignerFirstName] = useState('')
+  const [deliverySignerLastName, setDeliverySignerLastName] = useState('')
   const [temperature, setTemperature] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
@@ -108,6 +111,10 @@ export default function DriverLoadDetailPage() {
   const [gpsTrackingEnabled, setGpsTrackingEnabled] = useState(false)
   const [isTogglingGPS, setIsTogglingGPS] = useState(false)
   const [gpsWatchId, setGpsWatchId] = useState<number | null>(null)
+  const [gpsRetryCount, setGpsRetryCount] = useState(0)
+  const [gpsLastError, setGpsLastError] = useState<GeolocationPositionError | null>(null)
+  const [showMapsMenu, setShowMapsMenu] = useState<'pickup' | 'delivery' | 'route' | null>(null)
+  const [showNavigationView, setShowNavigationView] = useState(false)
 
   useEffect(() => {
     // Get driver from localStorage
@@ -147,6 +154,7 @@ export default function DriverLoadDetailPage() {
   }
 
   const handleDeleteDocument = async (documentId: string) => {
+    if (!load) return
     if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
       return
     }
@@ -170,6 +178,7 @@ export default function DriverLoadDetailPage() {
   }
 
   const handleDeleteLoad = async () => {
+    if (!load) return
     if (!confirm('Are you sure you want to permanently remove this load? This action cannot be undone and will delete all associated data including documents, tracking events, GPS tracking points, and ratings.')) {
       return
     }
@@ -207,7 +216,14 @@ export default function DriverLoadDetailPage() {
 
   // GPS tracking effect - submit location updates when enabled
   useEffect(() => {
-    if (!gpsTrackingEnabled || !load || !driver) return
+    if (!gpsTrackingEnabled || !load || !driver) {
+      // Clean up watch if GPS is disabled
+      if (gpsWatchId !== null) {
+        navigator.geolocation?.clearWatch(gpsWatchId)
+        setGpsWatchId(null)
+      }
+      return
+    }
 
     if (!navigator.geolocation) {
       showToast.error('GPS not available', 'Your device does not support GPS tracking.')
@@ -215,50 +231,189 @@ export default function DriverLoadDetailPage() {
       return
     }
 
-    // Request location permission and start tracking
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        try {
-          await fetch(`/api/load-requests/${load.id}/gps-tracking`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-              heading: position.coords.heading || null,
-              speed: position.coords.speed || null,
-              altitude: position.coords.altitude || null,
-            }),
-          })
-        } catch (error) {
-          console.error('Error submitting GPS coordinates:', error)
-          // Don't show error toast for every failed submission to avoid spam
-        }
-      },
-      (error) => {
-        console.error('GPS error:', error)
-        if (error.code === error.PERMISSION_DENIED) {
-          showToast.error('GPS permission denied', 'Please enable location permissions to use GPS tracking.')
-          setGpsTrackingEnabled(false)
-          handleToggleGPSTracking(false)
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 10000, // Accept cached position up to 10 seconds old
-        timeout: 5000,
-      }
-    )
+    // Use refs to track retry state without causing re-renders
+    let retryCount = 0
+    let consecutiveTimeouts = 0
+    const maxConsecutiveTimeouts = 5
+    let currentWatchId: number | null = null
 
-    setGpsWatchId(watchId)
+    // Adaptive geolocation options - start strict, become more lenient after failures
+    const getGeolocationOptions = (): PositionOptions => {
+      if (retryCount >= 3) {
+        // After 3 failures, use very relaxed settings
+        return {
+          enableHighAccuracy: false,
+          timeout: 20000, // 20 seconds
+          maximumAge: 60000, // Accept up to 1 minute old position
+        }
+      }
+      if (retryCount >= 2) {
+        // After 2 failures, reduce accuracy but keep reasonable timeout
+        return {
+          enableHighAccuracy: false,
+          timeout: 15000, // 15 seconds
+          maximumAge: 30000, // Accept up to 30 seconds old
+        }
+      }
+      if (retryCount >= 1) {
+        // After 1 failure, increase timeout but keep high accuracy
+        return {
+          enableHighAccuracy: true,
+          timeout: 15000, // 15 seconds
+          maximumAge: 20000, // Accept up to 20 seconds old
+        }
+      }
+      // Initial attempt: balanced settings
+      return {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 seconds
+        maximumAge: 10000, // Accept up to 10 seconds old
+      }
+    }
+
+    // Submit GPS coordinates to API
+    const submitCoordinates = async (position: GeolocationPosition) => {
+      try {
+        const payload: Record<string, number> = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }
+        
+        if (typeof position.coords.accuracy === 'number' && !isNaN(position.coords.accuracy)) {
+          payload.accuracy = position.coords.accuracy
+        }
+        if (typeof position.coords.heading === 'number' && !isNaN(position.coords.heading)) {
+          payload.heading = position.coords.heading
+        }
+        if (typeof position.coords.speed === 'number' && !isNaN(position.coords.speed) && position.coords.speed >= 0) {
+          payload.speed = position.coords.speed
+        }
+        if (typeof position.coords.altitude === 'number' && !isNaN(position.coords.altitude)) {
+          payload.altitude = position.coords.altitude
+        }
+
+        const response = await fetch(`/api/load-requests/${load.id}/gps-tracking`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+          // Only log occasionally to avoid spam
+          if (Math.random() < 0.1) {
+            console.warn('GPS tracking API error:', response.status, errorData.message)
+          }
+        }
+      } catch (error) {
+        console.error('Error submitting GPS coordinates:', error)
+      }
+    }
+
+    // Start watching position
+    const startWatching = () => {
+      // Clear existing watch if any
+      if (currentWatchId !== null) {
+        navigator.geolocation.clearWatch(currentWatchId)
+      }
+
+      currentWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          // Success - reset retry counters
+          retryCount = 0
+          consecutiveTimeouts = 0
+          setGpsRetryCount(0)
+          setGpsLastError(null)
+          
+          await submitCoordinates(position)
+        },
+        (error: GeolocationPositionError) => {
+          console.error('GPS error:', error.code, error.message)
+          setGpsLastError(error)
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              showToast.error('GPS permission denied', 'Please enable location permissions in your browser settings.')
+              setGpsTrackingEnabled(false)
+              handleToggleGPSTracking(false)
+              if (currentWatchId !== null) {
+                navigator.geolocation.clearWatch(currentWatchId)
+                currentWatchId = null
+              }
+              break
+              
+            case error.POSITION_UNAVAILABLE:
+              retryCount++
+              setGpsRetryCount(retryCount)
+              // Only notify after multiple failures
+              if (retryCount === 2) {
+                showToast.warning('Location unavailable', 'GPS signal is weak. Trying with relaxed settings...')
+              } else if (retryCount >= 4) {
+                showToast.error('Location unavailable', 'Unable to get location. Please check your device settings and GPS signal.')
+              }
+              // Retry with relaxed settings
+              setTimeout(() => {
+                if (gpsTrackingEnabled && load && driver) {
+                  startWatching()
+                }
+              }, 2000)
+              break
+              
+            case error.TIMEOUT:
+              consecutiveTimeouts++
+              retryCount++
+              setGpsRetryCount(retryCount)
+              
+              // If too many consecutive timeouts, disable GPS
+              if (consecutiveTimeouts >= maxConsecutiveTimeouts) {
+                showToast.error('GPS tracking disabled', 'GPS is taking too long. Tracking disabled. Try again later or move to better signal.')
+                setGpsTrackingEnabled(false)
+                handleToggleGPSTracking(false)
+                if (currentWatchId !== null) {
+                  navigator.geolocation.clearWatch(currentWatchId)
+                  currentWatchId = null
+                }
+                return
+              }
+              
+              // Show warning after 2 timeouts
+              if (retryCount === 2) {
+                showToast.warning('GPS timeout', 'GPS is slow. Trying with relaxed settings...')
+              }
+              
+              // Retry with relaxed settings after delay
+              setTimeout(() => {
+                if (gpsTrackingEnabled && load && driver) {
+                  startWatching()
+                }
+              }, 2000)
+              break
+              
+            default:
+              retryCount++
+              setGpsRetryCount(retryCount)
+              if (retryCount >= 3) {
+                showToast.error('GPS error', 'An error occurred. Try disabling and re-enabling GPS tracking.')
+              }
+              break
+          }
+        },
+        getGeolocationOptions()
+      )
+      
+      setGpsWatchId(currentWatchId)
+    }
+
+    // Start initial watch
+    startWatching()
 
     return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId)
+      if (currentWatchId !== null) {
+        navigator.geolocation.clearWatch(currentWatchId)
       }
     }
   }, [gpsTrackingEnabled, load, driver])
+
 
   const handleToggleGPSTracking = async (enabled: boolean) => {
     if (!load) return
@@ -378,17 +533,18 @@ export default function DriverLoadDetailPage() {
     }
   }
 
-  const handleSignatureSave = async (signatureData: string) => {
-    if (!load || !signerName.trim()) {
-      showToast.warning('Please enter the name of the person signing')
+  const handlePickupSignatureSave = async (signatureData: string) => {
+    if (!load || !pickupSignerFirstName.trim() || !pickupSignerLastName.trim()) {
+      showToast.warning('Please enter both first and last name of the person signing')
       return
     }
 
     setIsUpdating(true)
     try {
+      const fullName = `${pickupSignerFirstName.trim()} ${pickupSignerLastName.trim()}`
       const updateData: any = {
         pickupSignature: signatureData,
-        pickupSignerName: signerName,
+        pickupSignerName: fullName,
         pickupSignatureDriverId: driver?.id || null,
       }
 
@@ -420,18 +576,76 @@ export default function DriverLoadDetailPage() {
             status: updateData.status,
             eventLabel: LOAD_STATUS_LABELS[updateData.status as keyof typeof LOAD_STATUS_LABELS],
             locationText: `${load.pickupFacility.city}, ${load.pickupFacility.state}`,
-            eventDescription: `Signed by ${signerName}`,
+            eventDescription: `Signed by ${fullName}`,
           }),
         })
       }
 
       await fetchLoad()
       setShowSignatureCapture(null)
-      setSignerName('')
+      setPickupSignerFirstName('')
+      setPickupSignerLastName('')
       setTemperature('')
-      showToast.success('Signature saved successfully!')
+      showToast.success('Pickup signature saved successfully!')
     } catch (error) {
       showApiError(error, 'Failed to save signature')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDeliverySignatureSave = async (signatureData: string) => {
+    if (!load || !deliverySignerFirstName.trim() || !deliverySignerLastName.trim()) {
+      showToast.warning('Please enter both first and last name of the person receiving')
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      const fullName = `${deliverySignerFirstName.trim()} ${deliverySignerLastName.trim()}`
+      const updateData: any = {
+        deliverySignature: signatureData,
+        deliverySignerName: fullName,
+        deliverySignatureDriverId: driver?.id || null,
+        actualDeliveryTime: new Date().toISOString(),
+      }
+
+      // Add temperature if provided
+      if (temperature) {
+        updateData.deliveryTemperature = parseFloat(temperature)
+      }
+
+      // Auto-update status to DELIVERED
+      updateData.status = 'DELIVERED'
+
+      const response = await fetch(`/api/load-requests/${load.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+
+      if (!response.ok) throw new Error('Failed to save delivery signature')
+
+      // Create tracking event
+      await fetch(`/api/load-requests/${load.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'DELIVERED',
+          eventLabel: LOAD_STATUS_LABELS.DELIVERED,
+          locationText: `${load.dropoffFacility.city}, ${load.dropoffFacility.state}`,
+          eventDescription: `Delivered and signed by ${fullName}`,
+        }),
+      })
+
+      await fetchLoad()
+      setShowSignatureCapture(null)
+      setDeliverySignerFirstName('')
+      setDeliverySignerLastName('')
+      setTemperature('')
+      showToast.success('Delivery signature saved successfully!')
+    } catch (error) {
+      showApiError(error, 'Failed to save delivery signature')
     } finally {
       setIsUpdating(false)
     }
@@ -440,38 +654,8 @@ export default function DriverLoadDetailPage() {
   const handleConfirmDelivery = async () => {
     if (!load) return
 
-    if (!recipientName.trim()) {
-      showToast.warning('Please enter the name of the person who received the delivery')
-      return
-    }
-
-    setIsUpdating(true)
-    try {
-      // Update load with recipient name
-      const updateResponse = await fetch(`/api/load-requests/${load.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deliverySignerName: recipientName,
-          deliverySignatureDriverId: driver?.id || null,
-          actualDeliveryTime: new Date().toISOString(),
-        }),
-      })
-
-      if (!updateResponse.ok) {
-        const errorData = await updateResponse.json().catch(() => ({}))
-        throw new Error(errorData.message || errorData.error || 'Failed to save recipient name')
-      }
-
-      // Update status
-      await handleStatusUpdate('DELIVERED')
-      setShowDeliveryConfirm(false)
-      setRecipientName('')
-    } catch (error) {
-      showApiError(error, 'Failed to confirm delivery')
-    } finally {
-      setIsUpdating(false)
-    }
+    // Show signature capture modal instead of just confirming
+    setShowSignatureCapture('delivery')
   }
 
   if (isLoading) {
@@ -488,7 +672,7 @@ export default function DriverLoadDetailPage() {
   if (!load) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="glass p-8 rounded-2xl text-center">
+        <div className="glass-accent p-8 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
           <p className="text-red-600 mb-4">Load not found</p>
           <Link href="/driver/dashboard" className="text-primary-600 hover:text-primary-700 font-medium">
             ← Back to Dashboard
@@ -560,42 +744,11 @@ export default function DriverLoadDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 pb-20">
-      {/* Fixed Load Header - positioned below main app header and sidebar */}
-      <header className="glass fixed top-[73px] left-0 md:left-64 right-0 z-40 border-b border-white/30 shadow-sm">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/driver/dashboard"
-              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/40 transition-base"
-            >
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-gray-900">{load.publicTrackingCode}</h1>
-              <p className="text-xs text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
-              {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_COLORS]}
-            </span>
-            <button
-              onClick={handleDeleteLoad}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
-              title="Permanently remove this load"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* GPS Tracking Toggle - Only show if driver is assigned and load is active */}
-      {load && load.driverId && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+      {load && driver && load.status && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
         <div className="fixed top-20 left-0 right-0 z-40 px-4">
-          <div className="glass p-4 rounded-xl border-2 border-blue-200 shadow-lg max-w-md mx-auto">
+          <div className="glass-accent p-4 rounded-xl border-2 border-teal-200/30 shadow-medical max-w-md mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${gpsTrackingEnabled ? 'bg-blue-100' : 'bg-gray-100'}`}>
@@ -627,19 +780,52 @@ export default function DriverLoadDetailPage() {
                 />
               </button>
             </div>
-            {gpsTrackingEnabled && gpsTrackingStartedAt && (
+            {gpsTrackingEnabled && load.gpsTrackingStartedAt && (
               <p className="text-xs text-gray-500 mt-2">
-                Tracking started: {new Date(gpsTrackingStartedAt).toLocaleTimeString()}
+                Tracking started: {new Date(load.gpsTrackingStartedAt).toLocaleTimeString()}
               </p>
             )}
           </div>
         </div>
       )}
 
-      {/* Main content with top padding to account for fixed headers */}
-      <main className="px-4 pt-24 md:pt-24 pb-6 space-y-6">
+      {/* Main content */}
+      <main className="px-4 pt-6 pb-6 space-y-6">
+        {/* Load Header - In main content area */}
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/driver/dashboard"
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/40 transition-base flex-shrink-0"
+                aria-label="Back to Dashboard"
+              >
+                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">{load.publicTrackingCode}</h1>
+                <p className="text-sm text-gray-600">{load.serviceType.replace(/_/g, ' ')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
+                {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_COLORS]}
+              </span>
+              <button
+                onClick={handleDeleteLoad}
+                className="px-4 py-2 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors border border-red-200 font-medium text-sm"
+                title="Permanently remove this load"
+              >
+                Delete Load
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Rate & Distance Calculation */}
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Rate & Distance Calculation</h2>
           
           {/* Driver Starting Location Input */}
@@ -745,13 +931,13 @@ export default function DriverLoadDetailPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="glass p-6 rounded-2xl">
+        <div id="status" className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {/* Delivery confirmation - only for actual delivery POD */}
             {canDeliver && (
               <button
-                onClick={() => setShowDeliveryConfirm(true)}
+                onClick={() => setShowSignatureCapture('delivery')}
                 disabled={isUpdating}
                 className="px-4 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-base flex items-center justify-center gap-2"
               >
@@ -793,7 +979,7 @@ export default function DriverLoadDetailPage() {
           
           {/* Permanently Remove Load Button - Available for all loads */}
           <div className="mt-6 pt-6 border-t-2 border-red-200">
-            <div className="glass rounded-2xl p-6 border-2 border-red-200">
+            <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Danger Zone</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Permanently remove this load from the system. This action cannot be undone and will delete all associated data including documents, tracking events, and GPS tracking points.
@@ -814,7 +1000,7 @@ export default function DriverLoadDetailPage() {
 
         {/* Assigned Vehicle */}
         {load.vehicle && (
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -858,8 +1044,42 @@ export default function DriverLoadDetailPage() {
           </div>
         )}
 
+        {/* Driver Navigation View - Uber Style */}
+        {load && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Navigation</h2>
+              <button
+                onClick={() => setShowNavigationView(!showNavigationView)}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                {showNavigationView ? 'Hide Navigation' : 'Show Navigation'}
+              </button>
+            </div>
+            {showNavigationView && (
+              <GPSTrackingMap
+                loadId={load.id}
+                pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                enabled={gpsTrackingEnabled}
+                uberStyle={true}
+                driver={driver ? {
+                  id: driver.id,
+                  firstName: driver.firstName,
+                  lastName: driver.lastName,
+                  phone: driver.phone,
+                  vehicleType: load.vehicle?.vehicleType
+                } : null}
+              />
+            )}
+          </div>
+        )}
+
         {/* Pickup Location */}
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <div className="flex items-start justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -899,11 +1119,62 @@ export default function DriverLoadDetailPage() {
                 Ready: {formatDateTime(load.readyTime)}
               </p>
             )}
+            <div className="pt-3 mt-3 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  const urls = getAllRouteUrls(
+                    {
+                      addressLine1: load.pickupFacility.addressLine1,
+                      addressLine2: load.pickupFacility.addressLine2,
+                      city: load.pickupFacility.city,
+                      state: load.pickupFacility.state,
+                      postalCode: load.pickupFacility.postalCode,
+                      name: load.pickupFacility.name,
+                    },
+                    {
+                      addressLine1: load.dropoffFacility.addressLine1,
+                      addressLine2: load.dropoffFacility.addressLine2,
+                      city: load.dropoffFacility.city,
+                      state: load.dropoffFacility.state,
+                      postalCode: load.dropoffFacility.postalCode,
+                      name: load.dropoffFacility.name,
+                    }
+                  )
+                  window.open(urls.google, '_blank', 'noopener,noreferrer')
+                }}
+                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Open Route in Maps
+              </button>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => {
+                    const pickupAddr = `${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state} ${load.pickupFacility.postalCode}`
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pickupAddr)}`, '_blank', 'noopener,noreferrer')
+                  }}
+                  className="flex-1 px-3 py-1.5 text-xs rounded-lg bg-white/60 hover:bg-white/80 border border-gray-300 text-gray-700 font-medium transition-colors"
+                >
+                  Pickup
+                </button>
+                <button
+                  onClick={() => {
+                    const dropoffAddr = `${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state} ${load.dropoffFacility.postalCode}`
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dropoffAddr)}`, '_blank', 'noopener,noreferrer')
+                  }}
+                  className="flex-1 px-3 py-1.5 text-xs rounded-lg bg-white/60 hover:bg-white/80 border border-gray-300 text-gray-700 font-medium transition-colors"
+                >
+                  Delivery
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Dropoff Location */}
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <div className="flex items-start justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
@@ -947,7 +1218,7 @@ export default function DriverLoadDetailPage() {
         </div>
 
         {/* Cargo Details */}
-        <div className="glass p-6 rounded-2xl">
+        <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Cargo Details</h3>
           <div className="space-y-3 text-sm">
             <div>
@@ -982,7 +1253,7 @@ export default function DriverLoadDetailPage() {
 
         {/* Signatures */}
         {(load.pickupSignature || load.deliverySignature) && (
-          <div className="glass p-6 rounded-2xl">
+          <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Signatures</h3>
             <div className="space-y-4">
               {load.pickupSignature && (
@@ -1002,7 +1273,7 @@ export default function DriverLoadDetailPage() {
         )}
 
         {/* Documents Section */}
-        <div className="glass p-6 rounded-2xl">
+        <div id="documents" className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900">Documents</h3>
             <button
@@ -1076,7 +1347,7 @@ export default function DriverLoadDetailPage() {
       {/* Document Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-2xl w-full rounded-3xl p-6">
+          <div className="glass-accent max-w-2xl w-full rounded-3xl p-6 border-2 border-teal-200/30 shadow-medical">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Upload Document</h3>
 
             <form onSubmit={handleDocumentUpload} className="space-y-6">
@@ -1191,25 +1462,43 @@ export default function DriverLoadDetailPage() {
         </div>
       )}
 
-      {/* Signature Capture Modal - Only for Pickup */}
-      {showSignatureCapture && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-2xl w-full rounded-3xl p-6">
+      {/* Signature Capture Modal - Pickup */}
+      {showSignatureCapture === 'pickup' && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-accent max-w-2xl w-full rounded-3xl p-6 border-2 border-teal-200/30 shadow-medical my-4">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Pickup Confirmation
             </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Get signature from the person releasing the package/freight
+            </p>
 
-            {/* Signer Name */}
+            {/* Signer First Name */}
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Name of Person Signing *
+                First Name of Person Signing *
               </label>
               <input
                 type="text"
-                value={signerName}
-                onChange={(e) => setSignerName(e.target.value)}
+                value={pickupSignerFirstName}
+                onChange={(e) => setPickupSignerFirstName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
-                placeholder="John Doe"
+                placeholder="John"
+                required
+              />
+            </div>
+
+            {/* Signer Last Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Last Name of Person Signing *
+              </label>
+              <input
+                type="text"
+                value={pickupSignerLastName}
+                onChange={(e) => setPickupSignerLastName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                placeholder="Doe"
                 required
               />
             </div>
@@ -1231,66 +1520,90 @@ export default function DriverLoadDetailPage() {
 
             {/* Signature Capture Component */}
             <SignatureCapture
-              onSave={handleSignatureSave}
+              onSave={handlePickupSignatureSave}
               onCancel={() => {
                 setShowSignatureCapture(null)
-                setSignerName('')
+                setPickupSignerFirstName('')
+                setPickupSignerLastName('')
                 setTemperature('')
               }}
-              signerName={signerName}
+              signerName={`${pickupSignerFirstName} ${pickupSignerLastName}`.trim()}
             />
           </div>
         </div>
       )}
 
-      {/* Delivery Confirmation Modal */}
-      {showDeliveryConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass max-w-md w-full rounded-3xl p-6">
+      {/* Signature Capture Modal - Delivery */}
+      {showSignatureCapture === 'delivery' && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-accent max-w-2xl w-full rounded-3xl p-6 border-2 border-teal-200/30 shadow-medical my-4">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Confirm Delivery
+              Delivery Confirmation
             </h3>
-            <p className="text-gray-700 mb-4">
-              Are you sure you have delivered this load to {load?.dropoffFacility.name}?
+            <p className="text-sm text-gray-600 mb-6">
+              Get signature from the person receiving the package/freight
             </p>
-            
-            {/* Recipient Name Input */}
-            <div className="mb-6">
+
+            {/* Recipient First Name */}
+            <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Name of Person Who Received *
+                First Name of Person Receiving *
               </label>
               <input
                 type="text"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
+                value={deliverySignerFirstName}
+                onChange={(e) => setDeliverySignerFirstName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
-                placeholder="Enter recipient name"
+                placeholder="Jane"
                 required
               />
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowDeliveryConfirm(false)
-                  setRecipientName('')
-                }}
-                disabled={isUpdating}
-                className="flex-1 px-4 py-3 rounded-xl bg-gray-200 text-gray-800 font-semibold hover:bg-gray-300 disabled:opacity-50 transition-base"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelivery}
-                disabled={isUpdating}
-                className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-base"
-              >
-                {isUpdating ? 'Confirming...' : 'Yes, Confirm Delivery'}
-              </button>
+            {/* Recipient Last Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Last Name of Person Receiving *
+              </label>
+              <input
+                type="text"
+                value={deliverySignerLastName}
+                onChange={(e) => setDeliverySignerLastName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                placeholder="Smith"
+                required
+              />
             </div>
+
+            {/* Temperature */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Temperature (°C) - Optional
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                placeholder="2.5"
+              />
+            </div>
+
+            {/* Signature Capture Component */}
+            <SignatureCapture
+              onSave={handleDeliverySignatureSave}
+              onCancel={() => {
+                setShowSignatureCapture(null)
+                setDeliverySignerFirstName('')
+                setDeliverySignerLastName('')
+                setTemperature('')
+              }}
+              signerName={`${deliverySignerFirstName} ${deliverySignerLastName}`.trim()}
+            />
           </div>
         </div>
       )}
+
     </div>
   )
 }

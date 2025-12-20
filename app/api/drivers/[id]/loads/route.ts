@@ -12,63 +12,115 @@ export async function GET(
 ) {
   try {
     await params // Driver ID not used - all drivers see all loads
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const skip = (page - 1) * limit
 
-    // Return all active loads (excluding cancelled and completed)
-    const loads = await prisma.loadRequest.findMany({
-      where: {
-        status: {
-          notIn: ['CANCELLED', 'DELIVERED']
-        }
-      },
-      include: {
-        shipper: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
+    // Optimized query - use select, limit results, pagination
+    const [loads, total] = await Promise.all([
+      prisma.loadRequest.findMany({
+        where: {
+          status: {
+            notIn: ['CANCELLED', 'DELIVERED']
           }
         },
-        pickupFacility: true,
-        dropoffFacility: true,
-        driver: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            vehicleType: true,
+        select: {
+          id: true,
+          publicTrackingCode: true,
+          status: true,
+          serviceType: true,
+          commodityDescription: true,
+          temperatureRequirement: true,
+          readyTime: true,
+          deliveryDeadline: true,
+          quoteAmount: true,
+          createdAt: true,
+          shipper: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+            }
+          },
+          pickupFacility: {
+            select: {
+              id: true,
+              name: true,
+              addressLine1: true,
+              addressLine2: true,
+              city: true,
+              state: true,
+              contactPhone: true,
+            }
+          },
+          dropoffFacility: {
+            select: {
+              id: true,
+              name: true,
+              addressLine1: true,
+              addressLine2: true,
+              city: true,
+              state: true,
+              contactPhone: true,
+            }
+          },
+          driver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              vehicleType: true,
+            }
+          },
+          // Only get latest tracking event
+          trackingEvents: {
+            select: {
+              code: true,
+              label: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          },
+          // Only get document count, not full list
+          _count: {
+            select: {
+              documents: true
+            }
           }
         },
-        trackingEvents: {
-          select: {
-            id: true,
-            code: true,
-            label: true,
-            createdAt: true,
-            locationText: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 5
-        },
-        documents: {
-          select: {
-            id: true,
-            type: true,
-            title: true,
-            createdAt: true,
-            uploadedBy: true,
-          },
-          orderBy: { createdAt: 'desc' }
+        orderBy: [
+          { status: 'asc' }, // Active loads first
+          { readyTime: 'asc' }, // Then by ready time
+          { createdAt: 'desc' } // Most recent first
+        ],
+        skip,
+        take: limit,
+      }),
+      prisma.loadRequest.count({
+        where: {
+          status: {
+            notIn: ['CANCELLED', 'DELIVERED']
+          }
         }
-      },
-      orderBy: [
-        { status: 'asc' }, // Active loads first
-        { readyTime: 'asc' }, // Then by ready time
-        { createdAt: 'desc' } // Most recent first
-      ]
+      })
+    ])
+
+    return NextResponse.json({ 
+      loads,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=30',
+      }
     })
-
-    return NextResponse.json({ loads })
 
   } catch (error) {
     console.error('Error fetching driver loads:', error)

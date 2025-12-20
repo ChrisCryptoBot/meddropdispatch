@@ -23,10 +23,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; vehicleId: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -76,7 +76,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; vehicleId: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     const { id, vehicleId } = await params
 
     // Verify vehicle belongs to driver

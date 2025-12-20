@@ -1,23 +1,6 @@
 // Email Service Implementation
-// Uses Resend (already in package.json dependencies)
-
-import { Resend } from 'resend'
-
-// Lazy-initialize Resend client only when needed
-let resendClient: Resend | null = null
-
-function getResendClient(): Resend | null {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.log('⚠️  [Email Service] RESEND_API_KEY not found in environment')
-    return null
-  }
-  if (!resendClient) {
-    console.log('📧 [Email Service] Initializing Resend client with API key:', apiKey.substring(0, 10) + '...')
-    resendClient = new Resend(apiKey)
-  }
-  return resendClient
-}
+// Uses SendGrid (primary) or SMTP (fallback)
+// No Resend dependency - removed for simplicity
 
 export interface EmailOptions {
   to: string
@@ -32,144 +15,110 @@ export interface EmailOptions {
 }
 
 /**
- * Send an email using Resend
- * Falls back to console logging if Resend is not configured
+ * Send an email using SendGrid (primary) or SMTP (fallback)
+ * Falls back to console logging if no email service is configured
  * Also creates notifications for all drivers if email is sent to company email
  */
 export async function sendEmail(options: EmailOptions, throwOnError: boolean = false): Promise<void> {
   const { to, subject, text, html, attachments } = options
 
   // Check if email is being sent to company email (potential lead)
-  const companyEmail = process.env.COMPANY_EMAIL || process.env.RESEND_FROM_EMAIL || 'support@meddrop.com'
+  const companyEmail = process.env.COMPANY_EMAIL || process.env.SENDGRID_FROM_EMAIL || 'support@meddrop.com'
   const isCompanyEmail = to.toLowerCase().includes(companyEmail.toLowerCase()) || 
                          to.toLowerCase().includes('support@meddrop.com') ||
                          to.toLowerCase().includes('info@meddrop.com') ||
                          to.toLowerCase().includes('contact@meddrop.com')
 
-  const client = getResendClient()
-
-  // If Resend API key is not configured, log to console (for development)
-  if (!client) {
-    const errorMsg = 'Resend API key not configured'
-    console.log('⚠️  [Email Service]', errorMsg)
-    console.log('   To:', to)
-    console.log('   Subject:', subject)
-    console.log('   Text Preview:', text.substring(0, 200) + '...')
-    console.log('   Attachments:', attachments?.length || 0)
-    console.log('   ⚠️  To actually send emails, set RESEND_API_KEY in your .env file')
-    if (throwOnError) {
-      throw new Error(errorMsg)
+  // Try email providers in order of preference
+  // Priority: SendGrid > SMTP > Mailtrap > Console Log
+  
+  // 1. SendGrid (primary - easiest, no domain verification needed)
+  if (process.env.SENDGRID_API_KEY) {
+    try {
+      const { sendEmailSendGrid } = await import('./email-service-sendgrid')
+      await sendEmailSendGrid({ to, subject, text, html, attachments })
+      
+      // If email was sent to company email, notify all drivers (potential lead)
+      if (isCompanyEmail) {
+        try {
+          const { notifyAllDriversCompanyEmailReceived } = await import('./notifications')
+          await notifyAllDriversCompanyEmailReceived({
+            fromEmail: to,
+            subject,
+            message: text.substring(0, 500),
+          }).catch((notifError) => {
+            console.error('📧 [Email Service] Failed to create driver notifications:', notifError)
+          })
+        } catch (notifError) {
+          console.error('📧 [Email Service] Error importing notification function:', notifError)
+        }
+      }
+      
+      return
+    } catch (error) {
+      console.error('📧 [Email Service] SendGrid failed, trying next provider:', error)
+      // Fall through to next provider
     }
-    return
   }
 
-  try {
-    // Use Resend's test domain if no verified domain is available
-    // For production, you must verify your domain in Resend dashboard
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-    const fromName = process.env.RESEND_FROM_NAME || 'MED DROP'
-
-    console.log('📧 [Email Service] Sending email:', {
-      from: `${fromName} <${fromEmail}>`,
-      to,
-      subject,
-      hasApiKey: !!process.env.RESEND_API_KEY,
-      hasAttachments: !!attachments?.length,
-    })
-
-    const emailData: any = {
-      from: `${fromName} <${fromEmail}>`,
-      to: [to],
-      subject,
-      text,
-      html,
-    }
-
-    // Add attachments if provided
-    if (attachments && attachments.length > 0) {
-      emailData.attachments = attachments
-    }
-
-    const result = await client.emails.send(emailData)
-
-    // Resend API returns { data: { id }, error } structure
-    if (result.error) {
-      const errorMessage = result.error.message || JSON.stringify(result.error)
-      const statusCode = result.error.statusCode || 'unknown'
+  // 2. SMTP (Gmail, Outlook, or custom SMTP)
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const { sendEmailSMTP } = await import('./email-service-smtp')
+      await sendEmailSMTP({ to, subject, text, html, attachments })
       
-      console.error('📧 [Email Service] Resend API error:', {
-        statusCode,
-        name: result.error.name,
-        message: errorMessage,
-        fullError: result.error,
-      })
-      
-      // Check for specific test domain restriction
-      if (errorMessage.includes('only send testing emails to your own email address')) {
-        console.error('📧 [Email Service] ⚠️  TEST DOMAIN RESTRICTION:')
-        console.error('   The test domain (onboarding@resend.dev) can only send to your verified email.')
-        console.error('   To send to other recipients, verify a custom domain at: https://resend.com/domains')
-        console.error('   Then update RESEND_FROM_EMAIL to use your verified domain.')
+      // If email was sent to company email, notify all drivers (potential lead)
+      if (isCompanyEmail) {
+        try {
+          const { notifyAllDriversCompanyEmailReceived } = await import('./notifications')
+          await notifyAllDriversCompanyEmailReceived({
+            fromEmail: to,
+            subject,
+            message: text.substring(0, 500),
+          }).catch((notifError) => {
+            console.error('📧 [Email Service] Failed to create driver notifications:', notifError)
+          })
+        } catch (notifError) {
+          console.error('📧 [Email Service] Error importing notification function:', notifError)
+        }
       }
       
-      const error = new Error(`Resend API error (${statusCode}): ${errorMessage}`)
-      if (throwOnError) {
-        throw error
-      }
       return
+    } catch (error) {
+      console.error('📧 [Email Service] SMTP failed, trying next provider:', error)
+      // Fall through to next provider
     }
+  }
 
-    // Check if result has data property (newer API) or id directly (older API)
-    const emailId = result.data?.id || (result as any).id
-
-    if (!emailId) {
-      console.error('📧 [Email Service] No email ID returned from Resend API')
-      console.error('📧 [Email Service] Response structure:', Object.keys(result))
-      if (throwOnError) {
-        throw new Error('Resend API did not return an email ID')
-      }
+  // 3. Mailtrap (for testing)
+  if (process.env.MAILTRAP_USER && process.env.MAILTRAP_PASS) {
+    try {
+      const { sendEmailMailtrap } = await import('./email-service-mailtrap')
+      await sendEmailMailtrap({ to, subject, text, html, attachments })
       return
+    } catch (error) {
+      console.error('📧 [Email Service] Mailtrap failed, falling back to console:', error)
+      // Fall through to console logging
     }
+  }
 
-    console.log('📧 [Email Service] Email sent successfully:', {
-      id: emailId,
-      to,
-      subject,
-      hasAttachments: !!attachments?.length,
-      responseKeys: Object.keys(result),
-    })
-
-    // If email was sent to company email, notify all drivers (potential lead)
-    if (isCompanyEmail) {
-      try {
-        const { notifyAllDriversCompanyEmailReceived } = await import('./notifications')
-        await notifyAllDriversCompanyEmailReceived({
-          fromEmail: to, // The recipient (company email) - we'll extract sender from email headers if available
-          subject,
-          message: text.substring(0, 500), // First 500 chars of email content
-        }).catch((notifError) => {
-          console.error('📧 [Email Service] Failed to create driver notifications:', notifError)
-          // Don't fail email send if notification creation fails
-        })
-      } catch (notifError) {
-        console.error('📧 [Email Service] Error importing notification function:', notifError)
-        // Don't fail email send if notification import fails
-      }
-    }
-  } catch (error: any) {
-    console.error('📧 [Email Service] Failed to send email:', error)
-    console.error('📧 [Email Service] Error details:', {
-      message: error?.message,
-      name: error?.name,
-      statusCode: error?.statusCode,
-      response: error?.response,
-    })
-    // Re-throw if requested (for testing)
-    if (throwOnError) {
-      throw error
-    }
-    // Don't throw - allow application to continue even if email fails
-    // Email failures shouldn't break the workflow
+  // No email service configured - log to console
+  const errorMsg = 'No email service configured'
+  console.log('⚠️  [Email Service]', errorMsg)
+  console.log('   To:', to)
+  console.log('   Subject:', subject)
+  console.log('   Text Preview:', text.substring(0, 200) + '...')
+  console.log('   Attachments:', attachments?.length || 0)
+  console.log('   ⚠️  To actually send emails, configure ONE of these:')
+  console.log('      Option 1 (RECOMMENDED): Set SENDGRID_API_KEY in .env')
+  console.log('         → Get free API key: https://app.sendgrid.com/settings/api_keys')
+  console.log('         → Free tier: 100 emails/day forever')
+  console.log('         → No domain verification needed!')
+  console.log('      Option 2: Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS')
+  console.log('         → Works with Gmail (use App Password) or Outlook')
+  console.log('      Option 3: Set MAILTRAP_USER and MAILTRAP_PASS (testing only)')
+  
+  if (throwOnError) {
+    throw new Error(errorMsg)
   }
 }
-

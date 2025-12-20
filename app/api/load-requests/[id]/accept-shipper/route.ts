@@ -13,10 +13,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -67,25 +67,6 @@ export async function POST(
     // Don't change status - load continues as-is
     // Just create a tracking event to note shipper claimed the load in portal
     const updatedLoad = loadRequest
-      where: { id },
-      include: {
-        shipper: true,
-        driver: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-        pickupFacility: true,
-        dropoffFacility: true,
-      },
-    })
-
-    if (!updatedLoad) {
-      throw new NotFoundError('Load request')
-    }
 
     // Create tracking event - shipper claimed load in portal (optional action)
     await prisma.trackingEvent.create({

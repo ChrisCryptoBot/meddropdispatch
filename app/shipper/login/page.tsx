@@ -10,6 +10,7 @@ export default function ShipperLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isDevelopment, setIsDevelopment] = useState(false)
 
   // Handle email and tracking code from email links
   useEffect(() => {
@@ -26,6 +27,9 @@ export default function ShipperLoginPage() {
       if (tracking) {
         sessionStorage.setItem('redirectAfterLogin', `/track/${tracking}`)
       }
+
+      // Check if development environment
+      setIsDevelopment(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     }
   }, [])
 
@@ -42,6 +46,7 @@ export default function ShipperLoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginPayload),
+        credentials: 'include', // Include cookies for session management
       })
 
       let data
@@ -158,7 +163,7 @@ export default function ShipperLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full min-h-[44px] bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
@@ -175,15 +180,6 @@ export default function ShipperLoginPage() {
             <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
               ← Back to Home
             </Link>
-          </div>
-        </div>
-
-        {/* Test Credentials */}
-        <div className="mt-6 glass-primary border-2 border-blue-200/30 rounded-lg p-4 text-sm">
-          <p className="font-semibold text-gray-900 mb-2">Test Credentials:</p>
-          <div className="text-gray-800 space-y-1">
-            <p>Email: <code className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">shipper@test.com</code></p>
-            <p>Password: <code className="bg-blue-50 px-2 py-0.5 rounded border border-blue-200">shipper123</code></p>
           </div>
         </div>
       </div>

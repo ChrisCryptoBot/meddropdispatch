@@ -1,53 +1,74 @@
-// Load Templates API Route
-// GET: List templates for a shipper
-// POST: Create a new template
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const createTemplateSchema = z.object({
+  shipperId: z.string(),
+  name: z.string().min(1, 'Template name is required'),
+  serviceType: z.string(),
+  commodityDescription: z.string().min(1),
+  specimenCategory: z.string(),
+  temperatureRequirement: z.string(),
+  pickupFacilityId: z.string(),
+  dropoffFacilityId: z.string(),
+  readyTime: z.string().optional().nullable(),
+  deliveryDeadline: z.string().optional().nullable(),
+  accessNotes: z.string().optional().nullable(),
+})
+
+const updateTemplateSchema = createTemplateSchema.partial().extend({
+  isActive: z.boolean().optional(),
+})
 
 /**
  * GET /api/load-templates
- * Get all templates for a shipper (or all templates if admin)
+ * List load templates for a shipper
  */
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { searchParams } = new URL(req.url)
     const shipperId = searchParams.get('shipperId')
     const includeInactive = searchParams.get('includeInactive') === 'true'
 
-    const where: any = {}
-    if (shipperId) {
-      where.shipperId = shipperId
-    }
-    if (!includeInactive) {
-      where.isActive = true
+    if (!shipperId) {
+      return NextResponse.json(
+        { error: 'shipperId is required' },
+        { status: 400 }
+      )
     }
 
     const templates = await prisma.loadTemplate.findMany({
-      where,
+      where: {
+        shipperId,
+        ...(includeInactive ? {} : { isActive: true }),
+      },
       include: {
-        shipper: {
-          select: {
-            id: true,
-            companyName: true,
-          },
-        },
         pickupFacility: {
           select: {
             id: true,
             name: true,
+            addressLine1: true,
             city: true,
             state: true,
-            addressLine1: true,
+            postalCode: true,
           },
         },
         dropoffFacility: {
           select: {
             id: true,
             name: true,
+            addressLine1: true,
             city: true,
             state: true,
-            addressLine1: true,
+            postalCode: true,
           },
         },
       },
@@ -57,13 +78,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ templates })
-  } catch (error) {
-    console.error('Error fetching templates:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch templates' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**
@@ -71,161 +86,83 @@ export async function GET(request: NextRequest) {
  * Create a new load template
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const {
-      shipperId,
-      name,
-      serviceType,
-      commodityDescription,
-      specimenCategory,
-      temperatureRequirement,
-      pickupFacilityId,
-      dropoffFacilityId,
-      pickupFacilityData,
-      dropoffFacilityData,
-      readyTime,
-      deliveryDeadline,
-      accessNotes,
-    } = body
-
-    // Validate required fields
-    if (!shipperId || !name) {
-      return NextResponse.json(
-        { error: 'Missing required fields: shipperId, name' },
-        { status: 400 }
-      )
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
     }
 
-    // Create or find pickup facility
-    let pickupFacility
-    if (pickupFacilityId) {
-      pickupFacility = await prisma.facility.findUnique({
-        where: { id: pickupFacilityId },
-      })
-      if (!pickupFacility) {
-        return NextResponse.json(
-          { error: 'Pickup facility not found' },
-          { status: 404 }
-        )
-      }
-    } else if (pickupFacilityData) {
-      // Find or create pickup facility
-      pickupFacility = await prisma.facility.findFirst({
-        where: {
-          shipperId,
-          name: pickupFacilityData.name,
-          addressLine1: pickupFacilityData.addressLine1,
-          city: pickupFacilityData.city,
-          state: pickupFacilityData.state,
+    const rawData = await req.json()
+    const validation = createTemplateSchema.safeParse(rawData)
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: 'Invalid template data',
+          errors: validation.error.errors,
         },
-      })
-
-      if (!pickupFacility) {
-        pickupFacility = await prisma.facility.create({
-          data: {
-            shipperId,
-            name: pickupFacilityData.name,
-            facilityType: pickupFacilityData.facilityType || 'OTHER',
-            addressLine1: pickupFacilityData.addressLine1,
-            addressLine2: pickupFacilityData.addressLine2 || null,
-            city: pickupFacilityData.city,
-            state: pickupFacilityData.state.toUpperCase(),
-            postalCode: pickupFacilityData.postalCode,
-            contactName: pickupFacilityData.contactName,
-            contactPhone: pickupFacilityData.contactPhone,
-            defaultAccessNotes: pickupFacilityData.defaultAccessNotes || null,
-          },
-        })
-      }
-    } else {
-      return NextResponse.json(
-        { error: 'Missing pickup facility data or ID' },
         { status: 400 }
       )
     }
 
-    // Create or find dropoff facility
-    let dropoffFacility
-    if (dropoffFacilityId) {
-      dropoffFacility = await prisma.facility.findUnique({
-        where: { id: dropoffFacilityId },
-      })
-      if (!dropoffFacility) {
-        return NextResponse.json(
-          { error: 'Dropoff facility not found' },
-          { status: 404 }
-        )
-      }
-    } else if (dropoffFacilityData) {
-      // Find or create dropoff facility
-      dropoffFacility = await prisma.facility.findFirst({
-        where: {
-          shipperId,
-          name: dropoffFacilityData.name,
-          addressLine1: dropoffFacilityData.addressLine1,
-          city: dropoffFacilityData.city,
-          state: dropoffFacilityData.state,
-        },
-      })
+    const data = validation.data
 
-      if (!dropoffFacility) {
-        dropoffFacility = await prisma.facility.create({
-          data: {
-            shipperId,
-            name: dropoffFacilityData.name,
-            facilityType: dropoffFacilityData.facilityType || 'OTHER',
-            addressLine1: dropoffFacilityData.addressLine1,
-            addressLine2: dropoffFacilityData.addressLine2 || null,
-            city: dropoffFacilityData.city,
-            state: dropoffFacilityData.state.toUpperCase(),
-            postalCode: dropoffFacilityData.postalCode,
-            contactName: dropoffFacilityData.contactName,
-            contactPhone: dropoffFacilityData.contactPhone,
-            defaultAccessNotes: dropoffFacilityData.defaultAccessNotes || null,
-          },
-        })
-      }
-    } else {
-      return NextResponse.json(
-        { error: 'Missing dropoff facility data or ID' },
-        { status: 400 }
-      )
+    // Verify shipper exists
+    const shipper = await prisma.shipper.findUnique({
+      where: { id: data.shipperId },
+    })
+
+    if (!shipper) {
+      throw new NotFoundError('Shipper')
     }
 
+    // Verify facilities belong to shipper
+    const pickupFacility = await prisma.facility.findFirst({
+      where: {
+        id: data.pickupFacilityId,
+        shipperId: data.shipperId,
+      },
+    })
+
+    if (!pickupFacility) {
+      throw new ValidationError('Pickup facility not found or does not belong to shipper')
+    }
+
+    const dropoffFacility = await prisma.facility.findFirst({
+      where: {
+        id: data.dropoffFacilityId,
+        shipperId: data.shipperId,
+      },
+    })
+
+    if (!dropoffFacility) {
+      throw new ValidationError('Dropoff facility not found or does not belong to shipper')
+    }
+
+    // Create template
     const template = await prisma.loadTemplate.create({
       data: {
-        shipperId,
-        name,
-        serviceType: serviceType || 'SAME_DAY',
-        commodityDescription: commodityDescription || '',
-        specimenCategory: specimenCategory || 'OTHER',
-        temperatureRequirement: temperatureRequirement || 'AMBIENT',
-        pickupFacilityId: pickupFacility.id,
-        dropoffFacilityId: dropoffFacility.id,
-        readyTime,
-        deliveryDeadline,
-        accessNotes,
+        shipperId: data.shipperId,
+        name: data.name,
+        serviceType: data.serviceType,
+        commodityDescription: data.commodityDescription,
+        specimenCategory: data.specimenCategory,
+        temperatureRequirement: data.temperatureRequirement,
+        pickupFacilityId: data.pickupFacilityId,
+        dropoffFacilityId: data.dropoffFacilityId,
+        readyTime: data.readyTime || null,
+        deliveryDeadline: data.deliveryDeadline || null,
+        accessNotes: data.accessNotes || null,
+        isActive: true,
       },
       include: {
-        shipper: {
-          select: {
-            id: true,
-            companyName: true,
-          },
-        },
         pickupFacility: true,
         dropoffFacility: true,
       },
     })
 
-    return NextResponse.json(template, { status: 201 })
-  } catch (error) {
-    console.error('Error creating template:', error)
-    return NextResponse.json(
-      { error: 'Failed to create template' },
-      { status: 500 }
-    )
-  }
+    return NextResponse.json({ template }, { status: 201 })
+  })(request)
 }
-

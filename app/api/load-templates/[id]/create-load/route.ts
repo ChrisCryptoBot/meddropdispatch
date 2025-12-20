@@ -1,24 +1,52 @@
-// Create Load from Template API Route
-// POST: Create a new load request from a template
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { generateTrackingCode } from '@/lib/tracking'
+import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const createLoadFromTemplateSchema = z.object({
+  readyTime: z.string().datetime().optional().nullable(),
+  deliveryDeadline: z.string().datetime().optional().nullable(),
+  accessNotes: z.string().optional().nullable(),
+  driverId: z.string().optional().nullable(),
+})
 
 /**
  * POST /api/load-templates/[id]/create-load
- * Create a new load request from a template
+ * Create a load request from a template
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params
-    const body = await request.json()
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id: templateId } = await params
+    const rawData = await req.json()
+    const validation = createLoadFromTemplateSchema.safeParse(rawData)
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: 'Invalid load data',
+          errors: validation.error.errors,
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = validation.data
 
     // Get template
     const template = await prisma.loadTemplate.findUnique({
-      where: { id },
+      where: { id: templateId },
       include: {
         shipper: true,
         pickupFacility: true,
@@ -27,71 +55,89 @@ export async function POST(
     })
 
     if (!template) {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Load template')
     }
 
     if (!template.isActive) {
       return NextResponse.json(
-        { error: 'Template is inactive' },
+        { error: 'Template is inactive and cannot be used to create loads' },
         { status: 400 }
       )
     }
 
-    // Allow override of template values via body
-    const loadData = {
-      shipperId: template.shipperId,
-      pickupFacilityId: template.pickupFacilityId,
-      dropoffFacilityId: template.dropoffFacilityId,
-      serviceType: body.serviceType || template.serviceType,
-      commodityDescription: body.commodityDescription || template.commodityDescription,
-      specimenCategory: body.specimenCategory || template.specimenCategory,
-      temperatureRequirement: body.temperatureRequirement || template.temperatureRequirement,
-      readyTime: body.readyTime || (template.readyTime ? new Date(`${new Date().toISOString().split('T')[0]}T${template.readyTime}`) : null),
-      deliveryDeadline: body.deliveryDeadline || (template.deliveryDeadline ? new Date(`${new Date().toISOString().split('T')[0]}T${template.deliveryDeadline}`) : null),
-      accessNotes: body.accessNotes || template.accessNotes,
-      status: 'REQUESTED',
-      createdVia: 'WEB_FORM',
-      preferredContactMethod: 'EMAIL',
-    }
-
     // Generate tracking code
-    const year = new Date().getFullYear()
-    const prefix = `SHIPPER-${year.toString().slice(-2)}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-`
+    const publicTrackingCode = await generateTrackingCode(template.shipperId)
 
-    const latestLoad = await prisma.loadRequest.findFirst({
-      where: {
-        publicTrackingCode: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    // Calculate ready time and delivery deadline
+    // If provided in request, use those; otherwise use template times for today
+    let readyTime: Date | null = null
+    let deliveryDeadline: Date | null = null
 
-    let nextNumber = 1
-    if (latestLoad) {
-      const parts = latestLoad.publicTrackingCode.split('-')
-      const lastPart = parts[parts.length - 1]
-      const latestNumber = parseInt(lastPart) || 0
-      nextNumber = latestNumber + 1
+    if (data.readyTime) {
+      readyTime = new Date(data.readyTime)
+    } else if (template.readyTime) {
+      // Parse template time (e.g., "09:00") and apply to today
+      const [hours, minutes] = template.readyTime.split(':').map(Number)
+      readyTime = new Date()
+      readyTime.setHours(hours, minutes || 0, 0, 0)
     }
 
-    const trackingCode = `${prefix}${String(nextNumber).padStart(3, '0')}`
+    if (data.deliveryDeadline) {
+      deliveryDeadline = new Date(data.deliveryDeadline)
+    } else if (template.deliveryDeadline) {
+      // Parse template time and apply to today
+      const [hours, minutes] = template.deliveryDeadline.split(':').map(Number)
+      deliveryDeadline = new Date()
+      deliveryDeadline.setHours(hours, minutes || 0, 0, 0)
+    }
 
-    // Create load request
+    // Verify driver if provided
+    let assignedDriverId: string | null = null
+    if (data.driverId) {
+      const driver = await prisma.driver.findUnique({
+        where: { id: data.driverId },
+        select: { id: true, status: true },
+      })
+
+      if (driver) {
+        assignedDriverId = driver.id
+      }
+    }
+
+    // Create load request from template
     const loadRequest = await prisma.loadRequest.create({
       data: {
-        ...loadData,
-        publicTrackingCode: trackingCode,
+        publicTrackingCode,
+        shipperId: template.shipperId,
+        pickupFacilityId: template.pickupFacilityId,
+        dropoffFacilityId: template.dropoffFacilityId,
+        serviceType: template.serviceType,
+        commodityDescription: template.commodityDescription,
+        specimenCategory: template.specimenCategory,
+        temperatureRequirement: template.temperatureRequirement,
+        readyTime,
+        deliveryDeadline,
+        accessNotes: data.accessNotes || template.accessNotes || null,
+        status: assignedDriverId ? 'SCHEDULED' : 'REQUESTED',
+        createdVia: 'TEMPLATE',
+        driverId: assignedDriverId,
+        assignedAt: assignedDriverId ? new Date() : null,
       },
       include: {
         shipper: true,
         pickupFacility: true,
         dropoffFacility: true,
+        driver: assignedDriverId
+          ? {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                phone: true,
+                email: true,
+              },
+            }
+          : false,
       },
     })
 
@@ -99,25 +145,23 @@ export async function POST(
     await prisma.trackingEvent.create({
       data: {
         loadRequestId: loadRequest.id,
-        code: 'REQUEST_RECEIVED',
-        label: 'Scheduling Request Received',
-        description: `Load created from template: ${template.name}`,
+        code: assignedDriverId ? 'SCHEDULED' : 'REQUEST_RECEIVED',
+        label: assignedDriverId ? 'Load Scheduled' : 'Request Received',
+        description: assignedDriverId
+          ? 'Your delivery has been scheduled and assigned to a driver. Tracking is now available.'
+          : 'Your load request has been received. A driver will call shortly to confirm details and pricing.',
+        locationText: `${template.pickupFacility.city}, ${template.pickupFacility.state}`,
         actorType: 'SHIPPER',
       },
     })
 
-    return NextResponse.json({
-      success: true,
-      loadRequest,
-      message: 'Load created successfully from template',
-    }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating load from template:', error)
     return NextResponse.json(
-      { error: 'Failed to create load from template' },
-      { status: 500 }
+      {
+        success: true,
+        loadRequest,
+        message: 'Load created successfully from template',
+      },
+      { status: 201 }
     )
-  }
+  })(request)
 }
-
-

@@ -4,8 +4,17 @@ import { sendLoadConfirmationEmail } from '@/lib/email'
 /**
  * POST /api/test/send-load-confirmation
  * Test endpoint to send a sample load confirmation email
+ * Development only - disabled in production
  */
 export async function POST(request: NextRequest) {
+  // Disable in production for security
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'This endpoint is not available in production' },
+      { status: 403 }
+    )
+  }
+
   try {
     let body: any = {}
     try {

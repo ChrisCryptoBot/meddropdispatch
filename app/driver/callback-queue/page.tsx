@@ -48,6 +48,7 @@ export default function DriverCallbackQueuePage() {
   const [selectedCallbacks, setSelectedCallbacks] = useState<Set<string>>(new Set())
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
   const [priorityUpdates, setPriorityUpdates] = useState<{ [key: string]: string }>({})
+  const [deletingCallbackId, setDeletingCallbackId] = useState<string | null>(null)
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -246,6 +247,33 @@ export default function DriverCallbackQueuePage() {
     }
   }
 
+  const handleDeleteCallback = async (callbackId: string) => {
+    if (!confirm('Are you sure you want to delete this completed callback? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingCallbackId(callbackId)
+    try {
+      const response = await fetch(`/api/callback-queue/${callbackId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        showToast.success('Callback deleted')
+        fetchCallbacks() // Refresh queue
+        window.dispatchEvent(new CustomEvent('callbackQueueUpdated'))
+      } else {
+        const error = await response.json()
+        showToast.error(error.message || 'Failed to delete callback')
+      }
+    } catch (error) {
+      console.error('Error deleting callback:', error)
+      showToast.error('Failed to delete callback')
+    } finally {
+      setDeletingCallbackId(null)
+    }
+  }
+
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'URGENT':
@@ -305,7 +333,7 @@ export default function DriverCallbackQueuePage() {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-10 pb-4 mb-8 print:mb-4 print:static print:top-0">
+        <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
           <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Callback Queue</h1>
           <p className="text-gray-600 print:text-sm">Loading queue...</p>
         </div>
@@ -335,7 +363,8 @@ export default function DriverCallbackQueuePage() {
 
   return (
     <div className="p-8">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-10 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      {/* Title Container - Gold Standard */}
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Callback Queue</h1>
@@ -344,55 +373,55 @@ export default function DriverCallbackQueuePage() {
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div className="glass-accent rounded-2xl p-4 border-2 border-teal-200/30 shadow-medical mb-4">
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by company, name, email, phone..."
-                  className="w-full px-4 py-2 pl-10 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
-                />
-                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+      {/* Filters and Search - Separate, scrolls with page */}
+      <div className="glass-accent rounded-2xl p-4 border-2 border-teal-200/30 shadow-medical mb-8">
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by company, name, email, phone..."
+                className="w-full px-4 py-2 pl-10 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
+              />
+              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
+          </div>
 
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="w-full px-4 py-2 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
-              >
-                <option value="all">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="CALLED">Called</option>
-                <option value="COMPLETED">Completed</option>
-              </select>
-            </div>
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+              className="w-full px-4 py-2 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
+            >
+              <option value="all">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="CALLED">Called</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
 
-            {/* Sort */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full px-4 py-2 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
-              >
-                <option value="position">Position (Queue Order)</option>
-                <option value="created">Newest First</option>
-                <option value="company">Company Name (A-Z)</option>
-              </select>
-            </div>
+          {/* Sort */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full px-4 py-2 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm"
+            >
+              <option value="position">Position (Queue Order)</option>
+              <option value="created">Newest First</option>
+              <option value="company">Company Name (A-Z)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -604,9 +633,9 @@ export default function DriverCallbackQueuePage() {
           </div>
         </div>
       ) : (
-        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass mb-8">
+        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-glass mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center">
+            <div className="w-20 h-20 bg-gradient-accent rounded-full flex items-center justify-center">
               <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
@@ -692,7 +721,7 @@ export default function DriverCallbackQueuePage() {
             {completedCallbacks.map((callback) => (
               <div
                 key={callback.id}
-                className="glass-primary rounded-2xl p-6 border-2 border-green-200/30 shadow-glass bg-green-50/20"
+                className="glass-primary rounded-2xl p-6 border-2 border-green-200/30 shadow-glass bg-green-50/20 relative"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -748,6 +777,27 @@ export default function DriverCallbackQueuePage() {
                         </p>
                       </div>
                     )}
+                  </div>
+                  <div className="flex items-center gap-2 ml-2 mr-1">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleDeleteCallback(callback.id)
+                      }}
+                      disabled={deletingCallbackId === callback.id}
+                      className="p-1.5 text-gray-400 hover:text-urgent-600 rounded-lg hover:bg-urgent-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete callback"
+                      aria-label="Delete completed callback"
+                    >
+                      {deletingCallbackId === callback.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-urgent-600"></div>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>

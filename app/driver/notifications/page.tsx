@@ -1,26 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { showToast } from '@/lib/toast'
+import { groupNotifications, type GroupBy, type NotificationGroup, type Notification as NotificationType } from '@/lib/notification-grouping'
 
-interface Notification {
-  id: string
-  type: string
-  title: string
-  message: string
-  link: string | null
-  isRead: boolean
-  readAt: string | null
-  createdAt: string
-  metadata: any
-  loadRequest: {
-    id: string
-    publicTrackingCode: string
-    status: string
-  } | null
-}
+interface Notification extends NotificationType {}
 
 export default function DriverNotificationsPage() {
   const router = useRouter()
@@ -29,6 +15,8 @@ export default function DriverNotificationsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [isMarkingRead, setIsMarkingRead] = useState(false)
+  const [groupBy, setGroupBy] = useState<GroupBy>('date')
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const driverData = localStorage.getItem('driver')
@@ -99,6 +87,8 @@ export default function DriverNotificationsPage() {
         if (deletedNotification && !deletedNotification.isRead) {
           setUnreadCount((prev) => Math.max(0, prev - 1))
         }
+        // Dispatch custom event to notify layout dropdown
+        window.dispatchEvent(new CustomEvent('notificationDeleted', { detail: { notificationId } }))
         showToast.success('Notification deleted')
       } else {
         showToast.error('Failed to delete notification')
@@ -194,10 +184,138 @@ export default function DriverNotificationsPage() {
     }
   }
 
+  // Group notifications
+  const groupedNotifications = useMemo(() => {
+    return groupNotifications(notifications, groupBy)
+  }, [notifications, groupBy])
+
+  const toggleGroup = (groupKey: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupKey)) {
+        next.delete(groupKey)
+      } else {
+        next.add(groupKey)
+      }
+      return next
+    })
+  }
+
+  const renderNotification = (notification: Notification) => {
+    return (
+      <div
+        key={notification.id}
+        className={`glass-accent rounded-xl p-4 border-2 transition-all ${
+          notification.isRead
+            ? 'border-teal-200/30 bg-teal-50/40'
+            : `${getNotificationColor(notification.type)} bg-teal-50/60`
+        }`}
+      >
+        <div className="flex items-start gap-4">
+          <div
+            className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              notification.isRead ? 'bg-teal-100 text-teal-600' : getNotificationColor(notification.type).split(' ')[0]
+            }`}
+          >
+            {getNotificationIcon(notification.type)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                {notification.link ? (
+                  <Link
+                    href={notification.link}
+                    onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                    className="block"
+                  >
+                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                      {notification.title}
+                    </h3>
+                    <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                      {notification.message}
+                    </p>
+                    {notification.loadRequest && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Load: {notification.loadRequest.publicTrackingCode}
+                      </p>
+                    )}
+                  </Link>
+                ) : (
+                  <>
+                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                      {notification.title}
+                    </h3>
+                    <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                      {notification.message}
+                    </p>
+                    {notification.loadRequest && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Load: {notification.loadRequest.publicTrackingCode}
+                      </p>
+                    )}
+                  </>
+                )}
+                {notification.metadata?.shipperPhone && (
+                  <div className="mt-2">
+                    <a
+                      href={`tel:${notification.metadata.shipperPhone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-accent text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all shadow-medical"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      Call {notification.metadata.shipperName || 'Shipper'}
+                    </a>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 ml-2 mr-1">
+                {!notification.isRead && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleMarkAsRead(notification.id)
+                    }}
+                    className="p-1.5 text-accent-400 hover:text-accent-600 rounded-lg hover:bg-teal-50 transition-colors"
+                    title="Mark as read"
+                    aria-label="Mark notification as read"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleDeleteNotification(notification.id)
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-urgent-600 rounded-lg hover:bg-urgent-50 transition-colors"
+                  title="Delete notification"
+                  aria-label="Delete notification"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              {new Date(notification.createdAt).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="glass p-12 rounded-2xl text-center">
+        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading notifications...</p>
         </div>
@@ -207,7 +325,7 @@ export default function DriverNotificationsPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Notifications</h1>
@@ -219,136 +337,82 @@ export default function DriverNotificationsPage() {
               <p className="text-gray-600 print:text-sm">View all your notifications</p>
             )}
           </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              disabled={isMarkingRead}
-              className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 text-sm mr-6"
-            >
-              {isMarkingRead ? 'Marking...' : 'Mark All Read'}
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mr-4">
+              <label className="text-sm text-gray-600">Group by:</label>
+              <select
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+              >
+                <option value="none">None</option>
+                <option value="type">Type</option>
+                <option value="date">Date</option>
+              </select>
+            </div>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllAsRead}
+                disabled={isMarkingRead}
+                className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 text-sm"
+              >
+                {isMarkingRead ? 'Marking...' : 'Mark All Read'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {notifications.length === 0 ? (
-        <div className="glass p-12 rounded-2xl text-center">
+        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
           <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           <p className="text-lg font-medium text-gray-700 mb-2">No notifications yet</p>
           <p className="text-sm text-gray-500">Updates about new loads, call requests, and assignments will appear here</p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {notifications.map((notification) => {
+      ) : groupedNotifications ? (
+        <div className="space-y-4">
+          {groupedNotifications.map((group) => {
+            const isCollapsed = collapsedGroups.has(group.key)
             return (
-              <div
-                key={notification.id}
-                className={`glass-accent rounded-xl p-4 border-2 transition-all ${
-                  notification.isRead
-                    ? 'border-teal-200/30 bg-teal-50/40'
-                    : `${getNotificationColor(notification.type)} bg-teal-50/60`
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      notification.isRead ? 'bg-teal-100 text-teal-600' : getNotificationColor(notification.type).split(' ')[0]
-                    }`}
-                  >
-                    {getNotificationIcon(notification.type)}
+              <div key={group.key} className="glass-accent rounded-2xl border-2 border-teal-200/30 shadow-medical overflow-hidden">
+                <button
+                  onClick={() => toggleGroup(group.key)}
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-teal-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className={`w-5 h-5 text-gray-600 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <h3 className="text-lg font-bold text-gray-900">{group.label}</h3>
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">
+                      {group.notifications.length}
+                    </span>
+                    {group.unreadCount > 0 && (
+                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                        {group.unreadCount} unread
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        {notification.link ? (
-                          <Link
-                            href={notification.link}
-                            onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
-                            className="block"
-                          >
-                            <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
-                              {notification.title}
-                            </h3>
-                            <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
-                              {notification.message}
-                            </p>
-                            {notification.loadRequest && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Load: {notification.loadRequest.publicTrackingCode}
-                              </p>
-                            )}
-                          </Link>
-                        ) : (
-                          <>
-                            <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
-                              {notification.title}
-                            </h3>
-                            <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
-                              {notification.message}
-                            </p>
-                            {notification.loadRequest && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Load: {notification.loadRequest.publicTrackingCode}
-                              </p>
-                            )}
-                          </>
-                        )}
-                        {notification.metadata?.shipperPhone && (
-                          <div className="mt-2">
-                            <a
-                              href={`tel:${notification.metadata.shipperPhone}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-primary text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all shadow-lg"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                              </svg>
-                              Call {notification.metadata.shipperName || 'Shipper'}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!notification.isRead && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleMarkAsRead(notification.id)
-                            }}
-                            className="p-1.5 text-accent-400 hover:text-accent-600 rounded-lg hover:bg-teal-50 transition-colors"
-                            title="Mark as read"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handleDeleteNotification(notification.id)
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-urgent-600 rounded-lg hover:bg-urgent-50 transition-colors"
-                          title="Delete notification"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </p>
+                </button>
+                {!isCollapsed && (
+                  <div className="px-6 pb-4 space-y-3">
+                    {group.notifications.map((notification) => renderNotification(notification))}
                   </div>
-                </div>
+                )}
               </div>
             )
           })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {notifications.map((notification) => renderNotification(notification))}
         </div>
       )}
     </div>

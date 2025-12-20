@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendLoadStatusEmail } from '@/lib/email'
+import { sendLoadStatusEmail, sendDriverLoadStatusEmail } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
 import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
 import { approveDriverQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
@@ -15,10 +15,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -128,8 +128,12 @@ export async function POST(
       })
     }
 
-    // Send notification email to driver
+    // Send notification emails to both shipper and driver
     const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const driverPortalUrl = `${baseUrl}/driver/loads/${id}`
+    
+    // Notify shipper
     try {
       await sendLoadStatusEmail({
         to: loadRequest.shipper.email,
@@ -142,11 +146,41 @@ export async function POST(
         quoteCurrency: 'USD',
       })
     } catch (emailError) {
-      logger.warn('Failed to send email notification', { 
+      logger.warn('Failed to send shipper email notification', { 
         loadId: id,
         error: emailError instanceof Error ? emailError : new Error('Unknown email error')
       })
       // Don't fail the request if email fails
+    }
+
+    // Notify driver that their quote was approved
+    if (loadRequest.driverId && loadRequest.driver?.email) {
+      try {
+        const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim()
+        const pickupAddress = `${loadRequest.pickupFacility.addressLine1}, ${loadRequest.pickupFacility.city}, ${loadRequest.pickupFacility.state}`
+        const dropoffAddress = `${loadRequest.dropoffFacility.addressLine1}, ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}`
+        
+        await sendDriverLoadStatusEmail({
+          to: loadRequest.driver.email,
+          driverName,
+          trackingCode: loadRequest.publicTrackingCode,
+          status: 'SCHEDULED',
+          statusLabel: 'Quote Approved - Load Scheduled',
+          companyName: loadRequest.shipper.companyName,
+          pickupAddress,
+          dropoffAddress,
+          readyTime: loadRequest.readyTime,
+          deliveryDeadline: loadRequest.deliveryDeadline,
+          driverPortalUrl,
+        })
+      } catch (emailError) {
+        logger.warn('Failed to send driver quote approval email', { 
+          loadId: id,
+          driverId: loadRequest.driverId,
+          error: emailError instanceof Error ? emailError : new Error('Unknown email error')
+        })
+        // Don't fail the request if email fails
+      }
     }
 
     logger.info('Driver quote approved by shipper', {

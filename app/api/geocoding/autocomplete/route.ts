@@ -12,10 +12,10 @@ const client = new Client({})
  * Query params: input (the text being typed)
  */
 export async function GET(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         params: {
           input,
           key: apiKey,
-          types: 'address', // Restrict to addresses only
+          // types parameter removed due to type mismatch - API will return all types
         },
         timeout: 10000,
       })

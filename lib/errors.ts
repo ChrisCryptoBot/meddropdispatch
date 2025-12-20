@@ -1,7 +1,7 @@
 // Standardized Error Handling
 // Centralized error types and handling for consistent API responses
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 
 export class AppError extends Error {
@@ -181,10 +181,12 @@ export function createErrorResponse(error: unknown): NextResponse<ErrorResponse>
 }
 
 // Error handler wrapper for API routes
+// Returns a function that can be called directly as a route handler
+// Accepts both Request and NextRequest for flexibility
 export function withErrorHandling(
-  handler: (request: Request, context?: any) => Promise<NextResponse>
-) {
-  return async (request: Request, context?: any): Promise<NextResponse> => {
+  handler: (request: Request | NextRequest, context?: any) => Promise<NextResponse>
+): (request: Request | NextRequest, context?: any) => Promise<NextResponse> {
+  return async (request: Request | NextRequest, context?: any): Promise<NextResponse> => {
     try {
       return await handler(request, context)
     } catch (error) {

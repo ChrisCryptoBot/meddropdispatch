@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -20,9 +20,11 @@ export default function DriverLayout({
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const dismissedNotificationsRef = useRef<Set<string>>(new Set())
   const [shouldShake, setShouldShake] = useState(false)
   const [lastNotificationCount, setLastNotificationCount] = useState(0)
   const [pendingCallbackCount, setPendingCallbackCount] = useState(0)
+  const [adminModeEnabled, setAdminModeEnabled] = useState(false)
 
   useEffect(() => {
     // Don't check auth on login or signup pages
@@ -36,25 +38,52 @@ export default function DriverLayout({
       return
     }
 
-    // Check if driver is logged in
-    try {
-      const driverData = localStorage.getItem('driver')
-      if (driverData) {
-        setDriver(JSON.parse(driverData))
-        setIsChecking(false)
-      } else {
-        // Only redirect if we're not already on login/signup page
-        if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
-          router.push('/driver/login')
+    // Check authentication via API (httpOnly cookies)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check')
+        const data = await response.json()
+
+        if (data.authenticated && data.user && data.user.userType === 'driver') {
+          // Store in localStorage for backward compatibility with existing code
+          localStorage.setItem('driver', JSON.stringify(data.user))
+          setDriver(data.user)
+          // Check if admin mode is enabled
+          const adminMode = localStorage.getItem('driverAdminMode') === 'true'
+          setAdminModeEnabled(adminMode && data.user.isAdmin)
+          setIsChecking(false)
+        } else {
+          // Clear any stale localStorage data
+          localStorage.removeItem('driver')
+          setIsChecking(false)
+          // Only redirect if we're not already on login/signup page
+          if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
+            router.push('/driver/login')
+          }
         }
-      }
-    } catch (error) {
-      console.error('Error checking driver auth:', error)
-      setIsChecking(false)
-      if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
-        router.push('/driver/login')
+      } catch (error) {
+        console.error('Error checking driver auth:', error)
+        // Fallback to localStorage check for backward compatibility
+        try {
+          const driverData = localStorage.getItem('driver')
+          if (driverData) {
+            setDriver(JSON.parse(driverData))
+          } else {
+            if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
+              router.push('/driver/login')
+            }
+          }
+        } catch (localError) {
+          console.error('Error with localStorage fallback:', localError)
+          if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
+            router.push('/driver/login')
+          }
+        }
+        setIsChecking(false)
       }
     }
+
+    checkAuth()
   }, [pathname, router])
 
   // Close dropdown when route changes
@@ -72,8 +101,15 @@ export default function DriverLayout({
         const response = await fetch(`/api/drivers/${driver.id}/notifications?limit=5`)
         if (response.ok) {
           const data = await response.json()
-          setNotifications(data.notifications || [])
-          setUnreadCount(data.unreadCount || 0)
+          const allNotifications = data.notifications || []
+          // Filter out dismissed notifications from dropdown
+          const filteredNotifications = allNotifications.filter(
+            (n: any) => !dismissedNotificationsRef.current.has(n.id)
+          )
+          setNotifications(filteredNotifications)
+          // Count unread from all notifications (not filtered) - this is the total unread count
+          const unread = allNotifications.filter((n: any) => !n.isRead).length
+          setUnreadCount(unread)
         }
       } catch (error) {
         console.error('Error fetching notifications:', error)
@@ -83,8 +119,21 @@ export default function DriverLayout({
     fetchNotifications()
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
+    
+    // Listen for notification deletion events from notification page
+    const handleNotificationDeleted = (event: CustomEvent) => {
+      // Remove from dismissed list if it was dismissed, so it won't reappear
+      dismissedNotificationsRef.current.delete(event.detail.notificationId)
+      fetchNotifications()
+    }
+    window.addEventListener('notificationDeleted', handleNotificationDeleted as EventListener)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('notificationDeleted', handleNotificationDeleted as EventListener)
+    }
   }, [driver?.id])
+
 
   // Fetch pending callback count
   useEffect(() => {
@@ -119,8 +168,24 @@ export default function DriverLayout({
     }
   }, [driver?.id])
 
+  // Check if driver is pending approval and redirect
+  useEffect(() => {
+    if (!isChecking && driver) {
+      if (driver.status === 'PENDING_APPROVAL') {
+        // Allow access to pending-approval, profile, and support pages
+        const allowedPaths = ['/driver/pending-approval', '/driver/profile', '/driver/support', '/driver/login', '/driver/signup']
+        if (!allowedPaths.includes(pathname)) {
+          router.push('/driver/pending-approval')
+        }
+      } else if (driver.status !== 'PENDING_APPROVAL' && pathname === '/driver/pending-approval') {
+        // If approved and on pending page, redirect to dashboard
+        router.push('/driver/dashboard')
+      }
+    }
+  }, [driver, pathname, router, isChecking])
+
   // Show loading while checking auth
-  if (isChecking && pathname !== '/driver/login' && pathname !== '/driver/signup') {
+  if (isChecking && pathname !== '/driver/login' && pathname !== '/driver/signup' && pathname !== '/driver/pending-approval') {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -132,7 +197,7 @@ export default function DriverLayout({
   }
 
   // Don't show layout on login/signup pages
-  if (pathname === '/driver/login' || pathname === '/driver/signup') {
+  if (pathname === '/driver/login' || pathname === '/driver/signup' || pathname === '/driver/pending-approval') {
     return <>{children}</>
   }
 
@@ -175,11 +240,11 @@ export default function DriverLayout({
       ),
     },
     {
-      name: 'Earnings',
-      href: '/driver/earnings',
+      name: 'History',
+      href: '/driver/history',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
@@ -193,6 +258,87 @@ export default function DriverLayout({
       ),
     },
   ]
+
+  // Admin navigation items (only shown when admin mode is enabled)
+  const adminNavigation = [
+    {
+      name: 'Admin Dashboard',
+      href: '/driver/admin',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+    {
+      name: 'All Loads',
+      href: '/driver/admin/loads',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Manage Shippers',
+      href: '/driver/admin/shippers',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Invoices',
+      href: '/driver/admin/invoices',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'System Logs',
+      href: '/driver/admin/logs',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Audit Logs',
+      href: '/driver/admin/audit',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'User Activity',
+      href: '/driver/admin/users',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'System Diagnostics',
+      href: '/driver/admin/diagnostics',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+    },
+  ]
+
+  // Combine navigation items - admin items appear after driver items when admin mode is enabled
+  const allNavigation = adminModeEnabled && driver?.isAdmin 
+    ? [...navigation, ...adminNavigation]
+    : navigation
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -213,7 +359,7 @@ export default function DriverLayout({
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-sm font-semibold text-red-600">Medical Courier Services</p>
+                <p className="text-sm font-semibold text-red-600">Superior One Logistics Software</p>
               </div>
             </div>
             <nav className="flex items-center space-x-3 pr-4">
@@ -248,15 +394,51 @@ export default function DriverLayout({
                         </div>
                       ) : (
                         <div className="divide-y divide-teal-200/30">
-                          {notifications.map((notification) => (
+                          {notifications.map((notification) => {
+                            // Determine the appropriate route based on notification type and metadata
+                            const getNotificationRoute = (notif: any): string => {
+                              // If link is already set, use it
+                              if (notif.link) {
+                                return notif.link
+                              }
+                              
+                              // If notification has loadRequestId, route to load detail page
+                              if (notif.loadRequestId) {
+                                const baseRoute = `/driver/loads/${notif.loadRequestId}`
+                                
+                                // Route to specific sections based on notification type
+                                switch (notif.type) {
+                                  case 'DOCUMENT_UPLOADED':
+                                    return `${baseRoute}#documents`
+                                  case 'LOAD_STATUS_CHANGED':
+                                  case 'LOAD_CANCELLED':
+                                    return `${baseRoute}#status`
+                                  case 'SHIPPER_REQUEST_CALL':
+                                    // For call requests, route to the load page (contact info is in pickup/dropoff sections)
+                                    return baseRoute
+                                  case 'NEW_LOAD_ASSIGNED':
+                                    // For new loads, go to the main page (they might need to accept it)
+                                    return baseRoute
+                                  default:
+                                    return baseRoute
+                                }
+                              }
+                              
+                              // Default fallback
+                              return '/driver/notifications'
+                            }
+                            
+                            const notificationRoute = getNotificationRoute(notification)
+                            
+                            return (
                             <Link
                               key={notification.id}
-                              href={notification.link || '/driver/notifications'}
+                              href={notificationRoute}
                               onClick={async (e) => {
                                 e.preventDefault()
                                 setNotificationDropdownOpen(false)
                                 
-                                // Mark as read via API
+                                // Mark as read via API (if unread)
                                 if (!notification.isRead && driver?.id) {
                                   try {
                                     await fetch(`/api/drivers/${driver.id}/notifications`, {
@@ -264,27 +446,49 @@ export default function DriverLayout({
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ notificationIds: [notification.id] }),
                                     })
-                                    
-                                    // Update local state: mark as read and remove from dropdown
-                                    setNotifications(prev => 
-                                      prev.filter(n => n.id !== notification.id)
-                                    )
                                     setUnreadCount(prev => Math.max(0, prev - 1))
                                   } catch (error) {
                                     console.error('Error marking notification as read:', error)
                                   }
-                                } else {
-                                  // Even if already read, remove from dropdown
-                                  setNotifications(prev => 
-                                    prev.filter(n => n.id !== notification.id)
-                                  )
                                 }
                                 
-                                // Navigate to the link
-                                if (notification.link) {
-                                  router.push(notification.link)
-                                } else {
-                                  router.push('/driver/notifications')
+                                // Dismiss from dropdown (but keep on notification page)
+                                dismissedNotificationsRef.current.add(notification.id)
+                                setNotifications(prev => 
+                                  prev.filter(n => n.id !== notification.id)
+                                )
+                                
+                                // Navigate to the appropriate route
+                                router.push(notificationRoute)
+                                
+                                // If route has a hash, scroll to that section after navigation
+                                if (notificationRoute.includes('#')) {
+                                  // Wait for navigation to complete, then scroll
+                                  setTimeout(() => {
+                                    const hash = notificationRoute.split('#')[1]
+                                    const element = document.getElementById(hash)
+                                    if (element) {
+                                      // Scroll to element
+                                      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                      // Highlight the section briefly
+                                      element.classList.add('ring-2', 'ring-accent-500', 'ring-offset-2', 'transition-all')
+                                      setTimeout(() => {
+                                        element.classList.remove('ring-2', 'ring-accent-500', 'ring-offset-2')
+                                      }, 2000)
+                                    } else {
+                                      // If element not found, try again after a longer delay (page might still be loading)
+                                      setTimeout(() => {
+                                        const retryElement = document.getElementById(hash)
+                                        if (retryElement) {
+                                          retryElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                          retryElement.classList.add('ring-2', 'ring-accent-500', 'ring-offset-2', 'transition-all')
+                                          setTimeout(() => {
+                                            retryElement.classList.remove('ring-2', 'ring-accent-500', 'ring-offset-2')
+                                          }, 2000)
+                                        }
+                                      }, 500)
+                                    }
+                                  }, 300)
                                 }
                               }}
                               className={`block p-3 hover:bg-teal-50/60 transition-colors ${
@@ -306,7 +510,8 @@ export default function DriverLayout({
                                 )}
                               </div>
                             </Link>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                       <div className="p-2 border-t border-teal-200/30 bg-teal-50/60">
@@ -326,7 +531,7 @@ export default function DriverLayout({
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className={`px-5 py-3 rounded-lg text-base font-medium transition-base flex items-center gap-2 ${
-                    pathname?.startsWith('/driver/profile') || pathname?.startsWith('/driver/vehicle')
+                    pathname?.startsWith('/driver/profile') || pathname?.startsWith('/driver/vehicle') || pathname?.startsWith('/driver/settings')
                       ? 'bg-gradient-accent text-white shadow-medical'
                       : 'text-gray-700 hover:bg-teal-50/60'
                   }`}
@@ -375,9 +580,34 @@ export default function DriverLayout({
                           My Vehicles
                         </div>
                       </Link>
+                      <Link
+                        href="/driver/settings"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className={`block px-4 py-3 text-sm transition-base font-medium border-t border-teal-200/30 ${
+                          pathname?.startsWith('/driver/settings')
+                            ? 'bg-gradient-accent text-white shadow-medical'
+                            : 'text-accent-700 hover:bg-teal-50/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          Settings
+                        </div>
+                      </Link>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          try {
+                            // Call logout API to clear httpOnly cookie
+                            await fetch('/api/auth/logout', { method: 'POST' })
+                          } catch (error) {
+                            console.error('Error during logout:', error)
+                          }
+                          // Clear localStorage for backward compatibility
                           localStorage.removeItem('driver')
+                          setDriver(null)
                           setProfileDropdownOpen(false)
                           router.push('/driver/login')
                         }}
@@ -404,6 +634,7 @@ export default function DriverLayout({
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
+            {/* Driver Navigation */}
             {navigation.map((item) => {
               // Check if current path matches the nav item
               const isActive =
@@ -425,14 +656,14 @@ export default function DriverLayout({
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base relative ${
                     isActive
                       ? 'bg-gradient-accent text-white shadow-lg'
-                      : item.highlight
+                      : (item as any).highlight
                       ? 'bg-accent-50 text-accent-700 hover:bg-accent-100 border-2 border-accent-200'
                       : 'text-gray-700 hover:bg-teal-50/60'
                   }`}
                 >
                   {item.icon}
                   <span className="font-medium">{item.name}</span>
-                  {item.highlight && !isActive && (
+                  {(item as any).highlight && !isActive && (
                     <span className="ml-auto px-2 py-0.5 bg-accent-600 text-white text-xs font-bold rounded-full">New</span>
                   )}
                   {/* Pending callback count badge - only show if there are pending callbacks */}
@@ -448,6 +679,36 @@ export default function DriverLayout({
                 </Link>
               )
             })}
+            
+            {/* Admin Navigation Separator */}
+            {adminModeEnabled && driver?.isAdmin && (
+              <>
+                <div className="my-4 border-t border-teal-200/30"></div>
+                <div className="px-4 py-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</p>
+                </div>
+                {adminNavigation.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/driver/admin' && pathname?.startsWith(item.href))
+                  
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
+                        isActive
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-blue-50/60'
+                      }`}
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </nav>
 
           {/* Support */}
@@ -471,7 +732,9 @@ export default function DriverLayout({
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
       <main className="md:ml-64 bg-gradient-medical-bg min-h-screen pb-16 md:pb-0 pt-[73px]">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Navigation */}

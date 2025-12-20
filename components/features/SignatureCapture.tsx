@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from 'react'
 interface SignatureCaptureProps {
   onSave: (signatureData: string) => void
   onCancel: () => void
-  signerName?: string
+  signerName?: string // Full name (first + last) for validation
 }
 
 export default function SignatureCapture({ onSave, onCancel, signerName = '' }: SignatureCaptureProps) {

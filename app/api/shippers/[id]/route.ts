@@ -12,10 +12,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -44,6 +44,8 @@ export async function GET(
         stripeCustomerId: true,
         smsNotificationsEnabled: true,
         smsPhoneNumber: true,
+        subscriptionTier: true,
+        dedicatedDispatcherId: true,
         deletedAt: true,
         deletedBy: true,
         deletedReason: true,
@@ -81,7 +83,27 @@ export async function GET(
       throw new NotFoundError('Shipper')
     }
 
-    return NextResponse.json({ shipper })
+    // Fetch dispatcher info if assigned
+    let dispatcher = null
+    if (shipper.dedicatedDispatcherId) {
+      const dispatcherUser = await prisma.user.findUnique({
+        where: { id: shipper.dedicatedDispatcherId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      })
+      dispatcher = dispatcherUser
+    }
+
+    return NextResponse.json({ 
+      shipper: {
+        ...shipper,
+        dispatcher,
+      }
+    })
   })(request)
 }
 
@@ -93,10 +115,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -189,15 +211,19 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
+
+    // Get request body for deletion reason
+    const body = await req.json().catch(() => ({}))
+    const deletionReason = body.reason || body.deletionReason || 'Account deletion requested'
 
     // Check if shipper exists
     const shipper = await prisma.shipper.findUnique({
@@ -208,7 +234,14 @@ export async function DELETE(
             loadRequests: {
               where: {
                 status: {
-                  notIn: ['DELIVERED', 'CANCELLED'],
+                  notIn: ['DELIVERED', 'CANCELLED', 'COMPLETED', 'DENIED'],
+                },
+              },
+            },
+            invoices: {
+              where: {
+                status: {
+                  notIn: ['PAID', 'CANCELLED'],
                 },
               },
             },
@@ -221,15 +254,27 @@ export async function DELETE(
       throw new NotFoundError('Shipper')
     }
 
+    // Check for active loads - warn but allow deletion (soft delete preserves data)
+    if (shipper._count.loadRequests > 0) {
+      // Log warning but proceed with soft delete
+      console.warn(`Soft deleting shipper with ${shipper._count.loadRequests} active loads:`, id)
+    }
+
+    // Check for unpaid invoices - warn but allow deletion
+    if (shipper._count.invoices > 0) {
+      console.warn(`Soft deleting shipper with ${shipper._count.invoices} unpaid invoices:`, id)
+    }
+
     // Soft delete: Set isActive to false and mark as deleted
     // This maintains the record for historical purposes but hides it from active lists
+    // Cascade deletes will handle related records according to schema (onDelete: Cascade)
     const updatedShipper = await prisma.shipper.update({
       where: { id },
       data: {
         isActive: false,
         deletedAt: new Date(),
-        deletedBy: null, // Can be set if we track who deleted it
-        deletedReason: 'Soft deleted by admin/driver',
+        deletedBy: body.deletedBy || null, // Can be set if we track who deleted it
+        deletedReason: deletionReason,
       },
     })
 
@@ -237,6 +282,10 @@ export async function DELETE(
       success: true,
       message: 'Shipper deactivated successfully',
       shipper: updatedShipper,
+      warnings: {
+        activeLoads: shipper._count.loadRequests,
+        unpaidInvoices: shipper._count.invoices,
+      },
     })
   })(request)
 }

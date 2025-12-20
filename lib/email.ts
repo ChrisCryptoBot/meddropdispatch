@@ -316,6 +316,8 @@ export async function sendLoadStatusEmail({
   driverName,
   pickupAddress,
   dropoffAddress,
+  pickupSignerName,
+  deliverySignerName,
 }: {
   to: string
   trackingCode: string
@@ -329,6 +331,8 @@ export async function sendLoadStatusEmail({
   driverName?: string | null
   pickupAddress?: string | null
   dropoffAddress?: string | null
+  pickupSignerName?: string | null
+  deliverySignerName?: string | null
 }) {
   const subject = `MED DROP - Load ${trackingCode} Update: ${statusLabel}`
 
@@ -371,6 +375,8 @@ Status: ${statusLabel}
 ${driverName ? `Driver: ${driverName}` : ''}
 ${pickupAddress ? `Pickup: ${pickupAddress}` : ''}
 ${dropoffAddress ? `Delivery: ${dropoffAddress}` : ''}
+${pickupSignerName ? `Pickup Signed By: ${pickupSignerName}` : ''}
+${deliverySignerName ? `Delivery Signed By: ${deliverySignerName}` : ''}
 ${eta ? `Estimated Arrival: ${eta}` : ''}
 ${quoteAmount ? `Quote: ${quoteCurrency}${quoteAmount.toFixed(2)}` : ''}
 
@@ -473,6 +479,18 @@ Medical Courier Services
         <div class="info-row">
           <div class="info-label">Delivery Location:</div>
           <div class="info-value">${dropoffAddress}</div>
+        </div>
+        ` : ''}
+        ${pickupSignerName ? `
+        <div class="info-row">
+          <div class="info-label">Pickup Signed By:</div>
+          <div class="info-value"><strong>${pickupSignerName}</strong></div>
+        </div>
+        ` : ''}
+        ${deliverySignerName ? `
+        <div class="info-row">
+          <div class="info-label">Delivery Signed By:</div>
+          <div class="info-value"><strong>${deliverySignerName}</strong></div>
         </div>
         ` : ''}
       </div>
@@ -705,6 +723,12 @@ export async function sendDriverLoadStatusEmail({
   let statusColor = '#0ea5e9'
   
   switch (status) {
+    case 'SCHEDULED':
+    case 'ASSIGNED':
+      statusMessage = 'You have been selected for a new load! Please review the details and confirm acceptance in your driver portal.'
+      statusIcon = '📋'
+      statusColor = '#0ea5e9'
+      break
     case 'EN_ROUTE':
       statusMessage = 'You are en route to the pickup location. Safe travels!'
       statusIcon = '🛣️'
@@ -942,7 +966,7 @@ KEY FEATURES:
 - Digital signature capture for proof of delivery
 - Temperature logging for refrigerated loads
 - Document upload for POD, BOL, and more
-- Earnings tracking and payout management
+- Load history tracking
 
 SUPPORT:
 If you have any questions or need assistance, please don't hesitate to reach out to our support team.
@@ -1910,6 +1934,119 @@ If you have questions, contact support@meddrop.com
 }
 
 /**
+ * Send password reset email with token link (new token-based approach)
+ */
+export async function sendPasswordResetEmail({
+  to,
+  name,
+  resetLink,
+  baseUrl,
+}: {
+  to: string
+  name: string
+  resetLink: string
+  baseUrl: string
+}) {
+  const subject = `MED DROP - Reset Your Password`
+  const supportEmail = process.env.SUPPORT_EMAIL || 'support@meddrop.com'
+  const supportPhone = process.env.SUPPORT_PHONE || '1-800-MED-DROP'
+
+  const text = `
+Hello ${name},
+
+You requested to reset your password for your MED DROP account.
+
+To reset your password, click the link below (or copy and paste it into your browser):
+
+${resetLink}
+
+This link will expire in 1 hour for security reasons.
+
+If you did not request a password reset, please ignore this email or contact support if you have concerns.
+
+Need help? Contact us:
+- Email: ${supportEmail}
+- Phone: ${supportPhone}
+
+Thank you for using MED DROP.
+
+---
+MED DROP
+Medical Courier Services
+Professional. Reliable. Trusted.
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f3f4f6; }
+    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; }
+    .content { padding: 30px; }
+    .reset-box { background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+    .button:hover { background: #0284c7; }
+    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .link-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin: 20px 0; word-break: break-all; font-family: 'Courier New', monospace; font-size: 12px; color: #1e40af; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">Reset Your Password</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">MED DROP - Medical Courier Services</p>
+    </div>
+    
+    <div class="content">
+      <p style="font-size: 18px; color: #1e40af;"><strong>Hello ${name},</strong></p>
+      
+      <p>You requested to reset your password for your MED DROP account.</p>
+      
+      <div class="reset-box">
+        <p style="margin: 0 0 15px 0; font-weight: 600; color: #0369a1;">Click the button below to reset your password:</p>
+        <a href="${resetLink}" class="button">Reset Password</a>
+        <p style="margin: 15px 0 0 0; font-size: 12px; color: #6b7280;">This link expires in 1 hour</p>
+      </div>
+      
+      <p style="color: #6b7280; font-size: 14px;">Or copy and paste this link into your browser:</p>
+      <div class="link-box">${resetLink}</div>
+      
+      <div class="warning-box">
+        <p style="margin: 0;"><strong>⚠️ Security Notice:</strong></p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+          <li>This link will expire in 1 hour</li>
+          <li>If you did not request a password reset, please ignore this email</li>
+          <li>For security, never share this link with anyone</li>
+        </ul>
+      </div>
+      
+      <p style="margin-top: 30px;">Need help? Contact us:</p>
+      <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:${supportEmail}" style="color: #0ea5e9;">${supportEmail}</a></p>
+      <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:${supportPhone}" style="color: #0ea5e9;">${supportPhone}</a></p>
+      
+      <p style="margin-top: 30px;">Thank you for using MED DROP.</p>
+    </div>
+    
+    <div class="footer">
+      <p style="margin: 0;"><strong>MED DROP</strong></p>
+      <p style="margin: 5px 0;">Medical Courier Services</p>
+      <p style="margin: 5px 0;">Professional. Reliable. Trusted.</p>
+      <p style="margin: 15px 0 0 0; font-size: 12px;">This is an automated email. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
  * Send callback notification email to shipper when driver calls them
  */
 export async function sendCallbackCalledEmail({
@@ -2044,6 +2181,215 @@ ${supportEmail}
         <a href="${baseUrl}/shipper/dashboard">Access Your Dashboard</a>
       </p>
     </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
+ * Send driver approval email when account is approved
+ */
+export async function sendDriverApprovalEmail({
+  to,
+  firstName,
+  lastName,
+  email,
+}: {
+  to: string
+  firstName: string
+  lastName: string
+  email: string
+}) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const dashboardUrl = `${baseUrl}/driver/dashboard`
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+  
+  const subject = `Welcome to MED DROP - Application Approved!`
+
+  const text = `
+Congratulations ${firstName}!
+
+Your driver application has been approved. You can now access the load board and start accepting loads.
+
+YOUR ACCOUNT DETAILS:
+- Email: ${email}
+- Name: ${firstName} ${lastName}
+- Status: Active
+
+GET STARTED:
+1. Log in to your dashboard: ${dashboardUrl}
+2. View available loads on the load board
+3. Accept loads that fit your schedule
+4. Start earning!
+
+SUPPORT:
+If you have any questions, contact us:
+Email: ${supportEmail}
+Phone: ${supportPhone}
+
+Welcome aboard!
+
+---
+MED DROP
+Superior One Logistics Software
+${supportPhone}
+${supportEmail}
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Application Approved!</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">MED DROP - Superior One Logistics Software</p>
+  </div>
+  
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+    <p style="font-size: 18px; color: #1e40af;"><strong>Congratulations ${firstName}!</strong></p>
+    
+    <p>Your driver application has been approved. You can now access the load board and start accepting loads.</p>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #14b8a6;">
+      <p style="margin: 0 0 10px 0; font-weight: 600; color: #0369a1;">Your Account Details:</p>
+      <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+        <li>Email: ${email}</li>
+        <li>Name: ${firstName} ${lastName}</li>
+        <li>Status: <strong style="color: #059669;">Active</strong></li>
+      </ul>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Go to Dashboard</a>
+    </div>
+    
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0; font-weight: 600; color: #1e40af;">Get Started:</p>
+      <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #4b5563;">
+        <li>Log in to your dashboard</li>
+        <li>View available loads on the load board</li>
+        <li>Accept loads that fit your schedule</li>
+        <li>Start earning!</li>
+      </ol>
+    </div>
+    
+    <p style="margin-top: 30px;">Need help? Contact us:</p>
+    <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:${supportEmail}" style="color: #0ea5e9;">${supportEmail}</a></p>
+    <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:${supportPhone}" style="color: #0ea5e9;">${supportPhone}</a></p>
+    
+    <p style="margin-top: 30px;">Welcome aboard!</p>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+    <p style="margin: 0;"><strong>MED DROP</strong></p>
+    <p style="margin: 5px 0;">Superior One Logistics Software</p>
+    <p style="margin: 5px 0;">${supportPhone}</p>
+    <p style="margin: 15px 0 0 0;">This is an automated email. Please do not reply to this email.</p>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  await sendEmail({ to, subject, text, html })
+}
+
+/**
+ * Send driver rejection email when account is rejected
+ */
+export async function sendDriverRejectionEmail({
+  to,
+  firstName,
+  lastName,
+  rejectionReason,
+}: {
+  to: string
+  firstName: string
+  lastName: string
+  rejectionReason?: string | null
+}) {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const supportEmail = 'meddrop.dispatch@outlook.com'
+  const supportPhone = '(903) 914-0386'
+  
+  const subject = `Update on your MED DROP Application`
+
+  const text = `
+Hello ${firstName},
+
+We regret to inform you that your driver application has not been approved at this time.
+
+${rejectionReason ? `REASON: ${rejectionReason}` : 'Our team has reviewed your application and determined that we cannot proceed at this time.'}
+
+If you have questions about this decision or would like to discuss your application further, please contact our support team.
+
+SUPPORT:
+Email: ${supportEmail}
+Phone: ${supportPhone}
+
+Thank you for your interest in MED DROP.
+
+---
+MED DROP
+Superior One Logistics Software
+${supportPhone}
+${supportEmail}
+  `.trim()
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 28px;">Application Update</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">MED DROP - Superior One Logistics Software</p>
+  </div>
+  
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+    <p style="font-size: 18px; color: #1e40af;"><strong>Hello ${firstName},</strong></p>
+    
+    <p>We regret to inform you that your driver application has not been approved at this time.</p>
+    
+    ${rejectionReason ? `
+    <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+      <p style="margin: 0 0 10px 0; font-weight: 600; color: #991b1b;">Reason:</p>
+      <p style="margin: 0; color: #7f1d1d;">${rejectionReason}</p>
+    </div>
+    ` : `
+    <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+      <p style="margin: 0; color: #7f1d1d;">Our team has reviewed your application and determined that we cannot proceed at this time.</p>
+    </div>
+    `}
+    
+    <p>If you have questions about this decision or would like to discuss your application further, please contact our support team.</p>
+    
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0; font-weight: 600; color: #1e40af;">Contact Support:</p>
+      <p style="margin: 10px 0 5px 0;"><strong>Email:</strong> <a href="mailto:${supportEmail}" style="color: #0ea5e9;">${supportEmail}</a></p>
+      <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:${supportPhone}" style="color: #0ea5e9;">${supportPhone}</a></p>
+    </div>
+    
+    <p style="margin-top: 30px;">Thank you for your interest in MED DROP.</p>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px;">
+    <p style="margin: 0;"><strong>MED DROP</strong></p>
+    <p style="margin: 5px 0;">Superior One Logistics Software</p>
+    <p style="margin: 5px 0;">${supportPhone}</p>
+    <p style="margin: 15px 0 0 0;">This is an automated email. Please do not reply to this email.</p>
   </div>
 </body>
 </html>

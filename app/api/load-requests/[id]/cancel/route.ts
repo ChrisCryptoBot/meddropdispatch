@@ -15,10 +15,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -73,7 +73,7 @@ export async function POST(
       throw new ValidationError('Load is already cancelled')
     }
 
-    if (load.status === 'DELIVERED') {
+    if (load.status === 'DELIVERED' || load.status === 'COMPLETED') {
       throw new ValidationError('Cannot cancel a delivered or completed load')
     }
 

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
 import { showToast } from '@/lib/toast'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 interface Document {
   id: string
@@ -141,19 +143,14 @@ export default function DriverDocumentsPage() {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading documents...</p>
-          </div>
-        </div>
+        <LoadingSpinner portal="driver" label="Loading documents..." />
       </div>
     )
   }
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Documents</h1>
@@ -215,27 +212,16 @@ export default function DriverDocumentsPage() {
 
       {/* Documents List */}
       {filteredAndSortedDocuments.length === 0 ? (
-        <div className="glass-accent rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-medical">
-          <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No documents found</h3>
-          <p className="text-gray-600">
-            {searchQuery || filter !== 'all'
-              ? 'No documents match your filters'
-              : 'Documents uploaded for your loads will appear here'}
-          </p>
-        </div>
+        <EmptyState
+          portal="driver"
+          title={searchQuery || filter !== 'all' ? 'No documents match your filters' : 'No documents found'}
+          description={searchQuery || filter !== 'all' ? 'Try adjusting your search or filters' : 'Documents uploaded for your loads will appear here'}
+          icon={
+            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          }
+        />
       ) : (
         <div className="space-y-4">
           <div className="text-sm text-gray-600 mb-2">

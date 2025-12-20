@@ -4,21 +4,24 @@ import { verifyPassword } from '@/lib/auth'
 import { createErrorResponse, withErrorHandling, AuthenticationError } from '@/lib/errors'
 import { loginSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { setAuthCookie } from '@/lib/auth-session'
+import { checkAccountLockout, recordLoginAttempt } from '@/lib/account-lockout'
 
 /**
  * POST /api/auth/shipper/login
  * Authenticate a shipper with email and password
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request) => {
+    const nextReq = req as NextRequest
     // Apply stricter rate limiting for auth routes
     try {
-      rateLimit(RATE_LIMITS.auth)(req)
+      rateLimit(RATE_LIMITS.auth)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }
 
-    const rawData = await req.json()
+    const rawData = await nextReq.json()
     
     // Validate request body
     const validation = await validateRequest(loginSchema, rawData)
@@ -37,11 +40,32 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = validation.data
     
+    // Get IP address for lockout tracking
+    const ipAddress = nextReq.headers.get('x-forwarded-for')?.split(',')[0] || 
+                     nextReq.headers.get('x-real-ip') || 
+                     'unknown'
+    
     console.log('Login attempt received:', {
       email,
       hasPassword: !!password,
       passwordLength: password?.length || 0
     })
+
+    // Check if account is locked
+    const lockoutStatus = await checkAccountLockout(email, 'shipper', ipAddress)
+    if (lockoutStatus.locked) {
+      const minutesRemaining = Math.ceil(
+        (lockoutStatus.lockedUntil!.getTime() - Date.now()) / (60 * 1000)
+      )
+      return NextResponse.json(
+        {
+          error: 'AccountLocked',
+          message: `Account is temporarily locked due to too many failed login attempts. Please try again in ${minutesRemaining} minute(s).`,
+          lockedUntil: lockoutStatus.lockedUntil,
+        },
+        { status: 423 } // 423 Locked
+      )
+    }
 
     // Find shipper by email (case-insensitive)
     const shipper = await prisma.shipper.findUnique({
@@ -50,6 +74,8 @@ export async function POST(request: NextRequest) {
 
     if (!shipper) {
       console.error('Shipper not found for email:', email.toLowerCase())
+      // Record failed attempt
+      await recordLoginAttempt(email, 'shipper', false, ipAddress)
       throw new AuthenticationError('Invalid email or password')
     }
 
@@ -74,6 +100,25 @@ export async function POST(request: NextRequest) {
 
       if (!passwordValid) {
         console.error('Password verification failed for email:', email.toLowerCase())
+        // Record failed attempt
+        await recordLoginAttempt(email, 'shipper', false, ipAddress)
+        
+        // Check if this failure should trigger a lockout
+        const newLockoutStatus = await checkAccountLockout(email, 'shipper', ipAddress)
+        if (newLockoutStatus.locked) {
+          const minutesRemaining = Math.ceil(
+            (newLockoutStatus.lockedUntil!.getTime() - Date.now()) / (60 * 1000)
+          )
+          return NextResponse.json(
+            {
+              error: 'AccountLocked',
+              message: `Too many failed login attempts. Account is now locked for ${minutesRemaining} minute(s).`,
+              lockedUntil: newLockoutStatus.lockedUntil,
+            },
+            { status: 423 }
+          )
+        }
+        
         throw new AuthenticationError('Invalid email or password')
       }
     } catch (verifyError) {
@@ -86,12 +131,25 @@ export async function POST(request: NextRequest) {
 
     console.log('Shipper login successful for email:', email.toLowerCase())
 
+    // Record successful login attempt (clears failed attempts)
+    await recordLoginAttempt(email, 'shipper', true, ipAddress)
+
     // Return shipper data (excluding password hash)
     const { passwordHash, ...shipperData } = shipper
 
-    return NextResponse.json({
+    // Create response with httpOnly cookie
+    const response = NextResponse.json({
       success: true,
       shipper: shipperData
     })
+
+    // Set authentication cookie
+    await setAuthCookie(response, {
+      userId: shipper.id,
+      userType: 'shipper',
+      email: shipper.email,
+    })
+
+    return response
   })(request)
 }

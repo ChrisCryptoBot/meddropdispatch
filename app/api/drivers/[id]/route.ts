@@ -12,6 +12,8 @@ const updateDriverSchema = z.object({
   licenseExpiry: z.string().datetime().optional().nullable(),
   emergencyContact: z.string().optional().nullable(),
   emergencyPhone: z.string().optional().nullable(),
+  // Status (admin only)
+  status: z.enum(['PENDING_APPROVAL', 'AVAILABLE', 'ON_ROUTE', 'OFF_DUTY', 'INACTIVE']).optional(),
   // Vehicle fields
   vehicleType: z.string().optional().nullable(),
   vehicleMake: z.string().optional().nullable(),
@@ -72,6 +74,7 @@ export async function GET(
         yearsOfExperience: true,
         languages: true,
         serviceAreas: true,
+        isAdmin: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -141,6 +144,7 @@ export async function PATCH(
     }
     if (data.emergencyContact !== undefined) updateData.emergencyContact = data.emergencyContact
     if (data.emergencyPhone !== undefined) updateData.emergencyPhone = data.emergencyPhone
+    if (data.status !== undefined) updateData.status = data.status
     if (data.vehicleType !== undefined) updateData.vehicleType = data.vehicleType
     if (data.vehicleMake !== undefined) updateData.vehicleMake = data.vehicleMake
     if (data.vehicleModel !== undefined) updateData.vehicleModel = data.vehicleModel
@@ -183,6 +187,7 @@ export async function PATCH(
         yearsOfExperience: true,
         languages: true,
         serviceAreas: true,
+        isAdmin: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -215,6 +220,10 @@ export async function DELETE(
   try {
     const { id } = await params
 
+    // Get request body for deletion reason
+    const body = await request.json().catch(() => ({}))
+    const deletionReason = body.reason || body.deletionReason || 'Account deletion requested'
+
     // Check if driver exists
     const driver = await prisma.driver.findUnique({
       where: { id },
@@ -224,8 +233,13 @@ export async function DELETE(
             loadRequests: {
               where: {
                 status: {
-                  notIn: ['DELIVERED', 'CANCELLED'],
+                  notIn: ['DELIVERED', 'CANCELLED', 'COMPLETED', 'DENIED'],
                 },
+              },
+            },
+            vehicles: {
+              where: {
+                isActive: true,
               },
             },
           },
@@ -237,32 +251,46 @@ export async function DELETE(
       throw new NotFoundError('Driver')
     }
 
-    // Check for active loads
+    // Check for active loads - warn but allow soft delete (preserves data)
     if (driver._count.loadRequests > 0) {
-      return NextResponse.json(
-        {
-          error: 'Cannot delete account',
-          message: 'You have active loads that must be completed or cancelled before deleting your account.',
-          activeLoadsCount: driver._count.loadRequests,
-        },
-        { status: 400 }
-      )
+      // Log warning but proceed with soft delete
+      console.warn(`Soft deleting driver with ${driver._count.loadRequests} active loads:`, id)
     }
 
-    // Unassign driver from any loads (set driverId to null)
+    // Check for active vehicles - warn but allow deletion
+    if (driver._count.vehicles > 0) {
+      console.warn(`Soft deleting driver with ${driver._count.vehicles} active vehicles:`, id)
+    }
+
+    // Unassign driver from any active loads (set driverId to null)
+    // This is handled by onDelete: SetNull in schema, but we do it explicitly for clarity
     await prisma.loadRequest.updateMany({
       where: { driverId: id },
       data: { driverId: null },
     })
 
-    // Delete driver account
-    await prisma.driver.delete({
+    // Soft delete: Mark as deleted
+    // This maintains the record for historical purposes but hides it from active lists
+    // Cascade deletes will handle related records according to schema (onDelete: Cascade or SetNull)
+    const updatedDriver = await prisma.driver.update({
       where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: body.deletedBy || null, // Can be set if we track who deleted it
+        deletedReason: deletionReason,
+        status: 'INACTIVE', // Set status to inactive
+      },
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Account deleted successfully',
+      message: 'Driver deactivated successfully',
+      driver: updatedDriver,
+      warnings: {
+        activeLoads: driver._count.loadRequests,
+        activeVehicles: driver._count.vehicles,
+      },
     })
   } catch (error) {
     console.error('Error in DELETE /api/drivers/[id]:', error)

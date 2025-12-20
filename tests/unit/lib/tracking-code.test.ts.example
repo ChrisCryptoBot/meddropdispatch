@@ -1,0 +1,36 @@
+/**
+ * Example Unit Test - Tracking Code Generation
+ * 
+ * This is an example test file showing how to structure tests.
+ * Copy this pattern for other utility functions.
+ * 
+ * To run: npm run test
+ */
+
+import { describe, it, expect } from 'vitest'
+// import { generateTrackingCode } from '@/lib/tracking-code'
+
+describe('Tracking Code Generation', () => {
+  it('should generate a valid tracking code format', () => {
+    // Example test structure
+    // const code = generateTrackingCode()
+    // expect(code).toMatch(/^[A-Z0-9]{8}$/)
+  })
+
+  it('should generate unique tracking codes', () => {
+    // Test uniqueness
+    // const code1 = generateTrackingCode()
+    // const code2 = generateTrackingCode()
+    // expect(code1).not.toBe(code2)
+  })
+
+  it('should handle edge cases', () => {
+    // Test edge cases
+  })
+})
+
+
+
+
+
+

@@ -7,16 +7,17 @@ import type { LoadRequestFormData } from '@/lib/types'
 import { createErrorResponse, withErrorHandling } from '@/lib/errors'
 import { createLoadRequestSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { shouldBlockDuplicateLoad } from '@/lib/duplicate-detector'
 
 /**
  * POST /api/load-requests
  * Create a new load request from the public form
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -321,7 +322,7 @@ export async function POST(request: NextRequest) {
           data: {
             companyName: data.companyName,
             shipperCode: shipperCode, // Auto-generate from company name
-            clientType: (data.clientType as any) || 'OTHER',
+            clientType: ((rawData as any).clientType) || 'OTHER',
             contactName: data.contactName,
             phone: data.phone,
             email: data.email.toLowerCase(),
@@ -340,7 +341,7 @@ export async function POST(request: NextRequest) {
               data: {
                 companyName: data.companyName,
                 shipperCode: fallbackCode,
-                clientType: (data.clientType as any) || 'OTHER',
+                clientType: ((rawData as any).clientType) || 'OTHER',
                 contactName: data.contactName,
                 phone: data.phone,
                 email: data.email.toLowerCase(),
@@ -406,6 +407,7 @@ export async function POST(request: NextRequest) {
         companyName: true,
         shipperCode: true,
         email: true,
+        contactName: true,
       }
     })
     
@@ -479,6 +481,7 @@ export async function POST(request: NextRequest) {
               companyName: true,
               shipperCode: true,
               email: true,
+              contactName: true,
             }
           })
           updateSuccess = true
@@ -531,7 +534,7 @@ export async function POST(request: NextRequest) {
         data: {
           shipperId: finalShipper.id,
           name: data.pickupFacilityName,
-          facilityType: (data.pickupFacilityType as any) || 'OTHER', // Default to 'OTHER' if not provided
+          facilityType: ((rawData as any).pickupFacilityType) || 'OTHER', // Default to 'OTHER' if not provided
           addressLine1: data.pickupAddressLine1,
           addressLine2: data.pickupAddressLine2 || null,
           city: data.pickupCity,
@@ -560,7 +563,7 @@ export async function POST(request: NextRequest) {
         data: {
           shipperId: finalShipper.id,
           name: data.dropoffFacilityName,
-          facilityType: (data.dropoffFacilityType as any) || 'OTHER', // Default to 'OTHER' if not provided
+          facilityType: ((rawData as any).dropoffFacilityType) || 'OTHER', // Default to 'OTHER' if not provided
           addressLine1: data.dropoffAddressLine1,
           addressLine2: data.dropoffAddressLine2 || null,
           city: data.dropoffCity,
@@ -589,6 +592,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check for duplicate loads before creating
+    const overrideDuplicate = (rawData as any).overrideDuplicate as boolean | undefined
+    const duplicateCheck = await shouldBlockDuplicateLoad(
+      {
+        shipperId: finalShipper.id,
+        pickupFacilityId: pickupFacility.id,
+        dropoffFacilityId: dropoffFacility.id,
+        readyTime: data.readyTime ? new Date(data.readyTime) : null,
+        deliveryDeadline: data.deliveryDeadline ? new Date(data.deliveryDeadline) : null,
+        serviceType: data.serviceType,
+      },
+      overrideDuplicate || false
+    )
+
+    // Block exact duplicates unless override is provided
+    if (duplicateCheck.shouldBlock) {
+      return NextResponse.json(
+        {
+          error: 'DuplicateLoad',
+          message: duplicateCheck.result.message || 'A duplicate load request was detected',
+          duplicateLoadId: duplicateCheck.result.duplicateLoadId,
+          duplicateTrackingCode: duplicateCheck.result.duplicateTrackingCode,
+          similarity: duplicateCheck.result.similarity,
+          requiresOverride: true,
+        },
+        { status: 409 } // 409 Conflict
+      )
+    }
+
+    // Warn about near duplicates but allow creation
+    if (duplicateCheck.result.isDuplicate && duplicateCheck.result.similarity === 'near' && !overrideDuplicate) {
+      // Log warning but don't block
+      console.warn('Near-duplicate load detected but allowed:', {
+        newLoad: {
+          shipperId: finalShipper.id,
+          pickupFacilityId: pickupFacility.id,
+          dropoffFacilityId: dropoffFacility.id,
+        },
+        duplicateLoadId: duplicateCheck.result.duplicateLoadId,
+        duplicateTrackingCode: duplicateCheck.result.duplicateTrackingCode,
+      })
+    }
+
     // Create load request
     const loadRequest = await prisma.loadRequest.create({
       data: {
@@ -614,6 +660,78 @@ export async function POST(request: NextRequest) {
         assignedAt: assignedDriverId ? new Date() : null, // Set assignment timestamp
       }
     })
+
+    // Handle multiple locations if provided
+    const locations = (rawData as any).locations as Array<{
+      locationType: 'PICKUP' | 'DROPOFF'
+      sequence: number
+      facilityName: string
+      facilityType: string
+      addressLine1: string
+      addressLine2?: string
+      city: string
+      state: string
+      postalCode: string
+      contactName: string
+      contactPhone: string
+      accessNotes?: string
+      readyTime?: string
+    }> | undefined
+
+    if (locations && Array.isArray(locations) && locations.length > 0) {
+      // Group locations by type and sort by sequence
+      const pickupLocations = locations
+        .filter(loc => loc.locationType === 'PICKUP')
+        .sort((a, b) => a.sequence - b.sequence)
+      
+      const dropoffLocations = locations
+        .filter(loc => loc.locationType === 'DROPOFF')
+        .sort((a, b) => a.sequence - b.sequence)
+
+      // Create facilities and LoadRequestLocation records for each location
+      for (const loc of locations) {
+        // Find or create facility
+        let facility = await prisma.facility.findFirst({
+          where: {
+            shipperId: finalShipper.id,
+            name: loc.facilityName,
+            addressLine1: loc.addressLine1,
+            city: loc.city,
+            state: loc.state,
+          }
+        })
+
+        if (!facility) {
+          facility = await prisma.facility.create({
+            data: {
+              shipperId: finalShipper.id,
+              name: loc.facilityName,
+              facilityType: (loc.facilityType as any) || 'OTHER',
+              addressLine1: loc.addressLine1,
+              addressLine2: loc.addressLine2 || null,
+              city: loc.city,
+              state: loc.state.toUpperCase(),
+              postalCode: loc.postalCode,
+              contactName: loc.contactName,
+              contactPhone: loc.contactPhone,
+              defaultAccessNotes: loc.accessNotes || null,
+            }
+          })
+        }
+
+        // Create LoadRequestLocation record
+        await prisma.loadRequestLocation.create({
+          data: {
+            loadRequestId: loadRequest.id,
+            facilityId: facility.id,
+            locationType: loc.locationType,
+            sequence: loc.sequence,
+            readyTime: loc.readyTime ? new Date(loc.readyTime) : null,
+            accessNotes: loc.accessNotes || null,
+          }
+        })
+      }
+    }
 
     // Create initial tracking event
     if (assignedDriverId) {
@@ -881,5 +999,5 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-  })
+  })(request)
 }

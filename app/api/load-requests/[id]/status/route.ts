@@ -11,9 +11,14 @@ import {
   sendDeliveryCompleteSMS,
 } from '@/lib/sms'
 import { autoGenerateInvoiceForLoad } from '@/lib/invoicing'
-import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
 import { updateLoadStatusSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { validatePickupLocation, validateDeliveryLocation, validateCoordinates } from '@/lib/gps-validation'
+
+const DEFAULT_TOLERANCE_RADIUS = 100 // 100 meters default
+import { verifyLoadStatusUpdateAccess, requireAuth } from '@/lib/authorization'
+import { logUserAction } from '@/lib/audit-log'
 
 /**
  * PATCH /api/load-requests/[id]/status
@@ -23,16 +28,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request) => {
+    const nextReq = req as NextRequest
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
-    const rawData = await req.json()
+    const rawData = await nextReq.json()
     
     // Validate request body
     const validation = await validateRequest(updateLoadStatusSchema, rawData)
@@ -49,7 +55,15 @@ export async function PATCH(
       )
     }
 
-    const data = validation.data as StatusUpdateData & { driverId?: string; actorType?: string; latitude?: number; longitude?: number }
+    const data = validation.data as StatusUpdateData & { 
+      driverId?: string
+      actorType?: string
+      latitude?: number
+      longitude?: number
+      accuracy?: number
+      overrideReason?: string
+      overrideGpsValidation?: boolean
+    }
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -69,16 +83,25 @@ export async function PATCH(
       )
     }
 
+    // AUTHORIZATION: Verify user has permission to update this load's status
+    await verifyLoadStatusUpdateAccess(nextReq, id)
+
     // CHAIN-OF-CUSTODY: Enforce linear status transitions (scheduling system)
     // Allow flexible transitions - drivers can skip EN_ROUTE if already at pickup location
     const validTransitions: Record<string, string[]> = {
-      'REQUESTED': ['SCHEDULED', 'DENIED'], // Phone call → Schedule or Deny
-      'SCHEDULED': ['EN_ROUTE', 'PICKED_UP'], // Can go directly to PICKED_UP or start EN_ROUTE first
-      'EN_ROUTE': ['PICKED_UP'], // Arrive at pickup
-      'PICKED_UP': ['IN_TRANSIT', 'DELIVERED'], // Can skip IN_TRANSIT
-      'IN_TRANSIT': ['DELIVERED'],
+      'NEW': ['QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED', 'DENIED', 'CANCELLED'], // New load can be quoted, scheduled, or cancelled
+      'QUOTE_REQUESTED': ['QUOTED', 'DENIED', 'CANCELLED'], // Quote requested can be quoted or denied
+      'QUOTED': ['QUOTE_ACCEPTED', 'DENIED', 'CANCELLED'], // Quoted can be accepted, denied, or cancelled
+      'QUOTE_ACCEPTED': ['SCHEDULED', 'DENIED', 'CANCELLED'], // Quote accepted can be scheduled, denied, or cancelled
+      'REQUESTED': ['SCHEDULED', 'DENIED', 'CANCELLED'], // Phone call → Schedule or Deny
+      'SCHEDULED': ['EN_ROUTE', 'PICKED_UP', 'CANCELLED'], // Can go directly to PICKED_UP or start EN_ROUTE first
+      'EN_ROUTE': ['PICKED_UP', 'CANCELLED'], // Arrive at pickup
+      'PICKED_UP': ['IN_TRANSIT', 'DELIVERED', 'CANCELLED'], // Can skip IN_TRANSIT
+      'IN_TRANSIT': ['DELIVERED', 'CANCELLED'],
       'DELIVERED': [], // Terminal state - delivery complete, paperwork done
       'DENIED': [], // Terminal state
+      'CANCELLED': [], // Terminal state
+      'COMPLETED': [], // Terminal state
     }
 
     const currentStatus = loadRequest.status
@@ -100,17 +123,171 @@ export async function PATCH(
           { status: 400 }
         )
       }
+
+      // VALIDATION: Require driver assignment before status updates beyond SCHEDULED
+      if (['EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED'].includes(newStatus) && !loadRequest.driverId) {
+        return NextResponse.json(
+          { error: 'Cannot update status: Load must have an assigned driver before status can be updated to ' + newStatus },
+          { status: 400 }
+        )
+      }
+
+      // GPS VALIDATION: Validate location for pickup and delivery status updates
+      if (newStatus === 'PICKED_UP' && data.latitude && data.longitude) {
+        try {
+          const validationResult = await validatePickupLocation(
+            id,
+            {
+              latitude: data.latitude,
+              longitude: data.longitude,
+              accuracy: data.accuracy,
+            },
+            DEFAULT_TOLERANCE_RADIUS
+          )
+
+          if (!validationResult.withinRange && !data.overrideGpsValidation) {
+            // AUDIT: Log GPS validation failure
+            const auth = await requireAuth(nextReq).catch(() => null)
+            if (auth) {
+              await logUserAction('OTHER', 'LOAD_REQUEST', {
+                entityId: id,
+                userId: auth.userId,
+                userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+                req: nextReq,
+                metadata: { action: 'GPS_VALIDATION_FAILED', reason: validationResult.message },
+                severity: 'WARNING',
+                success: false,
+                errorMessage: `GPS validation failed for pickup: ${validationResult.message}`,
+              })
+            }
+
+            return NextResponse.json(
+              { 
+                error: 'GPS validation failed',
+                message: validationResult.message || 'Driver location does not match pickup location',
+                requiresOverride: true,
+              },
+              { status: 400 }
+            )
+          }
+
+          // AUDIT: Log GPS override if used
+          if (!validationResult.withinRange && data.overrideGpsValidation) {
+            const auth = await requireAuth(nextReq).catch(() => null)
+            if (auth) {
+              await logUserAction('OTHER', 'LOAD_REQUEST', {
+                entityId: id,
+                userId: auth.userId,
+                userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+                req: nextReq,
+                metadata: {
+                  action: 'GPS_VALIDATION_OVERRIDDEN',
+                  reason: data.overrideReason || 'GPS validation overridden',
+                  latitude: data.latitude,
+                  longitude: data.longitude,
+                },
+                severity: 'WARNING',
+                success: true,
+              })
+            }
+          }
+        } catch (gpsError) {
+          console.error('GPS validation error:', gpsError)
+          // Don't block if GPS validation fails - log and continue
+        }
+      }
+
+      if (newStatus === 'DELIVERED' && data.latitude && data.longitude) {
+        try {
+          const validationResult = await validateDeliveryLocation(
+            id,
+            {
+              latitude: data.latitude,
+              longitude: data.longitude,
+              accuracy: data.accuracy,
+            },
+            DEFAULT_TOLERANCE_RADIUS
+          )
+
+          if (!validationResult.withinRange && !data.overrideGpsValidation) {
+            // AUDIT: Log GPS validation failure
+            const auth = await requireAuth(nextReq).catch(() => null)
+            if (auth) {
+              await logUserAction('OTHER', 'LOAD_REQUEST', {
+                entityId: id,
+                userId: auth.userId,
+                userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+                req: nextReq,
+                metadata: { action: 'GPS_VALIDATION_FAILED', reason: validationResult.message },
+                severity: 'WARNING',
+                success: false,
+                errorMessage: `GPS validation failed for delivery: ${validationResult.message}`,
+              })
+            }
+
+            return NextResponse.json(
+              { 
+                error: 'GPS validation failed',
+                message: validationResult.message || 'Driver location does not match delivery location',
+                requiresOverride: true,
+              },
+              { status: 400 }
+            )
+          }
+
+          // AUDIT: Log GPS override if used
+          if (!validationResult.withinRange && data.overrideGpsValidation) {
+            const auth = await requireAuth(nextReq).catch(() => null)
+            if (auth) {
+              await logUserAction('OTHER', 'LOAD_REQUEST', {
+                entityId: id,
+                userId: auth.userId,
+                userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+                req: nextReq,
+                metadata: {
+                  action: 'GPS_VALIDATION_OVERRIDDEN',
+                  reason: data.overrideReason || 'GPS validation overridden',
+                  latitude: data.latitude,
+                  longitude: data.longitude,
+                },
+                severity: 'WARNING',
+                success: true,
+              })
+            }
+          }
+        } catch (gpsError) {
+          console.error('GPS validation error:', gpsError)
+          // Don't block if GPS validation fails - log and continue
+        }
+      }
     }
 
-    // Update load request
-    const updatedLoad = await prisma.loadRequest.update({
-      where: { id },
-      data: {
-        status: data.status,
-        quoteAmount: data.quoteAmount,
-        quoteNotes: data.quoteNotes,
+    // ATOMIC UPDATE: Use transaction to prevent duplicate invoice generation
+    const updatedLoad = await prisma.$transaction(async (tx) => {
+      // Re-check invoiceId within transaction to prevent race condition
+      const currentLoad = await tx.loadRequest.findUnique({
+        where: { id },
+        select: { invoiceId: true, status: true },
+      })
+
+      if (!currentLoad) {
+        throw new NotFoundError('Load request')
       }
+
+      // Update load status
+      const updated = await tx.loadRequest.update({
+        where: { id },
+        data: {
+          status: data.status,
+          quoteAmount: data.quoteAmount,
+          quoteNotes: data.quoteNotes,
+        }
+      })
+
+      return { updated, currentLoad }
     })
+
+    const finalUpdatedLoad = updatedLoad.updated
 
     // POD LOCKING: Lock all documents when status becomes DELIVERED
     if (data.status === 'DELIVERED') {
@@ -127,12 +304,22 @@ export async function PATCH(
     }
 
     // AUTO-INVOICE: Generate invoice when load is marked as DELIVERED
-    // Send delivery congratulations email with invoice attached
-    if (data.status === 'DELIVERED' && !loadRequest.invoiceId) {
-      // Run asynchronously to avoid blocking the status update
-      autoGenerateInvoiceForLoad(id)
-        .then(async (invoiceId) => {
-          if (invoiceId) {
+    // Use atomic check within transaction to prevent duplicates
+    if (data.status === 'DELIVERED' && !updatedLoad.currentLoad.invoiceId) {
+      // Generate invoice synchronously to ensure it completes
+      // Use try-catch to prevent status update failure if invoice generation fails
+      try {
+        const invoiceId = await autoGenerateInvoiceForLoad(id)
+        
+        if (invoiceId) {
+          // Update load with invoice ID atomically
+          await prisma.loadRequest.update({
+            where: { id },
+            data: { invoiceId },
+          })
+
+          // Send email asynchronously (non-blocking)
+          setImmediate(async () => {
             try {
               const { sendDeliveryCongratulationsEmail } = await import('@/lib/email')
               const { generateInvoicePDF } = await import('@/lib/invoicing')
@@ -159,12 +346,15 @@ export async function PATCH(
                 // Generate PDF
                 const pdfBuffer = await generateInvoicePDF(invoiceId)
                 
+                const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
+                const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+                
                 // Send delivery congratulations email with invoice
                 await sendDeliveryCongratulationsEmail({
                   to: loadRequest.shipper.email,
                   companyName: loadRequest.shipper.companyName,
                   trackingCode: loadRequest.publicTrackingCode,
-                  deliveryTime: loadWithRecipient?.actualDeliveryTime || updatedLoad.actualDeliveryTime || new Date(),
+                  deliveryTime: loadWithRecipient?.actualDeliveryTime || finalUpdatedLoad.actualDeliveryTime || new Date(),
                   recipientName: loadWithRecipient?.deliverySignerName || null,
                   invoicePdfBuffer: pdfBuffer,
                   invoiceNumber: invoice.invoiceNumber,
@@ -186,12 +376,13 @@ export async function PATCH(
               console.error('Error sending delivery congratulations email:', emailError)
               // Don't fail if email fails - invoice is still generated
             }
-          }
-        })
-        .catch((error) => {
-          console.error('Error auto-generating invoice:', error)
-          // Don't fail the status update if invoice generation fails
-        })
+          })
+        }
+      } catch (invoiceError) {
+        console.error('Error auto-generating invoice:', invoiceError)
+        // Log error but don't fail status update
+        // Invoice can be generated manually later if needed
+      }
     }
 
     // Determine tracking event code based on status
@@ -204,12 +395,20 @@ export async function PATCH(
     const actorId = data.driverId || loadRequest.driverId || null
     const actorType = data.actorType || (data.driverId || loadRequest.driverId ? 'DRIVER' : 'ADMIN')
 
+    // Build description with override reason if provided
+    let eventDescription = data.eventDescription || null
+    if (data.overrideReason) {
+      eventDescription = eventDescription
+        ? `${eventDescription}\n\nLocation Override: ${data.overrideReason}`
+        : `Location Override: ${data.overrideReason}`
+    }
+
     await prisma.trackingEvent.create({
       data: {
         loadRequestId: id,
         code: eventCode,
         label: eventLabel,
-        description: data.eventDescription || null,
+        description: eventDescription,
         locationText: data.locationText || null,
         actorId: actorId,
         actorType: actorType,
@@ -269,6 +468,15 @@ export async function PATCH(
     const dropoffAddress = `${loadRequest.dropoffFacility.addressLine1}, ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}`
 
     // Always notify shipper of status changes with enhanced email (ETA, status-specific content)
+    // Get signer names from final updated load
+    const finalLoadWithSigners = await prisma.loadRequest.findUnique({
+      where: { id },
+      select: {
+        pickupSignerName: true,
+        deliverySignerName: true,
+      },
+    })
+
     await sendLoadStatusEmail({
       to: loadRequest.shipper.email,
       trackingCode: loadRequest.publicTrackingCode,
@@ -276,12 +484,14 @@ export async function PATCH(
       status: data.status,
       statusLabel: eventLabel,
       trackingUrl,
-      quoteAmount: data.quoteAmount || loadRequest.quoteAmount,
-      quoteCurrency: updatedLoad.quoteCurrency,
+      quoteAmount: data.quoteAmount ?? (loadRequest.quoteAmount ?? undefined),
+      quoteCurrency: finalUpdatedLoad.quoteCurrency || undefined,
       eta,
       driverName,
       pickupAddress,
       dropoffAddress,
+      pickupSignerName: finalLoadWithSigners?.pickupSignerName || undefined,
+      deliverySignerName: finalLoadWithSigners?.deliverySignerName || undefined,
     })
 
     // Notify driver at key workflow points (EN_ROUTE, PICKED_UP, IN_TRANSIT, DELIVERED)
@@ -304,36 +514,43 @@ export async function PATCH(
     }
 
     // Send SMS notifications for critical status updates (if shipper has SMS enabled)
+    // NON-BLOCKING: SMS failures should not prevent status updates
     if (loadRequest.shipper.smsNotificationsEnabled && loadRequest.shipper.smsPhoneNumber) {
       const shipperPhone = loadRequest.shipper.smsPhoneNumber
 
-      // Driver assigned
+      // Driver assigned - fire and forget
       if (data.status === 'SCHEDULED' && loadRequest.driver) {
         const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
-        await sendDriverAssignedSMS({
+        sendDriverAssignedSMS({
           shipperPhone,
           trackingCode: loadRequest.publicTrackingCode,
           driverName,
+        }).catch((error) => {
+          console.error('[SMS] Failed to send driver assigned SMS (non-blocking):', error)
         })
       }
 
-      // Driver en route
+      // Driver en route - fire and forget
       if (data.status === 'EN_ROUTE' && loadRequest.driver) {
         const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
-        await sendDriverEnRouteSMS({
+        sendDriverEnRouteSMS({
           shipperPhone,
           trackingCode: loadRequest.publicTrackingCode,
           driverName,
+        }).catch((error) => {
+          console.error('[SMS] Failed to send driver en route SMS (non-blocking):', error)
         })
       }
 
-      // Delivery complete
+      // Delivery complete - fire and forget
       if (data.status === 'DELIVERED') {
         const deliveryTime = new Date().toLocaleString()
-        await sendDeliveryCompleteSMS({
+        sendDeliveryCompleteSMS({
           shipperPhone,
           trackingCode: loadRequest.publicTrackingCode,
           deliveryTime,
+        }).catch((error) => {
+          console.error('[SMS] Failed to send delivery complete SMS (non-blocking):', error)
         })
       }
     }
@@ -354,7 +571,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      loadRequest: updatedLoad,
+      loadRequest: finalUpdatedLoad,
     })
   })(request)
 }

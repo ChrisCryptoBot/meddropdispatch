@@ -11,41 +11,97 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const skip = (page - 1) * limit
 
     // Log for debugging
-    console.log(`[Fetch Shipper Loads] Requesting loads for shipper: ${id}`)
+    console.log(`[Fetch Shipper Loads] Requesting loads for shipper: ${id}, page: ${page}, limit: ${limit}`)
 
-    const loads = await prisma.loadRequest.findMany({
-      where: {
-        shipperId: id,
-      },
-      include: {
-        pickupFacility: true,
-        dropoffFacility: true,
-        driver: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            vehicleType: true,
-          }
+    // Optimized query - use select instead of include, limit results
+    const [loads, total] = await Promise.all([
+      prisma.loadRequest.findMany({
+        where: {
+          shipperId: id,
         },
-        trackingEvents: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
+        select: {
+          id: true,
+          publicTrackingCode: true,
+          status: true,
+          readyTime: true,
+          deliveryDeadline: true,
+          quoteAmount: true,
+          createdAt: true,
+          gpsTrackingEnabled: true,
+          pickupFacility: {
+            select: {
+              id: true,
+              name: true,
+              addressLine1: true,
+              city: true,
+              state: true,
+            }
+          },
+          dropoffFacility: {
+            select: {
+              id: true,
+              name: true,
+              addressLine1: true,
+              city: true,
+              state: true,
+            }
+          },
+          driver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              vehicleType: true,
+            }
+          },
+          // Only get latest tracking event, not all
+          trackingEvents: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: {
+              code: true,
+              label: true,
+              createdAt: true,
+            }
+          },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.loadRequest.count({
+        where: {
+          shipperId: id,
+        },
+      })
+    ])
 
     // Ensure all loads are returned, including REQUESTED status loads
     // REQUESTED loads should show if they've been reviewed/accepted by a driver
-    console.log(`[Fetch Shipper Loads] Found ${loads.length} loads for shipper ${id}. Statuses: ${loads.map(l => l.status).join(', ')}`)
+    console.log(`[Fetch Shipper Loads] Found ${loads.length} loads for shipper ${id} (page ${page} of ${Math.ceil(total / limit)}). Statuses: ${loads.map(l => l.status).join(', ')}`)
 
-    return NextResponse.json({ loads })
+    return NextResponse.json({ 
+      loads,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=30',
+      }
+    })
 
   } catch (error) {
     console.error('Error fetching shipper loads:', error)

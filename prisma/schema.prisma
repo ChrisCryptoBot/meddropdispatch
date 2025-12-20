@@ -27,7 +27,7 @@ datasource db {
 // TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, DRIVER_DENIED
 // DocumentType: PROOF_OF_PICKUP, PROOF_OF_DELIVERY, BILL_OF_LADING, OTHER
 // UserRole: ADMIN, DISPATCHER, VIEW_ONLY
-// DriverStatus: AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
+// DriverStatus: PENDING_APPROVAL, AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
 // VehicleType: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
 // CancellationReason: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
 // CancellationBillingRule: BILLABLE, PARTIAL, NOT_BILLABLE
@@ -49,11 +49,11 @@ model Shipper {
   email        String  @unique
   passwordHash String? // For shipper portal login
   isActive     Boolean @default(true)
-  
+
   // Soft Delete
-  deletedAt    DateTime? // When shipper was soft deleted
-  deletedBy    String?   // User/Driver ID who deleted
-  deletedReason String?   // Reason for deletion
+  deletedAt     DateTime? // When shipper was soft deleted
+  deletedBy     String? // User/Driver ID who deleted
+  deletedReason String? // Reason for deletion
 
   // Payment Terms & Billing
   paymentTerms        String  @default("NET_14") // NET_7, NET_14, NET_30, INVOICE_ONLY
@@ -70,16 +70,21 @@ model Shipper {
   smsNotificationsEnabled Boolean @default(true)
   smsPhoneNumber          String?
 
+  // Subscription Tier (Phase 3)
+  subscriptionTier      String  @default("STANDARD") // STANDARD, BROKERAGE
+  dedicatedDispatcherId String? // Optional - relation to Admin/Dispatcher user for BROKERAGE tier
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  facilities   Facility[]
-  loadRequests LoadRequest[]
-  invoices     Invoice[]
-  loadTemplates LoadTemplate[]
-  driverRatings DriverRating[]
-  callbackQueue CallbackQueue[]
+  facilities              Facility[]
+  loadRequests            LoadRequest[]
+  invoices                Invoice[]
+  loadTemplates           LoadTemplate[]
+  driverRatings           DriverRating[]
+  callbackQueue           CallbackQueue[]
+  notificationPreferences NotificationPreferences?
 
   @@index([email])
   @@index([companyName])
@@ -89,38 +94,38 @@ model Shipper {
 
 // BlockedEmail: DNU (Do Not Use) list - blocks emails from signing up
 model BlockedEmail {
-  id          String   @id @default(cuid())
-  email       String   @unique // Blocked email address
-  reason      String?  // Reason for blocking
-  blockedBy   String?  // User/Driver ID who blocked
-  blockedAt   DateTime @default(now())
-  isActive    Boolean  @default(true) // Can unblock if needed
-  
+  id        String   @id @default(cuid())
+  email     String   @unique // Blocked email address
+  reason    String? // Reason for blocking
+  blockedBy String? // User/Driver ID who blocked
+  blockedAt DateTime @default(now())
+  isActive  Boolean  @default(true) // Can unblock if needed
+
   @@index([email])
   @@index([isActive])
 }
 
 // LoadTemplate: Recurring load templates for shippers (Phase 2.2)
 model LoadTemplate {
-  id                 String   @id @default(cuid())
-  shipperId          String
-  name               String   // e.g., "Daily Lab Run to Memorial"
-  serviceType        String
-  commodityDescription String
-  specimenCategory   String
+  id                     String   @id @default(cuid())
+  shipperId              String
+  name                   String // e.g., "Daily Lab Run to Memorial"
+  serviceType            String
+  commodityDescription   String
+  specimenCategory       String
   temperatureRequirement String
-  pickupFacilityId   String
-  dropoffFacilityId  String
-  readyTime          String?  // Time of day (e.g., "09:00")
-  deliveryDeadline   String?  // Time of day (e.g., "17:00")
-  accessNotes        String?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  pickupFacilityId       String
+  dropoffFacilityId      String
+  readyTime              String? // Time of day (e.g., "09:00")
+  deliveryDeadline       String? // Time of day (e.g., "17:00")
+  accessNotes            String?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  shipper            Shipper  @relation(fields: [shipperId], references: [id], onDelete: Cascade)
-  pickupFacility     Facility @relation("TemplatePickupFacility", fields: [pickupFacilityId], references: [id])
-  dropoffFacility    Facility @relation("TemplateDropoffFacility", fields: [dropoffFacilityId], references: [id])
+  shipper         Shipper  @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  pickupFacility  Facility @relation("TemplatePickupFacility", fields: [pickupFacilityId], references: [id])
+  dropoffFacility Facility @relation("TemplateDropoffFacility", fields: [dropoffFacilityId], references: [id])
 
   @@index([shipperId])
   @@index([isActive])
@@ -129,18 +134,18 @@ model LoadTemplate {
 // Notification: In-app notifications for admin users and drivers
 // NotificationType: QUOTE_REQUEST, LOAD_UPDATE, DRIVER_DENIAL, LATE_DELIVERY, COMPLIANCE_EXPIRING, PAYMENT_RECEIVED, SHIPPER_REQUEST_CALL, NEW_LOAD_ASSIGNED, LOAD_CANCELLED, DOCUMENT_UPLOADED, OTHER
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String?  // Admin user ID (null = all admins)
-  driverId  String?  // Driver ID (for driver notifications)
+  id            String    @id @default(cuid())
+  userId        String? // Admin user ID (null = all admins)
+  driverId      String? // Driver ID (for driver notifications)
   loadRequestId String? // Related load request ID (if applicable)
-  type      String   // NotificationType enum
-  title     String
-  message   String
-  link      String?  // URL to relevant page
-  isRead    Boolean  @default(false)
-  readAt    DateTime?
-  metadata  String?  // JSON string for additional data (e.g., shipper phone number for call requests)
-  createdAt DateTime @default(now())
+  type          String // NotificationType enum
+  title         String
+  message       String
+  link          String? // URL to relevant page
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  metadata      String? // JSON string for additional data (e.g., shipper phone number for call requests)
+  createdAt     DateTime  @default(now())
 
   loadRequest LoadRequest? @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
 
@@ -168,11 +173,12 @@ model Facility {
   updatedAt          DateTime @updatedAt
 
   // Relations
-  shipper             Shipper       @relation(fields: [shipperId], references: [id], onDelete: Cascade)
-  pickupLoadRequests  LoadRequest[] @relation("PickupFacility")
-  dropoffLoadRequests LoadRequest[] @relation("DropoffFacility")
-  templatePickupLoads LoadTemplate[] @relation("TemplatePickupFacility")
-  templateDropoffLoads LoadTemplate[] @relation("TemplateDropoffFacility")
+  shipper              Shipper               @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  pickupLoadRequests   LoadRequest[]         @relation("PickupFacility")
+  dropoffLoadRequests  LoadRequest[]         @relation("DropoffFacility")
+  templatePickupLoads  LoadTemplate[]        @relation("TemplatePickupFacility")
+  templateDropoffLoads LoadTemplate[]        @relation("TemplateDropoffFacility")
+  loadRequestLocations LoadRequestLocation[]
 
   @@index([shipperId])
 }
@@ -199,10 +205,10 @@ model LoadRequest {
   declaredValue       Float?
 
   // Scheduling
-  readyTime        DateTime? // When ready for pickup
-  deliveryDeadline DateTime? // Must deliver by
-  isRecurring      Boolean  @default(false) // ONE_TIME vs RECURRING
-  directDriveRequired Boolean @default(false) // No other stops allowed
+  readyTime           DateTime? // When ready for pickup
+  deliveryDeadline    DateTime? // Must deliver by
+  isRecurring         Boolean   @default(false) // ONE_TIME vs RECURRING
+  directDriveRequired Boolean   @default(false) // No other stops allowed
 
   // Instructions & Contact
   accessNotes            String? // Pickup/delivery access notes
@@ -217,52 +223,52 @@ model LoadRequest {
   vehicleId          String? // Assigned vehicle for this load
   assignedAt         DateTime? // When assigned to driver
   acceptedByDriverAt DateTime? // When driver accepted
-  
+
   // GPS Tracking (Optional - Premium Feature)
-  gpsTrackingEnabled Boolean @default(false) // Driver can enable real-time GPS tracking
+  gpsTrackingEnabled   Boolean   @default(false) // Driver can enable real-time GPS tracking
   gpsTrackingStartedAt DateTime? // When GPS tracking was enabled
-  
+
   // Driver Denial Tracking (when driver rejects/declines a load before accepting)
-  driverDenialReason String? // DriverDenialReason: PRICE_TOO_LOW, ROUTE_NOT_FEASIBLE, TIMING_NOT_WORKABLE, TOO_FAR, EQUIPMENT_REQUIRED, ALREADY_BOOKED, OTHER
-  driverDenialNotes  String? // Optional notes explaining denial
-  driverDeniedAt     DateTime? // When load was denied by driver
+  driverDenialReason   String? // DriverDenialReason: PRICE_TOO_LOW, ROUTE_NOT_FEASIBLE, TIMING_NOT_WORKABLE, TOO_FAR, EQUIPMENT_REQUIRED, ALREADY_BOOKED, OTHER
+  driverDenialNotes    String? // Optional notes explaining denial
+  driverDeniedAt       DateTime? // When load was denied by driver
   lastDeniedByDriverId String? // ID of driver who last denied this load
 
   // Signatures & Compliance
-  chainOfCustodyRequired    Boolean @default(false) // Chain-of-custody required?
-  signatureRequiredAtPickup  Boolean @default(true) // Signature required at pickup?
+  chainOfCustodyRequired      Boolean @default(false) // Chain-of-custody required?
+  signatureRequiredAtPickup   Boolean @default(true) // Signature required at pickup?
   signatureRequiredAtDelivery Boolean @default(true) // Signature required at delivery?
-  electronicPodAcceptable    Boolean @default(true) // Electronic POD acceptable?
+  electronicPodAcceptable     Boolean @default(true) // Electronic POD acceptable?
   temperatureLoggingRequired  Boolean @default(false) // Temperature logging required?
-  
-  pickupSignature    String? // Base64 signature image
-  pickupSignerName   String? // Who signed at pickup
-  pickupSignatureDriverId String? // Driver ID who captured pickup signature (explicit for legal coverage)
-  deliverySignature  String? // Base64 signature image
-  deliverySignerName String? // Who signed at delivery
-  deliverySignatureDriverId String? // Driver ID who captured delivery signature (explicit for legal coverage)
-  pickupAttested     Boolean @default(false) // Driver attestation checkbox at pickup
-  pickupAttestedAt   DateTime? // When attestation was given
-  deliveryAttested   Boolean @default(false) // Driver attestation checkbox at delivery
-  deliveryAttestedAt DateTime? // When attestation was given
+
+  pickupSignature            String? // Base64 signature image
+  pickupSignerName           String? // Who signed at pickup
+  pickupSignatureDriverId    String? // Driver ID who captured pickup signature (explicit for legal coverage)
+  deliverySignature          String? // Base64 signature image
+  deliverySignerName         String? // Who signed at delivery
+  deliverySignatureDriverId  String? // Driver ID who captured delivery signature (explicit for legal coverage)
+  pickupAttested             Boolean   @default(false) // Driver attestation checkbox at pickup
+  pickupAttestedAt           DateTime? // When attestation was given
+  deliveryAttested           Boolean   @default(false) // Driver attestation checkbox at delivery
+  deliveryAttestedAt         DateTime? // When attestation was given
   signatureUnavailableReason String? // Reason if signature couldn't be captured
-  signatureFallbackPhoto    String? // Base64 photo if signature unavailable
+  signatureFallbackPhoto     String? // Base64 photo if signature unavailable
 
   // Temperature Tracking
-  pickupTemperature   Float? // Temperature at pickup (°C)
-  pickupTempRecordedAt DateTime? // Precise timestamp when pickup temperature was recorded
-  deliveryTemperature Float? // Temperature at delivery (°C)
-  deliveryTempRecordedAt DateTime? // Precise timestamp when delivery temperature was recorded
-  temperatureMin      Float? // Minimum acceptable temperature (°C)
-  temperatureMax      Float? // Maximum acceptable temperature (°C)
-  pickupTempException Boolean @default(false) // Flag if out of range at pickup
-  deliveryTempException Boolean @default(false) // Flag if out of range at delivery
+  pickupTemperature         Float? // Temperature at pickup (°C)
+  pickupTempRecordedAt      DateTime? // Precise timestamp when pickup temperature was recorded
+  deliveryTemperature       Float? // Temperature at delivery (°C)
+  deliveryTempRecordedAt    DateTime? // Precise timestamp when delivery temperature was recorded
+  temperatureMin            Float? // Minimum acceptable temperature (°C)
+  temperatureMax            Float? // Maximum acceptable temperature (°C)
+  pickupTempException       Boolean   @default(false) // Flag if out of range at pickup
+  deliveryTempException     Boolean   @default(false) // Flag if out of range at delivery
   temperatureExceptionNotes String? // Driver notes about temperature exceptions
 
   // Actual Timing
-  actualPickupTime   DateTime? // Actual pickup timestamp
-  actualDeliveryTime DateTime? // Actual delivery timestamp
-  lateDeliveryFlag   Boolean @default(false) // Flag if delivery was after deadline
+  actualPickupTime        DateTime? // Actual pickup timestamp
+  actualDeliveryTime      DateTime? // Actual delivery timestamp
+  lateDeliveryFlag        Boolean   @default(false) // Flag if delivery was after deadline
   lateDeliveryReasonNotes String? // Explanation for late delivery
 
   // Pricing/Quoting
@@ -270,43 +276,43 @@ model LoadRequest {
   quoteCurrency   String    @default("USD")
   quoteNotes      String? // Internal notes about the quote
   quoteAcceptedAt DateTime? // When shipper accepted quote
-  
+
   // Billing
-  poNumber        String? // PO or reference number
-  priorityLevel   String   @default("NORMAL") // Priority level: NORMAL, HIGH, CRITICAL
-  tags            String? // JSON array of tags/labels (e.g., ["urgent", "fragile"])
-  
+  poNumber      String? // PO or reference number
+  priorityLevel String  @default("NORMAL") // Priority level: NORMAL, HIGH, CRITICAL
+  tags          String? // JSON array of tags/labels (e.g., ["urgent", "fragile"])
+
   // Driver Quote/Negotiation (when driver accepts load and provides quote)
-  driverQuoteAmount       Float? // Driver's proposed rate
-  driverQuoteNotes        String? // Driver's terms/notes for the quote
-  driverQuoteSubmittedAt  DateTime? // When driver submitted quote
-  driverQuoteExpiresAt    DateTime? // Quote expiry deadline (e.g., 48 hours after submission)
-  shipperQuoteDecision    String? // Shipper decision: 'APPROVED', 'DENIED', 'PENDING', null
-  shipperQuoteDecisionAt  DateTime? // When shipper made decision
+  driverQuoteAmount      Float? // Driver's proposed rate
+  driverQuoteNotes       String? // Driver's terms/notes for the quote
+  driverQuoteSubmittedAt DateTime? // When driver submitted quote
+  driverQuoteExpiresAt   DateTime? // Quote expiry deadline (e.g., 48 hours after submission)
+  shipperQuoteDecision   String? // Shipper decision: 'APPROVED', 'DENIED', 'PENDING', null
+  shipperQuoteDecisionAt DateTime? // When shipper made decision
 
   // Invoice Linking
   invoiceId  String? // Link to invoice when billed
   invoicedAt DateTime? // When invoice was generated
 
   // Cancellation Tracking
-  cancellationReason String? // CancellationReason enum: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
-  cancelledBy String? // Who cancelled: "SHIPPER", "ADMIN", "DRIVER", "SYSTEM"
-  cancelledById String? // User/Shipper/Driver ID who cancelled
-  cancelledAt DateTime? // When load was cancelled
+  cancellationReason      String? // CancellationReason enum: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
+  cancelledBy             String? // Who cancelled: "SHIPPER", "ADMIN", "DRIVER", "SYSTEM"
+  cancelledById           String? // User/Shipper/Driver ID who cancelled
+  cancelledAt             DateTime? // When load was cancelled
   cancellationBillingRule String? // Billing rule: "BILLABLE", "PARTIAL", "NOT_BILLABLE"
 
   // Email-Based Quote Request Fields (for passive notification system)
-  rawEmailContent        String? // Original email body content
-  emailSubject           String? // Email subject line
-  emailFrom              String? // Sender email address
-  autoCalculatedDistance Float?  // Auto-calculated distance in miles (pickup to dropoff)
-  autoCalculatedTime     Int?    // Auto-calculated time in minutes
-  suggestedRateMin       Float?  // Minimum suggested rate (USD)
-  suggestedRateMax       Float?  // Maximum suggested rate (USD)
+  rawEmailContent          String? // Original email body content
+  emailSubject             String? // Email subject line
+  emailFrom                String? // Sender email address
+  autoCalculatedDistance   Float? // Auto-calculated distance in miles (pickup to dropoff)
+  autoCalculatedTime       Int? // Auto-calculated time in minutes
+  suggestedRateMin         Float? // Minimum suggested rate (USD)
+  suggestedRateMax         Float? // Maximum suggested rate (USD)
   deadheadStartingLocation String? // Driver's starting location for deadhead calculation
-  deadheadDistance Float? // Distance from driver location to pickup (miles)
-  totalDistance Float? // Total distance including deadhead (deadhead + pickup to dropoff)
-  ratePerMile Float? // Calculated rate per mile based on total distance
+  deadheadDistance         Float? // Distance from driver location to pickup (miles)
+  totalDistance            Float? // Total distance including deadhead (deadhead + pickup to dropoff)
+  ratePerMile              Float? // Calculated rate per mile based on total distance
 
   // Metadata
   createdVia String   @default("WEB_FORM") // CreatedVia enum
@@ -314,18 +320,20 @@ model LoadRequest {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  shipper         Shipper         @relation(fields: [shipperId], references: [id])
-  pickupFacility  Facility        @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
-  dropoffFacility Facility        @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
-  driver          Driver?         @relation(fields: [driverId], references: [id])
-  vehicle         Vehicle?        @relation(fields: [vehicleId], references: [id])
-  invoice         Invoice?        @relation(fields: [invoiceId], references: [id])
-  callbackQueue   CallbackQueue?  // Load created from callback queue
-  notifications   Notification[]
-  trackingEvents  TrackingEvent[]
-  documents       Document[]
+  shipper           Shipper               @relation(fields: [shipperId], references: [id])
+  pickupFacility    Facility              @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
+  dropoffFacility   Facility              @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
+  driver            Driver?               @relation(fields: [driverId], references: [id])
+  vehicle           Vehicle?              @relation(fields: [vehicleId], references: [id])
+  invoice           Invoice?              @relation(fields: [invoiceId], references: [id])
+  callbackQueue     CallbackQueue? // Load created from callback queue
+  notifications     Notification[]
+  trackingEvents    TrackingEvent[]
+  documents         Document[]
   gpsTrackingPoints GPSTrackingPoint[]
   driverRating      DriverRating?
+  locations         LoadRequestLocation[] // Multiple pickup/dropoff locations
+  notes             LoadNote[]
 
   @@index([driverId])
   @@index([vehicleId])
@@ -337,25 +345,25 @@ model LoadRequest {
 
 // DriverRating: Shipper feedback and rating for driver after delivery
 model DriverRating {
-  id            String   @id @default(cuid())
-  loadRequestId String   @unique
+  id            String @id @default(cuid())
+  loadRequestId String @unique
   driverId      String
   shipperId     String
-  
-  // Rating (1-5 stars)
-  rating        Int      // 1-5 stars
-  
-  // Feedback
-  feedback      String?  // Optional text feedback
-  wouldRecommend Boolean @default(true) // Would recommend this driver
-  
-  // Metadata
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 
-  loadRequest   LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
-  driver        Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  shipper       Shipper     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  // Rating (1-5 stars)
+  rating Int // 1-5 stars
+
+  // Feedback
+  feedback       String? // Optional text feedback
+  wouldRecommend Boolean @default(true) // Would recommend this driver
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+  driver      Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  shipper     Shipper     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
 
   @@index([driverId])
   @@index([shipperId])
@@ -389,13 +397,13 @@ model TrackingEvent {
 model GPSTrackingPoint {
   id            String   @id @default(cuid())
   loadRequestId String
-  driverId      String   // Driver who is being tracked
-  latitude      Float    // GPS latitude
-  longitude     Float    // GPS longitude
-  accuracy      Float?   // GPS accuracy in meters
-  heading       Float?   // Direction of travel in degrees (0-360)
-  speed         Float?   // Speed in meters per second
-  altitude      Float?   // Altitude in meters
+  driverId      String // Driver who is being tracked
+  latitude      Float // GPS latitude
+  longitude     Float // GPS longitude
+  accuracy      Float? // GPS accuracy in meters
+  heading       Float? // Direction of travel in degrees (0-360)
+  speed         Float? // Speed in meters per second
+  altitude      Float? // Altitude in meters
   timestamp     DateTime @default(now()) // When this location was recorded
 
   // Relations
@@ -409,21 +417,24 @@ model GPSTrackingPoint {
 
 // Document: Attachments for proof of pickup/delivery, BOL, etc.
 model Document {
-  id            String   @id @default(cuid())
-  loadRequestId String
-  type          String // DocumentType enum
-  title         String // e.g., "Proof of Pickup - ABC Clinic"
-  url           String // Storage URL (S3, etc.) or base64 data
-  mimeType      String? // MIME type (image/jpeg, application/pdf, etc.)
-  fileSize      Int? // File size in bytes
-  fileHash      String? // SHA-256 hash for document integrity verification
-  uploadedBy    String? // User ID or "driver" or "shipper"
-  isLocked      Boolean @default(false) // True if load is DELIVERED (POD locking)
-  lockedAt      DateTime? // When document was locked
-  adminOverride Boolean @default(false) // True if admin allowed late upload
-  adminOverrideBy String? // Admin user ID who approved override
+  id                 String    @id @default(cuid())
+  loadRequestId      String
+  type               String // DocumentType enum
+  title              String // e.g., "Proof of Pickup - ABC Clinic"
+  url                String // Storage URL (S3, etc.) or base64 data
+  mimeType           String? // MIME type (image/jpeg, application/pdf, etc.)
+  fileSize           Int? // File size in bytes
+  fileHash           String? // SHA-256 hash for document integrity verification
+  uploadedBy         String? // User ID or "driver" or "shipper"
+  isLocked           Boolean   @default(false) // True if load is DELIVERED (POD locking)
+  lockedAt           DateTime? // When document was locked
+  adminOverride      Boolean   @default(false) // True if admin allowed late upload
+  adminOverrideBy    String? // Admin user ID who approved override
   adminOverrideNotes String? // Reason for override (audit log)
-  createdAt     DateTime @default(now())
+  isArchived         Boolean   @default(false) // True if document was replaced
+  archivedAt         DateTime? // When document was archived (replaced)
+  replacedBy         String? // ID of document that replaced this one
+  createdAt          DateTime  @default(now())
 
   // Relations
   loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
@@ -455,7 +466,6 @@ model Invoice {
   notes            String? // Internal notes about payment
 
   // Optional Stripe Integration (secondary, not primary)
-  stripeInvoiceId String? // Stripe invoice ID if using Stripe (optional)
 
   // Relations
   shipper      Shipper       @relation(fields: [shipperId], references: [id])
@@ -483,7 +493,7 @@ model Driver {
   // Driver Details
   licenseNumber String? // Driver's license number
   licenseExpiry DateTime? // License expiration date
-  status        String    @default("AVAILABLE") // DriverStatus enum
+  status        String    @default("PENDING_APPROVAL") // DriverStatus enum: PENDING_APPROVAL, AVAILABLE, ON_ROUTE, OFF_DUTY, INACTIVE
 
   // Vehicle Information
   vehicleType      String? // VehicleType enum
@@ -504,52 +514,52 @@ model Driver {
   emergencyPhone   String?
 
   // Profile Personalization
-  profilePicture   String? // Base64 or URL to profile picture
-  bio              String? // Short bio/about me
-  specialties      String? // Comma-separated specialties (e.g., "STAT, Temperature-Controlled, Long Distance")
+  profilePicture    String? // Base64 or URL to profile picture
+  bio               String? // Short bio/about me
+  specialties       String? // Comma-separated specialties (e.g., "STAT, Temperature-Controlled, Long Distance")
   yearsOfExperience Int? // Years of experience in medical courier
-  languages        String? // Languages spoken (comma-separated)
-  serviceAreas     String? // Service areas/regions (comma-separated)
+  languages         String? // Languages spoken (comma-separated)
+  serviceAreas      String? // Service areas/regions (comma-separated)
 
-  // Payment Settings (Optional - stored as strings for SQLite)
-  paymentMethod      String? // ACH, CHECK, etc.
-  bankName           String?
-  accountHolderName  String?
-  routingNumber      String?
-  accountNumber      String? // Encrypted in production
-  accountType        String? // checking, savings
-  payoutFrequency    String? // WEEKLY, BIWEEKLY, MONTHLY
-  minimumPayout      Float?  @default(100)
-  taxId              String? // Encrypted in production
-  taxIdType          String? // SSN, EIN
-  w9Submitted        Boolean @default(false)
-  
   // Rate Settings
-  minimumRatePerMile  Float?  // Driver's minimum acceptable rate per mile (for profit estimation)
+  minimumRatePerMile Float? // Driver's minimum acceptable rate per mile (for profit estimation)
+
+  // Admin Access
+  isAdmin Boolean @default(false) // Whether driver has admin privileges
 
   // Relations
-  loadRequests LoadRequest[]
-  vehicles     Vehicle[]
-  documents    DriverDocument[]
-  gpsTrackingPoints GPSTrackingPoint[]
-  ratings      DriverRating[]
-  callbackQueue CallbackQueue[]
+  loadRequests       LoadRequest[]
+  vehicles           Vehicle[]
+  documents          DriverDocument[]
+  gpsTrackingPoints  GPSTrackingPoint[]
+  ratings            DriverRating[]
+  callbackQueue      CallbackQueue[]
+  equipmentChecklist DriverEquipmentChecklist?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  payouts Payout[]
+  notificationPreferences NotificationPreferences?
+  loadDrafts              LoadDraft[]
+
+  // Soft Delete
+  deletedAt     DateTime? // When driver was soft deleted
+  deletedBy     String? // User ID who deleted
+  deletedReason String? // Reason for deletion
+  isDeleted     Boolean   @default(false)
 
   @@index([email])
   @@index([status])
+  @@index([isDeleted])
+  @@index([deletedAt])
 }
 
 // Vehicle: Driver vehicles (drivers can have multiple vehicles)
 model Vehicle {
-  id        String   @id @default(cuid())
+  id       String @id @default(cuid())
   driverId String
-  
+
   // Vehicle Details
   vehicleType      String // VehicleType enum: SEDAN, SUV, VAN, SPRINTER, BOX_TRUCK, REFRIGERATED
   vehicleMake      String?
@@ -558,15 +568,15 @@ model Vehicle {
   vehiclePlate     String
   hasRefrigeration Boolean @default(false)
   isActive         Boolean @default(true) // Soft delete - can deactivate instead of deleting
-  
+
   // Optional nickname for easy identification
   nickname String? // e.g., "Work Van", "Backup Truck"
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  driver      Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver       Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
   loadRequests LoadRequest[]
 
   @@index([driverId])
@@ -576,26 +586,26 @@ model Vehicle {
 // DriverDocument: Driver compliance and certification documents
 // DocumentType: DRIVERS_LICENSE, VEHICLE_INSURANCE, VEHICLE_REGISTRATION, HIPAA_CERTIFICATE, UN3373_CERTIFICATE, W9_FORM, OTHER
 model DriverDocument {
-  id        String   @id @default(cuid())
-  driverId  String
-  
+  id       String @id @default(cuid())
+  driverId String
+
   // Document Details
-  type        String   // DocumentType enum
-  title       String   // e.g., "Driver's License", "Vehicle Insurance - ABC-1234"
-  url         String   // Storage URL (S3, etc.) or base64 data
-  mimeType    String?  // MIME type (image/jpeg, application/pdf, etc.)
-  fileSize    Int?     // File size in bytes
-  fileHash    String?  // SHA-256 hash for document integrity verification
-  
+  type     String // DocumentType enum
+  title    String // e.g., "Driver's License", "Vehicle Insurance - ABC-1234"
+  url      String // Storage URL (S3, etc.) or base64 data
+  mimeType String? // MIME type (image/jpeg, application/pdf, etc.)
+  fileSize Int? // File size in bytes
+  fileHash String? // SHA-256 hash for document integrity verification
+
   // Expiration Tracking
-  expiryDate  DateTime? // When document expires (for licenses, insurance, certs)
-  
+  expiryDate DateTime? // When document expires (for licenses, insurance, certs)
+
   // Status
-  isActive    Boolean  @default(true) // Soft delete
-  verifiedBy  String?  // Admin user ID who verified the document
-  verifiedAt  DateTime? // When document was verified by admin
-  notes       String?  // Optional notes about the document
-  
+  isActive   Boolean   @default(true) // Soft delete
+  verifiedBy String? // Admin user ID who verified the document
+  verifiedAt DateTime? // When document was verified by admin
+  notes      String? // Optional notes about the document
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -608,26 +618,48 @@ model DriverDocument {
   @@index([expiryDate])
 }
 
-// Payout: Driver payout history
-model Payout {
-  id            String   @id @default(cuid())
-  driverId      String
-  amount        Float
-  status        String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
-  paymentMethod String   // ACH, CHECK
-  payoutDate    DateTime // Scheduled payout date
-  processedAt   DateTime? // When payout was actually processed
-  reference     String? // Check number, ACH confirmation, transaction ID
-  notes         String? // Internal notes
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+// DriverEquipmentChecklist: Equipment checklist for driver onboarding
+// Equipment items can be required or optional
+model DriverEquipmentChecklist {
+  id       String @id @default(cuid())
+  driverId String @unique
+
+  // Equipment items (JSON string storing checked items)
+  // Format: { "itemId": { "checked": true, "notes": "optional notes" } }
+  checkedItems String @default("{}") // JSON object
+
+  // Admin approval
+  approvedBy String? // Admin user ID who approved
+  approvedAt DateTime? // When checklist was approved
+  notes      String? // Admin notes about the checklist
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
 
   @@index([driverId])
-  @@index([status])
-  @@index([payoutDate])
+  @@index([approvedAt])
+}
+
+// EquipmentItem: Master list of equipment items (can be required or optional)
+// This is a reference table - items are defined in code/config, not in DB
+// But we can store custom items if needed
+model EquipmentItem {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g., "Refrigerated Vehicle", "Temperature Monitor", "Chain of Custody Forms"
+  description String? // Description of the equipment
+  isRequired  Boolean @default(false) // Whether this item is required for approval
+  category    String? // Category: VEHICLE, TEMPERATURE, DOCUMENTATION, SAFETY, OTHER
+  isActive    Boolean @default(true) // Can deactivate items
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isRequired])
+  @@index([category])
+  @@index([isActive])
 }
 
 // User: Internal staff for admin access
@@ -645,23 +677,23 @@ model User {
 
 // CallbackQueue: Queue for shippers requesting callback to book loads
 model CallbackQueue {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   shipperId     String
-  driverId      String?  // Driver who called the shipper (null if not called yet)
-  loadRequestId String?  @unique // Load created from this callback (null if not created yet)
-  position      Int      // Position in queue (1 = first, 2 = second, etc.)
-  status        String   @default("PENDING") // PENDING, CALLED, COMPLETED, CANCELLED
-  priority      String   @default("NORMAL") // NORMAL, HIGH, URGENT
+  driverId      String? // Driver who called the shipper (null if not called yet)
+  loadRequestId String?   @unique // Load created from this callback (null if not created yet)
+  position      Int // Position in queue (1 = first, 2 = second, etc.)
+  status        String    @default("PENDING") // PENDING, CALLED, COMPLETED, CANCELLED
+  priority      String    @default("NORMAL") // NORMAL, HIGH, URGENT
   calledAt      DateTime? // When dispatch called the shipper
   completedAt   DateTime? // When callback was completed (load created)
   cancelledAt   DateTime? // When shipper cancelled their request
   notes         String? // Internal notes from dispatch
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
-  shipper     Shipper     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
-  driver      Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  shipper     Shipper      @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  driver      Driver?      @relation(fields: [driverId], references: [id], onDelete: SetNull)
   loadRequest LoadRequest? @relation(fields: [loadRequestId], references: [id], onDelete: SetNull)
 
   @@index([shipperId])
@@ -671,4 +703,141 @@ model CallbackQueue {
   @@index([driverId])
   @@index([loadRequestId])
   @@index([priority])
+}
+
+// PasswordResetToken: Tokens for password reset functionality
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  userType  String // 'driver' | 'shipper' | 'admin'
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId, userType])
+  @@index([expiresAt])
+}
+
+// LoginAttempt: Track login attempts for account lockout
+model LoginAttempt {
+  id           String    @id @default(cuid())
+  email        String
+  userType     String // 'driver' | 'shipper' | 'admin'
+  ipAddress    String?
+  success      Boolean   @default(false)
+  lockedUntil  DateTime?
+  attemptCount Int       @default(1)
+  createdAt    DateTime  @default(now())
+
+  @@index([email, userType])
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+// LoadNote: Notes attached to load requests
+model LoadNote {
+  id            String   @id @default(cuid())
+  loadRequestId String
+  content       String
+  isInternal    Boolean  @default(false) // Internal notes not visible to shipper
+  createdBy     String // User ID (driver, shipper, or admin)
+  createdByType String // 'DRIVER' | 'SHIPPER' | 'ADMIN'
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+
+  @@index([loadRequestId])
+  @@index([createdAt])
+  @@index([createdBy])
+}
+
+// NotificationPreferences: User notification preferences
+model NotificationPreferences {
+  id                 String   @id @default(cuid())
+  shipperId          String?  @unique
+  driverId           String?  @unique
+  emailNotifications String   @default("{}") // JSON string: { callbackRequested: boolean, loadUpdated: boolean, ... }
+  inAppNotifications String   @default("{}") // JSON string
+  smsNotifications   String   @default("{}") // JSON string
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  shipper Shipper? @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  driver  Driver?  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([shipperId])
+  @@index([driverId])
+}
+
+// LoadDraft: Draft load requests saved by drivers
+model LoadDraft {
+  id        String   @id @default(cuid())
+  driverId  String
+  data      String // JSON string: Store form data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([updatedAt])
+}
+
+// AuditLog: Comprehensive audit trail for all system actions
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String // Action type: CREATE, UPDATE, DELETE, VIEW, LOGIN, LOGOUT, EXPORT, etc.
+  entityType   String // Entity type: LOAD_REQUEST, DRIVER, SHIPPER, INVOICE, DOCUMENT, etc.
+  entityId     String? // ID of the affected entity
+  userId       String? // User/Driver/Shipper ID who performed the action
+  userType     String? // Type: DRIVER, SHIPPER, ADMIN, SYSTEM
+  userEmail    String? // Email of user (for audit trail even if user deleted)
+  ipAddress    String? // IP address of request
+  userAgent    String? // User agent string
+  changes      String? // JSON string: { field: { from: value, to: value } }
+  metadata     String? // JSON string: Additional context (load tracking code, invoice number, etc.)
+  severity     String   @default("INFO") // INFO, WARNING, ERROR, CRITICAL
+  success      Boolean  @default(true) // Whether action succeeded
+  errorMessage String? // Error message if action failed
+  createdAt    DateTime @default(now())
+
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([userType])
+  @@index([createdAt])
+  @@index([severity])
+  @@index([success])
+}
+
+// LoadRequestLocation: Multiple pickup/dropoff locations for a single load
+// LocationType: PICKUP, DROPOFF
+model LoadRequestLocation {
+  id            String    @id @default(cuid())
+  loadRequestId String
+  facilityId    String // Reference to Facility
+  locationType  String // "PICKUP" or "DROPOFF"
+  sequence      Int // Order of locations (1, 2, 3... for pickups, then 1, 2, 3... for dropoffs)
+  readyTime     DateTime? // When ready for pickup (for pickups) or delivery deadline (for dropoffs)
+  accessNotes   String? // Location-specific access notes
+  completedAt   DateTime? // When this location was completed (pickup completed or delivery completed)
+  completedBy   String? // Driver ID who completed this location
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  loadRequest LoadRequest @relation(fields: [loadRequestId], references: [id], onDelete: Cascade)
+  facility    Facility    @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+
+  @@index([loadRequestId, locationType, sequence])
+  @@index([facilityId])
+  @@index([loadRequestId])
 }

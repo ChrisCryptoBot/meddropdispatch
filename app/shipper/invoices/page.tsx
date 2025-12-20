@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { EmptyStates } from '@/components/ui/EmptyState'
 
 interface Invoice {
   id: string
@@ -156,20 +158,13 @@ export default function ShipperInvoicesPage() {
   }), [invoices])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading invoices...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner portal="shipper" label="Loading invoices..." fullScreen />
   }
 
   return (
     <div className="p-8 print:p-4">
       {/* Header */}
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Invoices</h1>
@@ -257,24 +252,13 @@ export default function ShipperInvoicesPage() {
 
       {/* Invoices List */}
       {filteredAndSortedInvoices.length === 0 ? (
-        <div className="glass-primary p-12 rounded-2xl text-center border-2 border-blue-200/30">
-          <svg
-            className="w-16 h-16 mx-auto mb-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className="text-gray-600 text-lg mb-2">
-            {searchQuery || filter !== 'all' ? 'No invoices match your filters' : 'No invoices found'}
-          </p>
-          <p className="text-gray-500 text-sm">
-            {searchQuery || filter !== 'all'
-              ? 'Try adjusting your search or filter criteria'
-              : 'Invoices will appear here once loads are completed'}
-          </p>
-        </div>
+        <EmptyStates.NoInvoices
+          portal="shipper"
+          title={searchQuery || filter !== 'all' ? 'No invoices match your filters' : 'No invoices found'}
+          description={searchQuery || filter !== 'all'
+            ? 'Try adjusting your search or filter criteria'
+            : 'Invoices will appear here once loads are completed'}
+        />
       ) : (
         <div className="space-y-4">
           <div className="text-sm text-medical mb-2">

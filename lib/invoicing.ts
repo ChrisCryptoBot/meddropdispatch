@@ -59,6 +59,7 @@ export function calculateDueDate(invoiceDate: Date, paymentTermsDays: number = 3
 
 /**
  * Create invoice from load requests
+ * Accepts optional Prisma transaction client for atomic operations
  */
 export async function createInvoice(
   shipperId: string,
@@ -68,10 +69,13 @@ export async function createInvoice(
     paymentTermsDays?: number
     taxRate?: number
     notes?: string
-  }
+  },
+  txClient?: any // Prisma transaction client
 ): Promise<InvoiceData> {
+  const prismaClient: any = txClient || prisma
+  
   // Get shipper
-  const shipper = await prisma.shipper.findUnique({
+  const shipper = await prismaClient.shipper.findUnique({
     where: { id: shipperId },
   })
 
@@ -80,7 +84,7 @@ export async function createInvoice(
   }
 
   // Get load requests
-  const loadRequests = await prisma.loadRequest.findMany({
+  const loadRequests = await prismaClient.loadRequest.findMany({
     where: {
       id: { in: loadRequestIds },
       shipperId,
@@ -94,7 +98,7 @@ export async function createInvoice(
   }
 
   // Calculate subtotal
-  const subtotal = loadRequests.reduce((sum, load) => {
+  const subtotal = loadRequests.reduce((sum: number, load: any) => {
     return sum + (load.quoteAmount || 0)
   }, 0)
 
@@ -112,7 +116,7 @@ export async function createInvoice(
   const dueDate = calculateDueDate(invoiceDate, paymentTermsDays)
 
   // Create invoice in database
-  const invoice = await prisma.invoice.create({
+  const invoice = await prismaClient.invoice.create({
     data: {
       invoiceNumber,
       shipperId,
@@ -138,16 +142,19 @@ export async function createInvoice(
     },
   })
 
-  // Update load requests with invoice ID
-  await prisma.loadRequest.updateMany({
-    where: {
-      id: { in: loadRequestIds },
-    },
-    data: {
-      invoiceId: invoice.id,
-      invoicedAt: invoiceDate,
-    },
-  })
+  // Update load requests with invoice ID (if not using transaction client)
+  // Note: When using txClient, the caller is responsible for updating load requests
+  if (!txClient) {
+    await prismaClient.loadRequest.updateMany({
+      where: {
+        id: { in: loadRequestIds },
+      },
+      data: {
+        invoiceId: invoice.id,
+        invoicedAt: invoiceDate,
+      },
+    })
+  }
 
   return {
     invoiceNumber: invoice.invoiceNumber,
@@ -499,45 +506,61 @@ Professional. Reliable. Trusted.
  */
 export async function autoGenerateInvoiceForLoad(loadRequestId: string): Promise<string | null> {
   try {
-    const loadRequest = await prisma.loadRequest.findUnique({
-      where: { id: loadRequestId },
-      include: {
-        shipper: true,
-      },
-    })
+    // Use transaction to prevent duplicate invoice generation
+    return await prisma.$transaction(async (tx) => {
+      const loadRequest = await tx.loadRequest.findUnique({
+        where: { id: loadRequestId },
+        include: {
+          shipper: true,
+        },
+      })
 
-    if (!loadRequest) {
-      return null
-    }
-
-    // Only generate if load is completed and has a quote amount
-    if (
-      !['DELIVERED', 'COMPLETED'].includes(loadRequest.status) ||
-      !loadRequest.quoteAmount ||
-      loadRequest.invoiceId
-    ) {
-      return null
-    }
-
-    // Check if shipper has payment terms configured
-    // For now, default to 30 days
-    const paymentTermsDays = 30
-
-    // Create invoice
-    const invoiceData = await createInvoice(
-      loadRequest.shipperId,
-      [loadRequestId],
-      {
-        paymentTermsDays,
+      if (!loadRequest) {
+        return null
       }
-    )
 
-    // Return invoice ID - the status update route will send the delivery congratulations email with invoice
-    const invoice = await prisma.invoice.findUnique({
-      where: { invoiceNumber: invoiceData.invoiceNumber },
+      // Only generate if load is completed and has a quote amount
+      // Double-check invoiceId within transaction to prevent race condition
+      if (
+        !['DELIVERED', 'COMPLETED'].includes(loadRequest.status) ||
+        !loadRequest.quoteAmount ||
+        loadRequest.invoiceId
+      ) {
+        return null
+      }
+
+      // Check if shipper has payment terms configured
+      // For now, default to 30 days
+      const paymentTermsDays = 30
+
+      // Create invoice using transaction client
+      const invoiceData = await createInvoice(
+        loadRequest.shipperId,
+        [loadRequestId],
+        {
+          paymentTermsDays,
+        },
+        tx // Pass transaction client
+      )
+
+      // Get the created invoice
+      const invoice = await tx.invoice.findUnique({
+        where: { invoiceNumber: invoiceData.invoiceNumber },
+      })
+
+      // Update load with invoice ID atomically within transaction
+      if (invoice) {
+        await tx.loadRequest.update({
+          where: { id: loadRequestId },
+          data: {
+            invoiceId: invoice.id,
+            invoicedAt: new Date(),
+          },
+        })
+      }
+
+      return invoice?.id || null
     })
-
-    return invoice?.id || null
   } catch (error) {
     console.error('Error auto-generating invoice:', error)
     return null

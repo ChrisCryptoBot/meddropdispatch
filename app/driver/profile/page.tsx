@@ -31,6 +31,8 @@ interface Driver {
   serviceAreas?: string | null
   emergencyContact?: string | null
   emergencyPhone?: string | null
+  averageRating?: number
+  ratingCount?: number
 }
 
 export default function DriverProfilePage() {
@@ -47,6 +49,7 @@ export default function DriverProfilePage() {
   const [uploadType, setUploadType] = useState('DRIVERS_LICENSE')
   const [uploadExpiryDate, setUploadExpiryDate] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [ratings, setRatings] = useState<{ averageRating: number; ratingCount: number } | null>(null)
 
   // Documents that can expire (for display purposes only)
   const EXPIRABLE_DOCS = [
@@ -184,9 +187,22 @@ export default function DriverProfilePage() {
     setIsLoading(false)
     if (parsedDriver?.id) {
       fetchDocuments(parsedDriver.id)
+      fetchRatings(parsedDriver.id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
+
+  const fetchRatings = async (driverId: string) => {
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/ratings`)
+      if (response.ok) {
+        const data = await response.json()
+        setRatings(data)
+      }
+    } catch (error) {
+      console.error('Error fetching ratings:', error)
+    }
+  }
 
   const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -279,7 +295,7 @@ export default function DriverProfilePage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Profile</h1>
@@ -540,6 +556,25 @@ export default function DriverProfilePage() {
                 <h2 className="text-xl font-bold text-gray-900">{driver.firstName} {driver.lastName}</h2>
                 {driver.yearsOfExperience && (
                   <p className="text-sm text-gray-600 mt-1">{driver.yearsOfExperience} {driver.yearsOfExperience === 1 ? 'Year' : 'Years'} Experience</p>
+                )}
+                {ratings && ratings.ratingCount > 0 && (
+                  <div className="mt-3 flex items-center justify-center gap-2">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className={`w-5 h-5 ${star <= Math.round(ratings.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {ratings.averageRating.toFixed(1)} ({ratings.ratingCount} {ratings.ratingCount === 1 ? 'rating' : 'ratings'})
+                    </span>
+                  </div>
                 )}
                 {driver.specialties && (
                   <div className="flex flex-wrap gap-2 justify-center mt-2">

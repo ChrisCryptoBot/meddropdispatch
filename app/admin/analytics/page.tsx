@@ -121,27 +121,27 @@ export default function AdminAnalyticsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">{analytics.stats.totalLoads}</div>
           <div className="text-sm text-gray-600">Total Loads</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-green-600 mb-1">{analytics.stats.completedLoads}</div>
           <div className="text-sm text-gray-600">Completed</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-blue-600 mb-1">
             ${analytics.stats.totalRevenue.toFixed(2)}
           </div>
           <div className="text-sm text-gray-600">Total Revenue</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-purple-600 mb-1">
             {analytics.stats.completionRate.toFixed(1)}%
           </div>
           <div className="text-sm text-gray-600">Completion Rate</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-orange-600 mb-1">
             ${analytics.stats.averageRevenuePerLoad.toFixed(2)}
           </div>
@@ -152,7 +152,7 @@ export default function AdminAnalyticsPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Daily Breakdown */}
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Daily Load Volume</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={analytics.dailyBreakdown}>
@@ -167,7 +167,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Loads by Status */}
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Loads by Status</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={analytics.loadsByStatus}>
@@ -185,7 +185,7 @@ export default function AdminAnalyticsPage() {
       {/* Service Type & Top Shippers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Loads by Service Type */}
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Loads by Service Type</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={analytics.loadsByServiceType}>
@@ -200,7 +200,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {/* Top Shippers */}
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Top 5 Shippers by Volume</h2>
           <div className="space-y-3">
             {analytics.topShippers.map((shipper, index) => (

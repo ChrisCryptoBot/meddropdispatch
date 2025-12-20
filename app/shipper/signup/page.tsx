@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function ShipperSignupPage() {
@@ -15,6 +14,7 @@ export default function ShipperSignupPage() {
     contactName: '',
     phone: '',
     clientType: 'CLINIC',
+    subscriptionTier: 'STANDARD',
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +40,10 @@ export default function ShipperSignupPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleTierChange = (tier: 'STANDARD' | 'BROKERAGE') => {
+    setFormData(prev => ({ ...prev, subscriptionTier: tier }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +74,7 @@ export default function ShipperSignupPage() {
           contactName: formData.contactName,
           phone: formData.phone,
           clientType: formData.clientType,
+          subscriptionTier: formData.subscriptionTier,
         }),
       })
 
@@ -100,29 +105,16 @@ export default function ShipperSignupPage() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex flex-col items-center">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={48}
-                  height={48}
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <h1 className="text-4xl font-bold text-gradient">
-                MED DROP
-              </h1>
-            </div>
-            <p className="text-medical">Join as Shipper</p>
+          <Link href="/" className="inline-block">
+            <h1 className="text-4xl font-bold text-gradient mb-2">
+              MED DROP
+            </h1>
           </Link>
+          <p className="text-medical">Join as Shipper</p>
         </div>
 
         {/* Signup Card */}
         <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
-          <h2 className="heading-secondary text-2xl mb-6">Create Your Account</h2>
 
           {/* Error Message */}
           {error && (
@@ -130,6 +122,108 @@ export default function ShipperSignupPage() {
               <p className="text-urgent-700 text-sm font-medium">{error}</p>
             </div>
           )}
+
+          {/* Service Plan Selection */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Your Service Plan</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Standard Plan */}
+              <button
+                type="button"
+                onClick={() => handleTierChange('STANDARD')}
+                className={`p-6 rounded-xl border-2 text-left transition-all ${
+                  formData.subscriptionTier === 'STANDARD'
+                    ? 'border-blue-500 bg-blue-50/60 shadow-lg'
+                    : 'border-blue-200/50 bg-white/60 hover:border-blue-300 hover:shadow-md'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">Standard</h4>
+                    <p className="text-sm text-gray-600">Self-Service</p>
+                  </div>
+                  {formData.subscriptionTier === 'STANDARD' && (
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Access to load board</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Request loads independently</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Pay per load</span>
+                  </li>
+                </ul>
+              </button>
+
+              {/* Brokerage Package */}
+              <button
+                type="button"
+                onClick={() => handleTierChange('BROKERAGE')}
+                className={`p-6 rounded-xl border-2 text-left transition-all relative overflow-visible ${
+                  formData.subscriptionTier === 'BROKERAGE'
+                    ? 'border-teal-500 bg-teal-50/60 shadow-lg'
+                    : 'border-teal-200/50 bg-white/60 hover:border-teal-300 hover:shadow-md'
+                }`}
+              >
+                {/* Premium Badge integrated into border */}
+                <div className="absolute -top-3 right-4 z-10">
+                  <span className="px-3 py-1 bg-gradient-accent text-white text-xs font-bold rounded-full shadow-lg border-2 border-white">
+                    Premium
+                  </span>
+                </div>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">Brokerage Package</h4>
+                    <p className="text-sm text-gray-600">White-Glove Service</p>
+                  </div>
+                  {formData.subscriptionTier === 'BROKERAGE' && (
+                    <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Dedicated dispatcher</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Personalized service</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span>Consolidated monthly invoicing</span>
+                  </li>
+                </ul>
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Company Information */}

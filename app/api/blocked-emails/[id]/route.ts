@@ -11,15 +11,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    const nextReq = req as NextRequest
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
-    const rawData = await req.json()
+    const rawData = await nextReq.json()
     const { isActive } = rawData
 
     const blockedEmail = await prisma.blockedEmail.findUnique({
@@ -49,9 +50,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    const nextReq = req as NextRequest
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }

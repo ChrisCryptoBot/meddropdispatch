@@ -4,8 +4,17 @@ import { sendDriverWelcomeEmail, sendShipperWelcomeEmail } from '@/lib/email'
 /**
  * GET /api/debug/test-email
  * Test endpoint to verify email sending works
+ * Development only - disabled in production
  */
 export async function GET(request: NextRequest) {
+  // Disable in production for security
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'This endpoint is not available in production' },
+      { status: 403 }
+    )
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const emailType = searchParams.get('type') || 'driver'

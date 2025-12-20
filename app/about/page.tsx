@@ -21,7 +21,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-sm font-semibold text-red-600">Medical Courier Services</p>
+                <p className="text-sm font-semibold text-red-600">Superior One Logistics Software</p>
               </div>
             </Link>
           </div>
@@ -35,7 +35,7 @@ export default function AboutPage() {
           <div className="prose prose-lg max-w-none">
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Medical Courier Services Done Right</h2>
             <p className="text-gray-700 mb-6">
-              MED DROP is a professional medical courier service dedicated to providing secure, compliant transportation for medical specimens, pharmaceuticals, and healthcare supplies. We serve healthcare facilities, laboratories, pharmacies, hospitals, clinics, dialysis centers, imaging centers, and government healthcare agencies with reliable, time-sensitive delivery solutions.
+              MED DROP is a professional medical courier service platform powered by Superior One Logistics Software. We provide secure, compliant transportation for medical specimens, pharmaceuticals, and healthcare supplies. Our technology-enabled platform connects healthcare facilities, laboratories, pharmacies, hospitals, clinics, dialysis centers, imaging centers, and government healthcare agencies with a network of professional drivers for reliable, time-sensitive delivery solutions.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Our Mission</h2>
@@ -129,16 +129,20 @@ export default function AboutPage() {
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Our Technology Platform</h2>
             <p className="text-gray-700 mb-4">
-              MED DROP operates on a modern, technology-enabled platform that provides:
+              MED DROP operates on Superior One Logistics Software—a modern, technology-enabled platform that provides:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mb-8">
+              <li><strong>Real-Time Load Board</strong> - Drivers can view and accept available loads instantly</li>
               <li><strong>Callback Queue System</strong> - Request a callback to book loads with real-time queue position updates</li>
               <li><strong>Load Management Dashboard</strong> - View all your shipments in one centralized location</li>
-              <li><strong>UPS-Style Tracking Timeline</strong> - Visual timeline showing every status update</li>
+              <li><strong>UPS-Style Tracking Timeline</strong> - Visual timeline showing every status update with complete chain of custody</li>
+              <li><strong>Quick Track Widget</strong> - Public tracking interface for instant shipment status lookup</li>
               <li><strong>Facility Management</strong> - Save frequently used pickup and delivery locations</li>
-              <li><strong>Document Management</strong> - Access Proof of Pickup, Proof of Delivery, and Bill of Lading documents</li>
+              <li><strong>Document Management</strong> - Upload and access Proof of Pickup, Proof of Delivery, and Bill of Lading documents</li>
               <li><strong>Invoice Management</strong> - View invoices, track payment status, and download PDFs</li>
               <li><strong>Driver Rating System</strong> - Rate drivers and provide feedback after each delivery</li>
+              <li><strong>Mobile-Optimized Interface</strong> - Full functionality on smartphones and tablets for drivers on the go</li>
+              <li><strong>Driver Vetting System</strong> - Comprehensive approval process ensuring qualified, compliant drivers</li>
             </ul>
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Who We Serve</h2>
@@ -171,23 +175,37 @@ export default function AboutPage() {
             <p className="text-gray-700 mb-4">
               MED DROP maintains the highest standards of regulatory compliance:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 mb-8">
-              <li>UN3373 Certification for Category B biological substances</li>
-              <li>HIPAA-compliant data handling and security</li>
-              <li>Professional liability coverage</li>
-              <li>Cargo insurance for medical goods</li>
-              <li>Temperature monitoring and documentation</li>
-              <li>Chain-of-custody protocols</li>
-              <li>Experienced professional drivers</li>
-              <li>Regular vehicle inspections</li>
-            </ul>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <ul className="list-disc list-inside space-y-2 text-gray-700">
+                <li><strong>HIPAA Compliant</strong> - Protected Health Information handling</li>
+                <li><strong>OSHA Trained</strong> - Safety & compliance protocols</li>
+                <li><strong>UN3373 Certified</strong> - Category B biological substances transport</li>
+                <li><strong>TSA Verifiable</strong> - Secure chain of custody</li>
+              </ul>
+              <ul className="list-disc list-inside space-y-2 text-gray-700">
+                <li>Professional liability coverage</li>
+                <li>Cargo insurance for medical goods</li>
+                <li>Temperature monitoring and documentation</li>
+                <li>Chain-of-custody protocols</li>
+                <li>Experienced professional drivers</li>
+                <li>Regular vehicle inspections</li>
+              </ul>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">About Superior One Logistics</h2>
+            <p className="text-gray-700 mb-4">
+              MED DROP is powered by Superior One Logistics Software, a comprehensive logistics technology platform designed specifically for medical courier operations. Our platform combines cutting-edge technology with industry expertise to deliver a seamless experience for both shippers and drivers.
+            </p>
+            <p className="text-gray-700 mb-6">
+              Superior One Logistics Medical (our tax name) operates MED DROP as a technology-enabled marketplace connecting healthcare facilities with professional medical courier drivers, ensuring secure, compliant, and reliable transportation of medical materials.
+            </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Our Commitment</h2>
             <p className="text-gray-700 mb-6">
               At MED DROP, we understand that medical courier services are not just about transportation—they're about patient care, diagnostic accuracy, and healthcare facility operations. Every delivery we make plays a role in the healthcare system, and we take that responsibility seriously.
             </p>
             <p className="text-gray-700">
-              We're committed to providing professional, reliable, compliant medical courier services that healthcare facilities can depend on for their most critical deliveries.
+              We're committed to providing professional, reliable, compliant medical courier services that healthcare facilities can depend on for their most critical deliveries. Through Superior One Logistics Software, we're building the future of medical logistics—one secure delivery at a time.
             </p>
           </div>
 

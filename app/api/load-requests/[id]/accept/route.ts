@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendDriverAcceptedNotification, sendLoadScheduledNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
-import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
 import { acceptLoadSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { requireDriver, verifyDriverAccess } from '@/lib/authorization'
 
 /**
  * POST /api/load-requests/[id]/accept
@@ -15,16 +16,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request) => {
+    const nextReq = req as NextRequest
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(nextReq)
     } catch (error) {
       return createErrorResponse(error)
     }
 
     const { id } = await params
-    const rawData = await req.json()
+    const rawData = await nextReq.json()
     
     // Validate request body
     const validation = await validateRequest(acceptLoadSchema, rawData)
@@ -42,6 +44,12 @@ export async function POST(
     }
 
     const { driverId, vehicleId, gpsTrackingEnabled } = validation.data
+
+    // AUTHORIZATION: Verify that the authenticated driver matches the driverId in request
+    const auth = await requireDriver(nextReq)
+    if (auth.userId !== driverId) {
+      throw new AuthorizationError('Cannot accept loads as another driver')
+    }
 
     // Verify vehicle belongs to driver
     const vehicle = await prisma.vehicle.findFirst({
@@ -68,19 +76,25 @@ export async function POST(
       throw new NotFoundError('Load request')
     }
 
-    // Check if load is already assigned to another driver
-    if (loadRequest.driverId && loadRequest.driverId !== driverId) {
-      throw new ValidationError('This load has already been accepted by another driver')
+    // Check if load can be accepted (must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED)
+    const acceptableStatuses = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED']
+    if (!acceptableStatuses.includes(loadRequest.status)) {
+      throw new ValidationError(`Cannot accept load with status: ${loadRequest.status}. Load must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED.`)
     }
 
-    // Check if load can be accepted (must be REQUESTED)
-    if (loadRequest.status !== 'REQUESTED') {
-      throw new ValidationError(`Cannot accept load with status: ${loadRequest.status}. Load must be REQUESTED.`)
-    }
-
-    // Update load with driver and vehicle assignment - set to SCHEDULED (tracking starts here)
-    const updatedLoad = await prisma.loadRequest.update({
-      where: { id },
+    // ATOMIC UPDATE: Use updateMany with WHERE clause to prevent race condition
+    // Only update if driverId is null or matches current driver (allows re-acceptance by same driver)
+    const updateResult = await prisma.loadRequest.updateMany({
+      where: {
+        id,
+        OR: [
+          { driverId: null },
+          { driverId: driverId },
+        ],
+        status: {
+          in: acceptableStatuses,
+        },
+      },
       data: {
         driverId,
         vehicleId,
@@ -92,6 +106,34 @@ export async function POST(
         gpsTrackingEnabled: gpsTrackingEnabled === true,
         gpsTrackingStartedAt: gpsTrackingEnabled === true ? new Date() : null,
       },
+    })
+
+    // Check if update actually happened (race condition check)
+    if (updateResult.count === 0) {
+      // Reload to check current state
+      const currentLoad = await prisma.loadRequest.findUnique({
+        where: { id },
+        select: { driverId: true, status: true },
+      })
+      
+      if (!currentLoad) {
+        throw new NotFoundError('Load request')
+      }
+
+      if (currentLoad.driverId && currentLoad.driverId !== driverId) {
+        throw new ValidationError('This load has already been accepted by another driver')
+      }
+
+      if (!acceptableStatuses.includes(currentLoad.status)) {
+        throw new ValidationError(`Cannot accept load with status: ${currentLoad.status}. Load must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED.`)
+      }
+
+      throw new ValidationError('Failed to accept load. Please try again.')
+    }
+
+    // Fetch the updated load with all relations
+    const updatedLoad = await prisma.loadRequest.findUnique({
+      where: { id },
       include: {
         driver: {
           select: {
@@ -117,6 +159,10 @@ export async function POST(
         dropoffFacility: true,
       },
     })
+
+    if (!updatedLoad) {
+      throw new NotFoundError('Load request')
+    }
 
     // Update the initial "Request Received" event description to reflect acceptance
     // Find the first REQUEST_RECEIVED event and update its description

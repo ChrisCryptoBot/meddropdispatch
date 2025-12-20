@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
+import { getLoadStatusColor, getLoadStatusLabel } from '@/lib/constants'
 
 interface LoadRequest {
   id: string
@@ -12,6 +13,7 @@ interface LoadRequest {
   readyTime: string | null
   deliveryDeadline: string | null
   quoteAmount: number | null
+  gpsTrackingEnabled?: boolean
   driver: {
     id: string
     firstName: string
@@ -32,9 +34,17 @@ interface LoadRequest {
   createdAt: string
 }
 
+interface Dispatcher {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export default function ShipperDashboardPage() {
   const router = useRouter()
   const [shipper, setShipper] = useState<any>(null)
+  const [dispatcher, setDispatcher] = useState<Dispatcher | null>(null)
   const [loads, setLoads] = useState<LoadRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
@@ -83,9 +93,27 @@ export default function ShipperDashboardPage() {
     const parsedShipper = JSON.parse(shipperData)
     setShipper(parsedShipper)
 
+    // Fetch full shipper details including dispatcher info
+    fetchShipperDetails(parsedShipper.id)
+
     // Fetch loads
     fetchLoads(parsedShipper.id)
   }, [router])
+
+  const fetchShipperDetails = async (shipperId: string) => {
+    try {
+      const response = await fetch(`/api/shippers/${shipperId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setShipper(data.shipper)
+        if (data.shipper.dispatcher) {
+          setDispatcher(data.shipper.dispatcher)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching shipper details:', error)
+    }
+  }
 
   // Refresh loads when URL params change (e.g., after redirect from request)
   useEffect(() => {
@@ -104,12 +132,12 @@ export default function ShipperDashboardPage() {
     }
   }, [shipper])
 
-  const fetchLoads = async (shipperId: string) => {
+  const fetchLoads = async (shipperId: string, page: number = 1) => {
     try {
       setIsLoading(true)
-      // Add cache busting to ensure fresh data
-      const response = await fetch(`/api/shippers/${shipperId}/loads?t=${Date.now()}`, {
-        cache: 'no-store'
+      // Use proper caching - Next.js will handle cache revalidation
+      const response = await fetch(`/api/shippers/${shipperId}/loads?page=${page}&limit=50`, {
+        next: { revalidate: 10 } // Revalidate every 10 seconds
       })
       if (!response.ok) throw new Error('Failed to fetch loads')
 
@@ -170,40 +198,13 @@ export default function ShipperDashboardPage() {
     }
   }
 
+  // Use centralized status colors and labels
   const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      'QUOTE_REQUESTED': 'bg-orange-100 text-orange-800 border-orange-200',
-      'REQUESTED': 'bg-blue-100 text-blue-800 border-blue-200',
-      'NEW': 'bg-blue-100 text-blue-800 border-blue-200',
-      'QUOTED': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'QUOTE_ACCEPTED': 'bg-green-100 text-green-800 border-green-200',
-      'SCHEDULED': 'bg-purple-100 text-purple-800 border-purple-200',
-      'EN_ROUTE': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'PICKED_UP': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'IN_TRANSIT': 'bg-cyan-100 text-cyan-800 border-cyan-200',
-      'DELIVERED': 'bg-green-100 text-green-800 border-green-200',
-      'CANCELLED': 'bg-red-100 text-red-800 border-red-200',
-      'DENIED': 'bg-red-100 text-red-800 border-red-200',
-    }
-    return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+    return getLoadStatusColor(status)
   }
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      'QUOTE_REQUESTED': 'Available to Claim',
-      'REQUESTED': 'Scheduling Request',
-      'NEW': 'New Request',
-      'QUOTED': 'Quote Pending',
-      'QUOTE_ACCEPTED': 'Quote Accepted',
-      'SCHEDULED': 'Scheduled',
-      'EN_ROUTE': 'En Route to Pickup',
-      'PICKED_UP': 'Picked Up',
-      'IN_TRANSIT': 'In Transit',
-      'DELIVERED': 'Delivered',
-      'CANCELLED': 'Cancelled',
-      'DENIED': 'Not Scheduled',
-    }
-    return labels[status] || status
+    return getLoadStatusLabel(status)
   }
 
   // Filter and sort loads
@@ -324,7 +325,7 @@ export default function ShipperDashboardPage() {
   return (
     <div className="p-8 print:p-4">
       {/* Header */}
-      <div className="sticky top-[73px] z-30 bg-gradient-medical-bg pt-8 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Loads</h1>
@@ -333,8 +334,72 @@ export default function ShipperDashboardPage() {
         </div>
       </div>
 
-      {/* Call to Book Loads - Prominent CTA */}
-      <div className="sticky top-[185px] z-20 bg-gradient-medical-bg pt-4 pb-4 mb-8 print:mb-4 print:static print:top-0">
+      {/* Dedicated Dispatcher Card - Premium Tier Only */}
+      {shipper?.subscriptionTier === 'BROKERAGE' && dispatcher && (
+        <div className="mb-8 print:mb-4">
+          <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div className="w-16 h-16 bg-gradient-accent rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 className="text-2xl font-bold text-gray-900 print:text-xl">Your Dedicated Dispatcher</h2>
+                    <span className="px-3 py-1 bg-gradient-accent text-white text-xs font-semibold rounded-full shadow-lg">
+                      Premium
+                    </span>
+                  </div>
+                  <p className="text-gray-700 mb-4 print:text-sm">
+                    You have a dedicated dispatcher assigned to handle your loads and provide personalized service.
+                  </p>
+                  <div className="bg-white/60 rounded-lg p-4 mb-4 border border-teal-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-accent rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-lg">
+                          {dispatcher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900 text-lg">{dispatcher.name}</div>
+                        <div className="text-sm text-gray-600">{dispatcher.email}</div>
+                        <div className="text-xs text-teal-600 font-medium mt-1">
+                          {dispatcher.role === 'ADMIN' ? 'Administrator' : 'Dispatcher'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href={`mailto:${dispatcher.email}?subject=Load Request - ${shipper.companyName}`}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg min-h-[44px]"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email Dispatcher
+                    </a>
+                    <Link
+                      href="/shipper/load-request"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-teal-700 rounded-lg font-semibold hover:bg-teal-50 transition-all border-2 border-teal-200 min-h-[44px]"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Request New Load
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Call to Book Loads - Prominent CTA - Separate, scrolls with page */}
+      <div className="mb-8 print:mb-4">
         <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
@@ -348,7 +413,7 @@ export default function ShipperDashboardPage() {
                 <p className="text-medical mb-2 print:text-sm">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
                 <a
                   href="tel:+1234567890"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg min-h-[44px]"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -362,26 +427,26 @@ export default function ShipperDashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
           <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
-          <div className="text-sm text-medical">Total Loads</div>
+          <div className="text-sm text-teal-700 font-medium">Total Loads</div>
         </div>
-        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
           <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
-          <div className="text-sm text-medical">Pending</div>
+          <div className="text-sm text-teal-700 font-medium">Pending</div>
         </div>
-        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30">
-          <div className="text-3xl font-bold text-gradient mb-1">{stats.active}</div>
-          <div className="text-sm text-medical">Active</div>
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-3xl font-bold text-accent-700 mb-1">{stats.active}</div>
+          <div className="text-sm text-teal-700 font-medium">Active</div>
         </div>
-        <div className="glass-success rounded-2xl p-6 border-2 border-green-200/30">
-          <div className="text-3xl font-bold text-success-700 mb-1">{stats.delivered}</div>
-          <div className="text-sm text-success-700">Delivered</div>
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-3xl font-bold text-green-600 mb-1">{stats.delivered}</div>
+          <div className="text-sm text-teal-700 font-medium">Delivered</div>
         </div>
-        <div className="glass-urgent rounded-2xl p-6 border-2 border-red-200/30">
-          <div className="text-3xl font-bold text-urgent-700 mb-1">{stats.cancelled}</div>
-          <div className="text-sm text-urgent-700">Cancelled</div>
+        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+          <div className="text-3xl font-bold text-accent-700 mb-1">{stats.cancelled}</div>
+          <div className="text-sm text-teal-700 font-medium">Cancelled</div>
         </div>
       </div>
 
@@ -576,13 +641,23 @@ export default function ShipperDashboardPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <Link href={`/shipper/loads/${load.id}`}>
                         <h3 className="font-bold text-gray-900 text-lg font-mono hover:text-blue-600 transition-colors">{load.publicTrackingCode}</h3>
                       </Link>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
                         {getStatusLabel(load.status)}
                       </span>
+                      {/* GPS Tracking Badge */}
+                      {load.driver && load.gpsTrackingEnabled && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          Live GPS
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600">
                       Created {new Date(load.createdAt).toLocaleDateString()}
@@ -711,8 +786,21 @@ export default function ShipperDashboardPage() {
                   </div>
                 )}
 
-                {/* View Details Link */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                {/* Action Buttons */}
+                <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3 flex-wrap">
+                  {/* GPS Tracking Button - Show when GPS is enabled */}
+                  {load.driver && load.gpsTrackingEnabled && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+                    <Link
+                      href={`/shipper/loads/${load.id}#gps-tracking`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm shadow-md"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      View Map
+                    </Link>
+                  )}
                   <Link
                     href={`/shipper/loads/${load.id}`}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm shadow-lg"

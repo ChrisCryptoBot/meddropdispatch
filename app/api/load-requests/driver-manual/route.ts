@@ -9,10 +9,10 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
  * Create a manual load record for driver documentation
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -29,9 +29,6 @@ export async function POST(request: NextRequest) {
 
     // Determine which driver to assign (assignedDriverId takes precedence, otherwise use creator driverId)
     const finalAssignedDriverId = assignedDriverId || driverId
-
-    // Track if shipper is new (will be created)
-    let isNewShipper = false
 
     // Track if shipper is new (will be created)
     let isNewShipper = false
@@ -113,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify assigned driver exists (if different from creator)
-    let assignedDriver = creatorDriver
+    let assignedDriver: { id: string; firstName: string; lastName: string; phone?: string; email?: string } | null = creatorDriver
     if (assignedDriverId && assignedDriverId !== driverId) {
       assignedDriver = await prisma.driver.findUnique({
         where: { id: assignedDriverId },
@@ -215,7 +212,6 @@ export async function POST(request: NextRequest) {
         shipperId: shipper.id,
         pickupFacilityId: pickupFacility.id,
         dropoffFacilityId: dropoffFacility.id,
-        driverId: driverId,
         serviceType: loadData.serviceType || 'OTHER',
         commodityDescription: loadData.commodityDescription || 'Manual entry - see documents',
         specimenCategory: loadData.specimenCategory || 'OTHER',

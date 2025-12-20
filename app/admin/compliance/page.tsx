@@ -80,26 +80,26 @@ export default function AdminCompliancePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</div>
           <div className="text-sm text-gray-600">Total Reminders</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-red-600 mb-1">{stats.critical}</div>
           <div className="text-sm text-gray-600">Critical</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-yellow-600 mb-1">{stats.warnings}</div>
           <div className="text-sm text-gray-600">Warnings</div>
         </div>
-        <div className="glass p-6 rounded-xl">
+        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-blue-600 mb-1">{stats.info}</div>
           <div className="text-sm text-gray-600">Info</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="glass p-4 rounded-xl mb-6">
+      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30 shadow-glass">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700">Filter:</label>
           <select
@@ -117,7 +117,7 @@ export default function AdminCompliancePage() {
 
       {/* Reminders List */}
       {reminders.length === 0 ? (
-        <div className="glass p-12 rounded-2xl text-center">
+        <div className="glass-primary p-12 rounded-2xl text-center border-2 border-blue-200/30 shadow-glass">
           <svg
             className="w-16 h-16 mx-auto mb-4 text-gray-400"
             fill="none"
@@ -134,7 +134,7 @@ export default function AdminCompliancePage() {
           {reminders.map((reminder) => (
             <div
               key={reminder.id}
-              className={`glass p-6 rounded-xl border ${
+              className={`glass-primary p-6 rounded-xl border-2 border-blue-200/30 shadow-glass ${
                 reminder.severity === 'CRITICAL'
                   ? 'border-red-200 bg-red-50/50'
                   : reminder.severity === 'WARNING'

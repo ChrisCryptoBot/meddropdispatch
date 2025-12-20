@@ -166,7 +166,7 @@ export default function AdminCreateLoadPage() {
         </div>
 
         {error && (
-          <div className="glass p-4 rounded-lg border-l-4 border-red-500 mb-6 bg-red-50/50">
+          <div className="glass-primary p-4 rounded-lg border-l-4 border-red-500 mb-6 bg-red-50/50 border-2 border-blue-200/30 shadow-glass">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-600 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
@@ -183,7 +183,7 @@ export default function AdminCreateLoadPage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Shipper Selection */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Shipper Information</h3>
             
             {!showNewShipperForm ? (
@@ -310,7 +310,7 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Service Details */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Service Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -393,7 +393,7 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Pickup Details */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Pickup Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
@@ -542,7 +542,7 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Delivery Details */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Delivery Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
@@ -691,7 +691,7 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Optional Details */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Additional Details (Optional)</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>

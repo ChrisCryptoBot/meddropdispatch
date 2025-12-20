@@ -7,11 +7,7 @@ import { parseEmailContent, detectServiceType, sanitizeEmailContent } from '@/li
 import { geocodeAddress } from '@/lib/geocoding'
 import { calculateDistance } from '@/lib/distance-calculator'
 import { calculateRate } from '@/lib/rate-calculator'
-import {
-  parseIncomingEmailWebhook,
-  sendQuoteRequestConfirmation,
-  sendAdminQuoteRequestNotification,
-} from '@/lib/email'
+// Email functions are implemented inline below
 import {
   sendNewQuoteRequestSMS,
 } from '@/lib/sms'
@@ -24,10 +20,10 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
  * Handle incoming email webhooks from Resend
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply more lenient rate limiting for webhooks
     try {
-      rateLimit(RATE_LIMITS.webhook)(req)
+      rateLimit(RATE_LIMITS.webhook)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -80,19 +76,31 @@ export async function POST(request: NextRequest) {
       console.log('✅ Webhook signature verified')
     }
 
-    // Parse email data from webhook
-    const emailData = parseIncomingEmailWebhook(webhookData)
+    // Parse email data from webhook (inline implementation)
+    // Resend webhook format: { from, to, subject, text, html, ... }
+    const emailData = {
+      from: webhookData.from?.email || webhookData.from,
+      to: webhookData.to || [],
+      subject: webhookData.subject || '',
+      text: webhookData.text || '',
+      html: webhookData.html || '',
+      date: webhookData.date || new Date().toISOString(),
+    }
 
-    if (!emailData) {
-      console.error('Failed to parse email webhook data')
+    if (!emailData.from || !emailData.subject) {
+      console.error('Failed to parse email webhook data - missing required fields')
       return NextResponse.json(
-        { error: 'Invalid webhook data' },
+        { error: 'Invalid webhook data - missing from or subject' },
         { status: 400 }
       )
     }
 
     // Parse email content to extract information
-    const parsedEmail = parseEmailContent(emailData)
+    const parsedEmail = parseEmailContent({
+      from: emailData.from,
+      subject: emailData.subject,
+      body: emailData.text || emailData.html || '',
+    })
 
     // Sanitize email content
     const sanitizedBody = sanitizeEmailContent(parsedEmail.body)
@@ -246,33 +254,37 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Created load request:', loadRequest.publicTrackingCode)
 
-    // Send confirmation email to shipper
-    const trackingUrl = `${process.env.NEXTAUTH_URL}/track?code=${trackingCode}`
+    // Send confirmation email to shipper (using existing email service)
+    const trackingUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/track?code=${trackingCode}`
+    const { sendEmail } = await import('@/lib/email-service')
+    
+    try {
+      await sendEmail({
+        to: parsedEmail.from,
+        subject: `MED DROP - Quote Request Received: ${trackingCode}`,
+        text: `Hello ${shipper.companyName},\n\nYour quote request has been received and assigned tracking code: ${trackingCode}\n\nPickup: ${parsedEmail.pickupAddress || 'TBD'}\nDelivery: ${parsedEmail.dropoffAddress || 'TBD'}\n\nTrack your request: ${trackingUrl}\n\nThank you for choosing MED DROP!`,
+        html: `<html><body><h2>MED DROP - Quote Request Received</h2><p>Hello ${shipper.companyName},</p><p>Your quote request has been received and assigned tracking code: <strong>${trackingCode}</strong></p><p><strong>Pickup:</strong> ${parsedEmail.pickupAddress || 'TBD'}<br><strong>Delivery:</strong> ${parsedEmail.dropoffAddress || 'TBD'}</p><p><a href="${trackingUrl}">Track your request</a></p><p>Thank you for choosing MED DROP!</p></body></html>`,
+      })
+    } catch (emailError) {
+      console.error('Failed to send quote request confirmation email:', emailError)
+      // Don't fail the webhook if email fails
+    }
 
-    await sendQuoteRequestConfirmation({
-      to: parsedEmail.from,
-      trackingCode,
-      companyName: shipper.companyName,
-      pickupAddress: parsedEmail.pickupAddress,
-      dropoffAddress: parsedEmail.dropoffAddress,
-      trackingUrl,
-    })
-
-    // Send notification to admin
-    const adminUrl = `${process.env.NEXTAUTH_URL}/admin/loads/${loadRequest.id}`
-
-    await sendAdminQuoteRequestNotification({
-      trackingCode,
-      shipperName: shipper.companyName,
-      shipperEmail: shipper.email,
-      pickupAddress: parsedEmail.pickupAddress,
-      dropoffAddress: parsedEmail.dropoffAddress,
-      distance: autoCalculatedDistance,
-      suggestedRate: suggestedRateMin && suggestedRateMax
-        ? { min: suggestedRateMin, max: suggestedRateMax }
-        : undefined,
-      adminUrl,
-    })
+    // Send notification to admin (using existing email service)
+    const adminUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/admin/loads/${loadRequest.id}`
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@meddrop.com'
+    
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: `New Quote Request: ${trackingCode}`,
+        text: `New quote request received:\n\nTracking Code: ${trackingCode}\nShipper: ${shipper.companyName} (${shipper.email})\nPickup: ${parsedEmail.pickupAddress || 'TBD'}\nDelivery: ${parsedEmail.dropoffAddress || 'TBD'}${autoCalculatedDistance ? `\nDistance: ${autoCalculatedDistance.toFixed(1)} miles` : ''}${suggestedRateMin && suggestedRateMax ? `\nSuggested Rate: $${suggestedRateMin} - $${suggestedRateMax}` : ''}\n\nView in admin portal: ${adminUrl}`,
+        html: `<html><body><h2>New Quote Request</h2><p><strong>Tracking Code:</strong> ${trackingCode}</p><p><strong>Shipper:</strong> ${shipper.companyName} (${shipper.email})</p><p><strong>Pickup:</strong> ${parsedEmail.pickupAddress || 'TBD'}<br><strong>Delivery:</strong> ${parsedEmail.dropoffAddress || 'TBD'}</p>${autoCalculatedDistance ? `<p><strong>Distance:</strong> ${autoCalculatedDistance.toFixed(1)} miles</p>` : ''}${suggestedRateMin && suggestedRateMax ? `<p><strong>Suggested Rate:</strong> $${suggestedRateMin} - $${suggestedRateMax}</p>` : ''}<p><a href="${adminUrl}">View in admin portal</a></p></body></html>`,
+      })
+    } catch (emailError) {
+      console.error('Failed to send admin notification email:', emailError)
+      // Don't fail the webhook if email fails
+    }
 
     // Create in-app notification for admins
     const route = parsedEmail.pickupAddress && parsedEmail.dropoffAddress
@@ -303,16 +315,18 @@ export async function POST(request: NextRequest) {
       // Don't fail the webhook if notification creation fails
     })
 
-    // Send SMS to admin (if configured)
+    // Send SMS to admin (if configured) - NON-BLOCKING: SMS failures should not prevent webhook processing
     const adminPhone = process.env.ADMIN_PHONE_NUMBER
     if (adminPhone) {
-      await sendNewQuoteRequestSMS({
+      sendNewQuoteRequestSMS({
         adminPhone,
         trackingCode,
         shipperName: shipper.companyName,
         route: parsedEmail.pickupAddress && parsedEmail.dropoffAddress
           ? `${parsedEmail.pickupAddress.split(',')[0]} → ${parsedEmail.dropoffAddress.split(',')[0]}`
           : 'Route TBD',
+      }).catch((error) => {
+        console.error('[SMS] Failed to send new quote request SMS (non-blocking):', error)
       })
     }
 
@@ -321,13 +335,7 @@ export async function POST(request: NextRequest) {
       trackingCode,
       loadRequestId: loadRequest.id,
     })
-  } catch (error) {
-    console.error('❌ Error processing email webhook:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 
 /**

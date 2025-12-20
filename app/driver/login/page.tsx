@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 export default function DriverLoginPage() {
   const router = useRouter()
@@ -106,34 +105,22 @@ export default function DriverLoginPage() {
   return (
     <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="glass-accent p-8 rounded-3xl border-2 border-teal-200/30 shadow-medical">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4">
-              <Image
-                src="/logo-icon.png"
-                alt="MED DROP Logo"
-                width={80}
-                height={80}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <h1 className="text-3xl font-bold text-gradient mb-2">MED DROP</h1>
-            <p className="text-teal-700">Driver Portal</p>
-          </div>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-block">
+            <h1 className="text-4xl font-bold text-gradient mb-2">
+              MED DROP
+            </h1>
+          </Link>
+          <p className="text-medical">Driver Portal Login</p>
+        </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
-              <p className="text-urgent-700 text-sm font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Login Form */}
+        {/* Login Card */}
+        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <input
@@ -141,22 +128,23 @@ export default function DriverLoginPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                placeholder="your@email.com"
                 required
-                className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80 text-lg"
-                placeholder="driver@meddrop.com"
                 autoComplete="email"
               />
             </div>
 
+            {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                Password
-              </label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-teal-600 hover:text-teal-800 font-medium"
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   Forgot Password?
                 </button>
@@ -166,31 +154,39 @@ export default function DriverLoginPage() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80 text-lg"
+                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
                 placeholder="••••••••"
+                required
                 autoComplete="current-password"
               />
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-urgent-50 border-2 border-urgent-200 text-urgent-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-4 rounded-xl bg-gradient-accent text-white font-bold text-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
+              className="w-full min-h-[44px] bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-8 text-center space-y-2">
-            <p className="text-sm text-teal-700">
+          <div className="mt-6 text-center text-sm text-medical">
+            <p>
               Don't have an account?{' '}
-              <Link href="/driver/signup" className="text-teal-600 hover:text-teal-900 font-medium">
+              <Link href="/driver/signup" className="text-blue-600 hover:text-blue-800 font-medium">
                 Sign up as Driver
               </Link>
             </p>
-            <Link href="/" className="text-sm text-gray-600 hover:text-teal-700 transition-base inline-block">
+            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
               ← Back to Home
             </Link>
           </div>
@@ -199,7 +195,7 @@ export default function DriverLoginPage() {
         {/* Forgot Password Modal */}
         {showForgotPassword && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="glass-accent p-8 rounded-3xl max-w-md w-full border-2 border-teal-200/30 shadow-medical">
+            <div className="glass-primary p-8 rounded-2xl max-w-md w-full border-2 border-blue-200/30 shadow-glass">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Forgot Password</h2>
                 <button
@@ -218,7 +214,7 @@ export default function DriverLoginPage() {
               </div>
 
               {resetMessage ? (
-                <div className="mb-6 p-4 bg-success-50 border-2 border-success-200 rounded-xl">
+                <div className="mb-6 p-4 bg-success-50 border-2 border-success-200 rounded-lg">
                   <p className="text-success-700 text-sm font-medium">{resetMessage}</p>
                 </div>
               ) : (
@@ -228,14 +224,14 @@ export default function DriverLoginPage() {
                   </p>
 
                   {error && (
-                    <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
+                    <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-lg">
                       <p className="text-urgent-700 text-sm font-medium">{error}</p>
                     </div>
                   )}
 
                   <form onSubmit={handleForgotPassword} className="space-y-6">
                     <div>
-                      <label htmlFor="forgot-email" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-2">
                         Email Address
                       </label>
                       <input
@@ -244,8 +240,8 @@ export default function DriverLoginPage() {
                         value={forgotPasswordEmail}
                         onChange={(e) => setForgotPasswordEmail(e.target.value)}
                         required
-                        className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80 text-lg"
-                        placeholder="driver@meddrop.com"
+                        className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                        placeholder="your@email.com"
                         autoComplete="email"
                       />
                     </div>
@@ -253,7 +249,7 @@ export default function DriverLoginPage() {
                     <button
                       type="submit"
                       disabled={isSendingReset}
-                      className="w-full px-6 py-4 rounded-xl bg-gradient-accent text-white font-bold text-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg"
+                      className="w-full min-h-[44px] bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                       {isSendingReset ? 'Sending...' : 'Send Password Reset'}
                     </button>
@@ -263,15 +259,6 @@ export default function DriverLoginPage() {
             </div>
           </div>
         )}
-
-        {/* Test Credentials */}
-        <div className="mt-6 glass-accent border-2 border-teal-200/30 rounded-lg p-4 text-sm">
-          <p className="font-semibold text-gray-900 mb-2">Test Credentials:</p>
-          <div className="text-gray-800 space-y-1">
-            <p>Email: <code className="bg-teal-50 px-2 py-0.5 rounded border border-teal-200">driver@test.com</code></p>
-            <p>Password: <code className="bg-teal-50 px-2 py-0.5 rounded border border-teal-200">driver123</code></p>
-          </div>
-        </div>
       </div>
     </div>
   )

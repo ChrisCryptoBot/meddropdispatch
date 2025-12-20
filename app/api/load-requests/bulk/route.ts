@@ -12,10 +12,10 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
  * Perform bulk operations on load requests
  */
 export async function POST(request: NextRequest) {
-  return withErrorHandling(async (req: NextRequest) => {
+  return withErrorHandling(async (req: Request | NextRequest) => {
     // Apply rate limiting
     try {
-      rateLimit(RATE_LIMITS.api)(req)
+      rateLimit(RATE_LIMITS.api)(request)
     } catch (error) {
       return createErrorResponse(error)
     }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'update_status':
-        const { status, eventLabel, eventDescription } = body
+        // status, eventLabel, eventDescription already destructured from validation.data above
         if (!status) {
           return NextResponse.json(
             { error: 'Missing status for update_status action' },
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         break
 
       case 'assign_driver':
-        const { driverId } = body
+        // driverId already destructured from validation.data above
         if (!driverId) {
           return NextResponse.json(
             { error: 'Missing driverId for assign_driver action' },
@@ -222,12 +222,6 @@ export async function POST(request: NextRequest) {
       loadRequestIds,
       result,
     })
-  } catch (error) {
-    console.error('Error performing bulk operation:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to perform bulk operation' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
 

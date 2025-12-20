@@ -219,23 +219,23 @@ export default function AdminInvoicesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="glass rounded-xl p-6">
+        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">{invoices.length}</div>
           <div className="text-sm text-gray-600">Total Invoices</div>
         </div>
-        <div className="glass rounded-xl p-6">
+        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'SENT').length}
           </div>
           <div className="text-sm text-gray-600">Sent</div>
         </div>
-        <div className="glass rounded-xl p-6">
+        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'OVERDUE').length}
           </div>
           <div className="text-sm text-gray-600">Overdue</div>
         </div>
-        <div className="glass rounded-xl p-6">
+        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {invoices.filter((i) => i.status === 'PAID').length}
           </div>
@@ -244,7 +244,7 @@ export default function AdminInvoicesPage() {
       </div>
 
       {/* Filters, Search, and Sort */}
-      <div className="glass p-4 rounded-xl mb-6">
+      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30 shadow-glass">
         <div className="grid md:grid-cols-3 gap-4 mb-4">
           {/* Search */}
           <div>
@@ -322,7 +322,7 @@ export default function AdminInvoicesPage() {
 
       {/* Invoices List */}
       {filteredAndSortedInvoices.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center">
+        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
             fill="none"
@@ -351,7 +351,7 @@ export default function AdminInvoicesPage() {
             Showing {filteredAndSortedInvoices.length} of {invoices.length} invoices
           </div>
           {filteredAndSortedInvoices.map((invoice) => (
-            <div key={invoice.id} className="glass rounded-xl p-6">
+            <div key={invoice.id} className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
