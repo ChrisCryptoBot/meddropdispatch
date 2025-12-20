@@ -31,7 +31,7 @@
 - [ ] `DATABASE_URL` - PostgreSQL connection string
 - [ ] `NEXTAUTH_SECRET` - Generated secret
 - [ ] `NEXTAUTH_URL` - `https://meddropdispatch.com`
-- [ ] `SENDGRID_API_KEY` - `SG.your-api-key-here`
+- [ ] `SENDGRID_API_KEY` - `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`
 - [ ] `SENDGRID_FROM_EMAIL` - `noreply@meddropdispatch.com`
 - [ ] `SENDGRID_FROM_NAME` - `MED DROP`
 - [ ] `NODE_ENV` - `production`
@@ -76,7 +76,7 @@ Copy these into Vercel:
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres?sslmode=require
 NEXTAUTH_SECRET=[generate with: npm run generate:secret]
 NEXTAUTH_URL=https://meddropdispatch.com
-SENDGRID_API_KEY=SG.your-api-key-here
+SENDGRID_API_KEY=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
 SENDGRID_FROM_EMAIL=noreply@meddropdispatch.com
 SENDGRID_FROM_NAME=MED DROP
 NODE_ENV=production

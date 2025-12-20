@@ -7,7 +7,7 @@ Your SendGrid API key has been successfully configured!
 The following has been added to your `.env` file:
 
 ```env
-SENDGRID_API_KEY=SG.your-api-key-here
+SENDGRID_API_KEY=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
 SENDGRID_FROM_EMAIL=noreply@meddrop.com
 SENDGRID_FROM_NAME=MED DROP
 ```

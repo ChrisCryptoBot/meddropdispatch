@@ -106,7 +106,7 @@ NEXTAUTH_URL=https://meddropdispatch.com
 (Use your custom domain)
 
 # SendGrid Email
-SENDGRID_API_KEY=SG.your-api-key-here
+SENDGRID_API_KEY=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
 
 SENDGRID_FROM_EMAIL=noreply@meddropdispatch.com
 (Use your custom domain)
