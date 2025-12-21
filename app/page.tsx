@@ -43,7 +43,20 @@ export default function HomePage() {
       {/* Hero Section */}
       <main>
         <section className="relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(/Background.jpg)',
+            }}
+          >
+            {/* Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/85 via-white/75 to-white/90"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-teal-50/30"></div>
+          </div>
+          
+          {/* Content */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
             <div className="text-center mb-16">
               <h2 className="heading-primary text-5xl md:text-6xl lg:text-7xl mb-6 leading-tight">
                 Medical Courier Services<br />
@@ -145,9 +158,24 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* User Type Benefits */}
-        <section className="py-20 lg:py-28">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* User Type Benefits & Key Features - Combined with Background */}
+        <section className="relative overflow-hidden">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(/Background2.jpg)',
+            }}
+          >
+            {/* Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/85 via-white/75 to-white/90"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-teal-50/30"></div>
+          </div>
+          
+          {/* Content */}
+          <div className="relative z-10">
+            <div className="py-20 lg:py-28 pb-20 lg:pb-32">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 Built for Your Needs
@@ -383,6 +411,8 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
           </div>
         </section>
       </main>
