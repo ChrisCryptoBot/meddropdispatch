@@ -134,25 +134,84 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Stats Section */}
+        {/* Compliance & Security & Features Section */}
         <section className="py-16 glass-primary border-y border-blue-200/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                Compliance & Security
+              </h3>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Fully certified and compliant with industry standards for medical transportation
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+              {/* HIPAA Compliant Badge */}
+              <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical text-center hover-lift transition-all">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
+                  <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">HIPAA Compliant</h4>
+                <p className="text-sm text-gray-600">Protected Health Information</p>
+              </div>
+
+              {/* OSHA Trained Badge */}
+              <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical text-center hover-lift transition-all">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
+                  <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">OSHA Trained</h4>
+                <p className="text-sm text-gray-600">Safety & Compliance</p>
+              </div>
+
+              {/* UN3373 Biohazard Badge */}
+              <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical text-center hover-lift transition-all">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
+                  <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">UN3373 Certified</h4>
+                <p className="text-sm text-gray-600">Biohazard Transport</p>
+              </div>
+
+              {/* TSA Verifiable Badge */}
+              <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical text-center hover-lift transition-all">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
+                  <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">TSA Verifiable</h4>
+                <p className="text-sm text-gray-600">Secure Chain of Custody</p>
+              </div>
+            </div>
+
+            {/* Operational Features */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-8 border-t border-blue-200/30">
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2">24/7</div>
+                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2 leading-normal">24/7</div>
                 <div className="text-sm md:text-base text-medical font-medium">Support Available</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2">Real-Time</div>
+                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2 leading-normal">Real-Time</div>
                 <div className="text-sm md:text-base text-medical font-medium">Tracking Updates</div>
               </div>
-              <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2">UN3373</div>
-                <div className="text-sm md:text-base text-medical font-medium">Certified</div>
+              <div className="text-center pb-1">
+                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2 leading-[1.2] pb-4" style={{ paddingBottom: '1rem' }}>Digital</div>
+                <div className="text-sm md:text-base text-medical font-medium">Signatures</div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2">HIPAA</div>
-                <div className="text-sm md:text-base text-medical font-medium">Compliant</div>
+                <div className="text-4xl md:text-5xl font-bold text-gradient mb-2 leading-normal">Temp</div>
+                <div className="text-sm md:text-base text-medical font-medium">Monitoring</div>
               </div>
             </div>
           </div>
@@ -174,18 +233,18 @@ export default function HomePage() {
           
           {/* Content */}
           <div className="relative z-10">
-            <div className="py-20 lg:py-28 pb-20 lg:pb-32">
+            <div className="py-20 lg:py-28 pb-64 lg:pb-96">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Built for Your Needs
-              </h3>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Whether you're shipping medical supplies or delivering them, MED DROP has you covered
-              </p>
-            </div>
+                <div className="text-center mb-16">
+                  <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                    Built for Your Needs
+                  </h3>
+                  <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Whether you're shipping medical supplies or delivering them, MED DROP has you covered
+                  </p>
+                </div>
 
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12 mb-16">
+                <div className="grid md:grid-cols-2 gap-8 lg:gap-12 mb-16">
               {/* Shipper Benefits */}
               <div className="glass-primary p-10 rounded-3xl hover-lift medical-accent">
                 <div className="flex items-center gap-4 mb-6">
@@ -307,114 +366,9 @@ export default function HomePage() {
                   </li>
                 </ul>
               </div>
-            </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Key Features */}
-        <section className="py-20 glass-primary border-y border-blue-200/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h3 className="heading-secondary text-4xl md:text-5xl mb-4">
-                Why Choose MED DROP
-              </h3>
-              <p className="text-xl text-medical max-w-2xl mx-auto">
-                Professional medical courier services with the technology and compliance you need
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {/* Feature 1 - STAT */}
-              <div className="glass-urgent p-8 rounded-2xl hover-lift text-center border-2 border-red-200/30">
-                <div className="w-16 h-16 bg-gradient-urgent rounded-xl flex items-center justify-center mx-auto mb-6 shadow-urgent">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-gray-900">STAT & Same-Day</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  Urgent medical courier services with immediate pickup and same-day delivery options for critical healthcare needs.
-                </p>
-              </div>
-
-              {/* Feature 2 - Compliance */}
-              <div className="glass-accent p-8 rounded-2xl hover-lift text-center border-2 border-teal-200/30">
-                <div className="w-16 h-16 bg-gradient-accent rounded-xl flex items-center justify-center mx-auto mb-6 shadow-medical">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-gray-900">Compliant Handling</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  UN3373 certified handling for biological specimens and temperature-controlled transport with full documentation.
-                </p>
-              </div>
-
-              {/* Feature 3 - Tracking */}
-              <div className="glass-primary p-8 rounded-2xl hover-lift text-center border-2 border-blue-200/30">
-                <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-6 shadow-glass">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </div>
-                <h4 className="text-xl font-bold mb-3 text-gray-900">Real-Time Tracking</h4>
-                <p className="text-gray-600 leading-relaxed">
-                  Track your shipment status with detailed checkpoint updates and digital signature confirmations throughout delivery.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Services Section */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="glass-accent p-12 rounded-3xl border-2 border-teal-200/30">
-              <h3 className="heading-secondary text-3xl md:text-4xl mb-10 text-center">What We Transport</h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="flex flex-col items-start">
-                  <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center mb-3 shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-gray-900 mb-1">Laboratory Specimens</h4>
-                  <p className="text-sm text-gray-600">UN3373 Category B biological substances</p>
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="w-10 h-10 bg-gradient-accent rounded-lg flex items-center justify-center mb-3 shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-gray-900 mb-1">Pharmaceuticals</h4>
-                  <p className="text-sm text-gray-600">Prescription medications and supplies</p>
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="w-10 h-10 bg-gradient-success rounded-lg flex items-center justify-center mb-3 shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-gray-900 mb-1">Medical Equipment</h4>
-                  <p className="text-sm text-gray-600">Supplies and equipment for healthcare facilities</p>
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg flex items-center justify-center mb-3 shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-gray-900 mb-1">Temperature-Controlled</h4>
-                  <p className="text-sm text-gray-600">Refrigerated and frozen transport available</p>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
           </div>
         </section>
       </main>
