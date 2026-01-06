@@ -21,10 +21,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const input = searchParams.get('input')
+    const rawInput = searchParams.get('input')
 
-    if (!input || input.length < 3) {
+    // Input sanitization
+    if (!rawInput || rawInput.length < 3) {
       return NextResponse.json({ predictions: [] })
+    }
+
+    // Sanitize input: remove special characters that could cause issues
+    const input = rawInput.trim().substring(0, 200) // Max 200 chars
+
+    // Validate input doesn't contain suspicious patterns
+    if (/[<>{}[\]\\]/.test(input)) {
+      return NextResponse.json({
+        predictions: [],
+        error: 'Invalid characters in search query'
+      }, { status: 400 })
     }
 
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
@@ -39,9 +51,8 @@ export async function GET(request: NextRequest) {
         params: {
           input,
           key: apiKey,
-          // types parameter removed due to type mismatch - API will return all types
         },
-        timeout: 10000,
+        timeout: 5000, // Reduced timeout to 5s
       })
 
       if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
@@ -57,10 +68,18 @@ export async function GET(request: NextRequest) {
       }))
 
       return NextResponse.json({ predictions })
-    } catch (error) {
+    } catch (error: any) {
+      // Handle timeout specifically
+      if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+        console.error('Geocoding API timeout:', error)
+        return NextResponse.json({
+          predictions: [],
+          error: 'Geocoding service timeout'
+        }, { status: 504 })
+      }
+
       console.error('Error in autocomplete:', error)
       return NextResponse.json({ predictions: [] })
     }
   })(request)
 }
-

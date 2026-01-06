@@ -14,6 +14,58 @@ if (!process.env.BLOB_READ_WRITE_TOKEN) {
   console.warn('⚠️  BLOB_READ_WRITE_TOKEN not configured. Document uploads will fall back to base64 storage.')
 }
 
+// Allowed file types for document uploads
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const
+
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
+/**
+ * Validate file before upload
+ */
+function validateFile(file: File | Buffer, filename: string, contentType: string): void {
+  // Validate MIME type
+  if (!ALLOWED_MIME_TYPES.includes(contentType as any)) {
+    throw new Error(`File type not allowed: ${contentType}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`)
+  }
+
+  // Validate file size
+  const fileSize = file instanceof Buffer ? file.length : (file as any).size || 0
+  if (fileSize > MAX_FILE_SIZE) {
+    throw new Error(`File too large: ${(fileSize / 1024 / 1024).toFixed(2)}MB. Maximum: ${MAX_FILE_SIZE / 1024 / 1024}MB`)
+  }
+
+  // Validate filename doesn't contain path traversal
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    throw new Error('Invalid filename: path traversal detected')
+  }
+
+  // Validate filename extension matches content type
+  const ext = filename.split('.').pop()?.toLowerCase()
+  const expectedExts: Record<string, string[]> = {
+    'application/pdf': ['pdf'],
+    'image/jpeg': ['jpg', 'jpeg'],
+    'image/jpg': ['jpg', 'jpeg'],
+    'image/png': ['png'],
+    'image/webp': ['webp'],
+    'application/msword': ['doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
+  }
+
+  const validExts = expectedExts[contentType] || []
+  if (ext && !validExts.includes(ext)) {
+    throw new Error(`File extension .${ext} doesn't match content type ${contentType}`)
+  }
+}
+
 /**
  * Upload a document to Vercel Blob Storage
  * @param file - File object or Buffer containing file data
@@ -31,10 +83,14 @@ export async function uploadDocumentToBlob(
     throw new Error('BLOB_READ_WRITE_TOKEN not configured. Cannot upload to blob storage.')
   }
 
+  // Validate file before upload
+  validateFile(file, filename, contentType)
+
   try {
     // Generate unique filename with timestamp to avoid collisions
     const timestamp = Date.now()
-    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+    // Strict filename sanitization: only alphanumeric, dots, dashes, underscores
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_').substring(0, 100)
     const blobPath = `documents/${timestamp}-${sanitizedFilename}`
 
     // Upload to Vercel Blob
