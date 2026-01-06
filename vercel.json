@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "framework": null,
+  "installCommand": "npm install",
+  "crons": [
+    {
+      "path": "/api/cron/generate-invoices",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
+

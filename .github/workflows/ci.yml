@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test -- --run
+    env:
+      DATABASE_URL: file:./test.db
+      NEXTAUTH_SECRET: test-secret-for-ci
+      NEXTAUTH_URL: http://localhost:3000
+      GOOGLE_MAPS_API_KEY: test-key
+      RESEND_API_KEY: test-key
+      RESEND_FROM_EMAIL: test@test.com
+      RESEND_FROM_NAME: Test
+      COMPANY_NAME: Test
+      COMPANY_ADDRESS: Test
+      COMPANY_CITY: Test
+      COMPANY_STATE: Test
+      COMPANY_ZIP: Test
+      COMPANY_EIN: Test
+      SUPPORT_EMAIL: test@test.com
+      SUPPORT_PHONE: Test
+      ADMIN_EMAIL: test@test.com
+      ADMIN_PHONE_NUMBER: Test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+    env:
+      DATABASE_URL: file:./test.db
+      NEXTAUTH_SECRET: test-secret-for-ci
+      NEXTAUTH_URL: http://localhost:3000
+      GOOGLE_MAPS_API_KEY: test-key
+      RESEND_API_KEY: test-key
+      RESEND_FROM_EMAIL: test@test.com
+      RESEND_FROM_NAME: Test
+      COMPANY_NAME: Test
+      COMPANY_ADDRESS: Test
+      COMPANY_CITY: Test
+      COMPANY_STATE: Test
+      COMPANY_ZIP: Test
+      COMPANY_EIN: Test
+      SUPPORT_EMAIL: test@test.com
+      SUPPORT_PHONE: Test
+      ADMIN_EMAIL: test@test.com
+      ADMIN_PHONE_NUMBER: Test
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test -- --run
+    env:
+      DATABASE_URL: file:./test.db
+      NEXTAUTH_SECRET: test-secret-for-ci
+      NEXTAUTH_URL: http://localhost:3000
+      GOOGLE_MAPS_API_KEY: test-key
+      RESEND_API_KEY: test-key
+      RESEND_FROM_EMAIL: test@test.com
+      RESEND_FROM_NAME: Test
+      COMPANY_NAME: Test
+      COMPANY_ADDRESS: Test
+      COMPANY_CITY: Test
+      COMPANY_STATE: Test
+      COMPANY_ZIP: Test
+      COMPANY_EIN: Test
+      SUPPORT_EMAIL: test@test.com
+      SUPPORT_PHONE: Test
+      ADMIN_EMAIL: test@test.com
+      ADMIN_PHONE_NUMBER: Test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+    env:
+      DATABASE_URL: file:./test.db
+      NEXTAUTH_SECRET: test-secret-for-ci
+      NEXTAUTH_URL: http://localhost:3000
+      GOOGLE_MAPS_API_KEY: test-key
+      RESEND_API_KEY: test-key
+      RESEND_FROM_EMAIL: test@test.com
+      RESEND_FROM_NAME: Test
+      COMPANY_NAME: Test
+      COMPANY_ADDRESS: Test
+      COMPANY_CITY: Test
+      COMPANY_STATE: Test
+      COMPANY_ZIP: Test
+      COMPANY_EIN: Test
+      SUPPORT_EMAIL: test@test.com
+      SUPPORT_PHONE: Test
+      ADMIN_EMAIL: test@test.com
+      ADMIN_PHONE_NUMBER: Test

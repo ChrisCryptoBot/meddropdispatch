@@ -1,0 +1,353 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { sendEmail } from '@/lib/email'
+import { createHash } from 'crypto'
+import { createErrorResponse, withErrorHandling, ValidationError, AuthorizationError } from '@/lib/errors'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { verifyDocumentUploadAccess } from '@/lib/authorization'
+import { logUserAction } from '@/lib/audit-log'
+
+/**
+ * POST /api/load-requests/[id]/documents
+ * Upload a document for a load request
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: Request) => {
+    const nextReq = req as NextRequest
+    // Apply stricter rate limiting for upload routes
+    try {
+      rateLimit(RATE_LIMITS.upload)(nextReq)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+    console.log('[Document Upload] Starting upload for load:', id)
+
+    const formData = await nextReq.formData()
+    console.log('[Document Upload] FormData parsed successfully')
+
+    const file = formData.get('file') as File
+    const documentType = formData.get('type') as string
+    const title = formData.get('title') as string
+    const uploadedBy = formData.get('uploadedBy') as string // 'driver' or 'shipper'
+
+    console.log('[Document Upload] File info:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      documentType,
+      title,
+      uploadedBy,
+    })
+
+    if (!file || !documentType || !title) {
+      console.error('[Document Upload] Missing required fields:', {
+        hasFile: !!file,
+        documentType,
+        title,
+      })
+      throw new ValidationError('File, type, and title are required')
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        {
+          error: 'File size exceeds limit',
+          message: `File size must be less than 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate file type
+    const validMimeTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/heic',
+    ]
+    const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+
+    // Check MIME type or extension
+    const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension)
+
+    if (!isValidType) {
+      throw new ValidationError(
+        `File type "${file.type || 'unknown'}" is not supported. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`
+      )
+    }
+
+    // Convert file to base64 for storage (in production, use S3/Blob storage)
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const base64 = buffer.toString('base64')
+    const dataUrl = `data:${file.type};base64,${base64}`
+
+    // Calculate SHA-256 hash for immutability marker
+    const fileHash = createHash('sha256').update(buffer).digest('hex')
+
+    // Deduplication: prevent duplicate document uploads for a load (same hash)
+    const duplicate = await prisma.document.findFirst({
+      where: {
+        loadRequestId: id,
+        fileHash,
+      },
+      select: { id: true, createdAt: true, title: true, type: true },
+    })
+
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: 'DuplicateDocument',
+          message: 'An identical document has already been uploaded for this load.',
+          existingDocument: duplicate,
+        },
+        { status: 409 }
+      )
+    }
+
+    // Get load request with shipper info for email
+    const loadRequest = await prisma.loadRequest.findUnique({
+      where: { id },
+      include: {
+        shipper: true,
+        pickupFacility: true,
+        dropoffFacility: true,
+      }
+    })
+
+    if (!loadRequest) {
+      return NextResponse.json(
+        { error: 'Load request not found' },
+        { status: 404 }
+      )
+    }
+
+    // AUTHORIZATION: Verify user has permission to upload documents to this load
+    try {
+      console.log('[Document Upload] Verifying upload access...')
+      await verifyDocumentUploadAccess(nextReq, id)
+      console.log('[Document Upload] Access verified')
+    } catch (authError) {
+      console.error('[Document Upload] Authorization error:', authError)
+      if (authError instanceof AuthorizationError) {
+        return NextResponse.json(
+          { error: 'AuthorizationError', message: authError.message },
+          { status: 403 }
+        )
+      }
+      throw authError
+    }
+
+    // POD LOCKING: Check if load is DELIVERED and require admin override for new uploads
+    // Exception: DRIVER_MANUAL loads allow drivers to upload documents even if status is DELIVERED
+    const isDriverManual = loadRequest.createdVia === 'DRIVER_MANUAL'
+    const requiresOverride = loadRequest.status === 'DELIVERED' && !isDriverManual
+    const adminOverride = formData.get('adminOverride') === 'true'
+    const adminOverrideBy = formData.get('adminOverrideBy') as string | null
+    const adminOverrideNotes = formData.get('adminOverrideNotes') as string | null
+
+    if (requiresOverride && !adminOverride && uploadedBy !== 'admin') {
+      return NextResponse.json(
+        {
+          error: 'Cannot upload documents after delivery. Please contact admin to add documents with proper authorization.',
+          requiresAdminOverride: true
+        },
+        { status: 403 }
+      )
+    }
+
+    // POD LOCKING: Lock documents if load is DELIVERED (except if admin override or DRIVER_MANUAL)
+    const isLocked = requiresOverride && !adminOverride
+    const lockedAt = isLocked ? new Date() : null
+
+    // Create document record
+    console.log('[Document Upload] Creating document record...')
+    let document
+    try {
+      document = await prisma.document.create({
+        data: {
+          loadRequestId: id,
+          type: documentType,
+          title,
+          url: dataUrl, // Stored as base64 data URL
+          mimeType: file.type,
+          fileSize: file.size,
+          fileHash: fileHash, // SHA-256 hash for immutability verification
+          uploadedBy: uploadedBy || 'unknown',
+          isLocked: isLocked,
+          lockedAt: lockedAt,
+          adminOverride: adminOverride || false,
+          adminOverrideBy: adminOverride ? adminOverrideBy : null,
+          adminOverrideNotes: adminOverride ? adminOverrideNotes : null,
+        }
+      })
+      console.log('[Document Upload] Document created successfully:', document.id)
+    } catch (dbError) {
+      console.error('[Document Upload] Database error:', dbError)
+      throw new Error(`Failed to save document: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`)
+    }
+
+    // If driver uploaded, send email to shipper with attachment
+    if (uploadedBy === 'driver') {
+      try {
+        // Create attachment data for email
+        const attachmentContent = base64
+        const attachmentName = file.name
+
+        // Send email with document attached
+        await sendEmail({
+          to: loadRequest.shipper.email,
+          subject: `MED DROP - Document Uploaded for Load ${loadRequest.publicTrackingCode}`,
+          text: `
+Hello ${loadRequest.shipper.companyName},
+
+A new document has been uploaded for your load request:
+
+Tracking Code: ${loadRequest.publicTrackingCode}
+Document Type: ${title}
+Uploaded: ${new Date().toLocaleString()}
+
+You can view and download this document in your shipper portal. If you received this document via email attachment (due to a technical issue), you can also upload it to the portal yourself for your records.
+
+Route: ${loadRequest.pickupFacility.city}, ${loadRequest.pickupFacility.state} → ${loadRequest.dropoffFacility.city}, ${loadRequest.dropoffFacility.state}
+
+If you have any questions, please contact us at support@meddrop.com
+
+---
+MED DROP
+Medical Courier Services
+          `.trim(),
+          html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
+    .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+    .tracking-code { font-size: 24px; font-weight: bold; margin: 10px 0; }
+    .info-box { background: #f0f9ff; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0ea5e9; }
+    .button { display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MED DROP</h1>
+      <p>Medical Courier Services</p>
+    </div>
+    <div class="content">
+      <h2>Document Upload Notification</h2>
+      <p>Hello ${loadRequest.shipper.companyName},</p>
+      <p>A new document has been uploaded for your load request:</p>
+
+      <div class="tracking-code">${loadRequest.publicTrackingCode}</div>
+
+      <div class="info-box">
+        <strong>Document Type:</strong> ${title}<br>
+        <strong>Uploaded:</strong> ${new Date().toLocaleString()}<br>
+        <strong>File:</strong> ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+      </div>
+
+      <p>You can view and download this document in your shipper portal. If you experience any technical issues accessing the portal, please contact support and we can email the document directly.</p>
+
+      <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/shipper/loads/${id}" class="button">View Load Details</a>
+
+      <p>If you have any questions, please contact us at support@meddrop.com</p>
+
+      <div class="footer">
+        <p>MED DROP - Professional Medical Courier Services</p>
+        <p>This is an automated notification. Please do not reply to this email.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+          `.trim(),
+        })
+
+        // Note: In production, you'd attach the actual file to the email
+        // For now, the email just notifies - the file is available in the portal
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError)
+        // Don't fail the upload if email fails
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      document: {
+        id: document.id,
+        title: document.title,
+        type: document.type,
+        createdAt: document.createdAt,
+      }
+    })
+  })(request)
+}
+
+/**
+ * GET /api/load-requests/[id]/documents
+ * Get all documents for a load request
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+
+    // AUTHORIZATION: Verify user can view these documents
+    // Re-use upload access logic (drivers assigned / shippers owning / admins)
+    // Or stricter: view access. Using upload access is safe proxy for now.
+    // Ideally we import verifyViewLoadAccess if it existed, but verifyDocumentUploadAccess is sufficient for "involved parties"
+    await verifyDocumentUploadAccess(request, id)
+
+    const documents = await prisma.document.findMany({
+      where: { loadRequestId: id },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Get auth for logging (verifyDocumentUploadAccess ensures they are authorized, so requireAuth is safe)
+    const auth = await import('@/lib/authorization').then(m => m.requireAuth(req as NextRequest))
+
+    // AUDIT LOGGING: HIPAA Compliance - Log Read Access to Document (PHI)
+    if (auth) {
+      await logUserAction('VIEW', 'DOCUMENT', {
+        entityId: id, // Note: We only have loadId here easily, getting specific doc ID might need adjustment if not in scope, but this route returns ALL docs.
+        // Wait, this is GET /documents (list). So we are viewing the LIST of documents.
+        userId: auth.userId,
+        userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+        req: req as NextRequest, // Use 'req' from the inner scope
+        metadata: {
+          action: 'READ_PHI',
+          resource: 'DOCUMENT_LIST',
+          loadId: id
+        },
+        severity: 'INFO',
+        success: true,
+      })
+    }
+
+    return NextResponse.json({ documents })
+  })(request)
+}

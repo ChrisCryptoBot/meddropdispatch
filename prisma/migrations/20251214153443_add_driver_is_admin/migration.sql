@@ -1,0 +1,2 @@
+﻿-- AlterTable
+ALTER TABLE "Driver" ADD COLUMN "isAdmin" BOOLEAN NOT NULL DEFAULT 0;
