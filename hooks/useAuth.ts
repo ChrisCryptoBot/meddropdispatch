@@ -1,83 +1,36 @@
-// Generic Authentication Hook
-// Base hook for authentication utilities
+'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { getDriver, getShipper, getAdmin } from '@/lib/storage'
-import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/constants'
-
-export type UserType = 'driver' | 'shipper' | 'admin'
-
-interface UseAuthOptions {
-  userType: UserType
-  redirectTo?: string
-  requireAuth?: boolean
-}
 
 /**
- * Generic authentication hook
- * Handles auth state and redirects
+ * Hook to get current authenticated user from httpOnly cookie
+ * Replaces localStorage.getItem('driver'|'shipper'|'admin')
  */
-export function useAuth(options: UseAuthOptions) {
-  const { userType, redirectTo, requireAuth = true } = options
-  const router = useRouter()
-  const pathname = usePathname()
+export function useAuth() {
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Don't check auth on public routes
-    if (PUBLIC_ROUTES.includes(pathname) || AUTH_ROUTES.includes(pathname)) {
-      setIsLoading(false)
-      return
-    }
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check')
+        const data = await response.json()
 
-    // Only run on client side
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    // Get user based on type
-    let userData: any = null
-    try {
-      switch (userType) {
-        case 'driver':
-          userData = getDriver()
-          break
-        case 'shipper':
-          userData = getShipper()
-          break
-        case 'admin':
-          userData = getAdmin()
-          break
-      }
-
-      if (userData) {
-        setUser(userData)
-        setIsLoading(false)
-      } else if (requireAuth) {
-        // Redirect to login if not authenticated
-        const loginPath = redirectTo || `/${userType}/login`
-        if (pathname !== loginPath) {
-          router.push(loginPath)
+        if (data.authenticated && data.user) {
+          setUser(data.user)
+        } else {
+          setUser(null)
         }
+      } catch (error) {
+        console.error('Error checking auth:', error)
+        setUser(null)
+      } finally {
         setIsLoading(false)
-      } else {
-        setIsLoading(false)
-      }
-    } catch (error) {
-      console.error(`Error checking ${userType} auth:`, error)
-      setIsLoading(false)
-      if (requireAuth) {
-        const loginPath = redirectTo || `/${userType}/login`
-        router.push(loginPath)
       }
     }
-  }, [pathname, router, userType, redirectTo, requireAuth])
+
+    checkAuth()
+  }, [])
 
   return { user, isLoading, isAuthenticated: !!user }
 }
-
-
-
-

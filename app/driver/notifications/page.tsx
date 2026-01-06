@@ -19,16 +19,34 @@ export default function DriverNotificationsPage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchNotifications(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchNotifications(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchNotifications = async (driverId: string) => {
     try {
@@ -316,25 +334,28 @@ export default function DriverNotificationsPage() {
     return (
       <div className="p-8">
         <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading notifications...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading notifications...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+    <div className="p-6 md:p-8 print:p-4">
+      {/* Header Section - Gold Standard - Sticky */}
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Notifications</h1>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+              Notifications
+            </h1>
             {unreadCount > 0 ? (
-              <p className="text-sm text-gray-600 print:text-xs">
+              <p className="text-sm text-slate-400 print:text-xs">
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
             ) : (
-              <p className="text-gray-600 print:text-sm">View all your notifications</p>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">View all your notifications</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -418,3 +439,4 @@ export default function DriverNotificationsPage() {
     </div>
   )
 }
+

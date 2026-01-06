@@ -60,19 +60,37 @@ export default function ShipperLoadsPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        
+        if (shipperId) {
+          fetchShipperLoads(data.user.id, shipperId)
+        }
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
     
-    if (shipperId) {
-      fetchShipperLoads(parsedDriver.id, shipperId)
-    }
-  }, [router, shipperId])
+    fetchDriverData()
+  }, [shipperId])
 
   const fetchShipperLoads = async (driverId: string, shipperId: string) => {
     try {
@@ -175,8 +193,8 @@ export default function ShipperLoadsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading...</p>
           </div>
         </div>
       </div>
@@ -187,21 +205,21 @@ export default function ShipperLoadsPage() {
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
+          <div className="flex items-center gap-4 mb-2">
             <Link
               href="/driver/shippers"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-slate-300 hover:text-cyan-400 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
                 {shipper?.companyName || 'Shipper'} - Load History
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">
                 All loads you've completed for this shipper
               </p>
             </div>
@@ -319,8 +337,8 @@ export default function ShipperLoadsPage() {
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading loads...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+              <p className="text-slate-300">Loading loads...</p>
             </div>
           </div>
         ) : filteredAndSortedLoads.length === 0 ? (
@@ -411,5 +429,4 @@ export default function ShipperLoadsPage() {
     </div>
   )
 }
-
 

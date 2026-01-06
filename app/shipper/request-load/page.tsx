@@ -18,16 +18,31 @@ export default function ShipperRequestLoadPage() {
   const [driver, setDriver] = useState<{ firstName: string; lastName: string } | null>(null)
 
   useEffect(() => {
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
+        checkQueuePosition(data.user.id)
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(shipperData)
-    setShipper(parsed)
-    checkQueuePosition(parsed.id)
-  }, [router])
+    
+    fetchShipperData()
+  }, [])
 
   const checkQueuePosition = async (shipperId: string) => {
     try {
@@ -295,3 +310,4 @@ export default function ShipperRequestLoadPage() {
     </div>
   )
 }
+

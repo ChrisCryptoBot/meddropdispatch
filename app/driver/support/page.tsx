@@ -8,30 +8,52 @@ export default function DriverSupportPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    setIsLoading(false)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+    <div className="p-6 md:p-8 print:p-4">
+      {/* Header Section - Gold Standard - Sticky */}
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Support</h1>
-            <p className="text-gray-600 print:text-sm">Get help and contact our support team</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+              Support
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">Get help and contact our support team</p>
           </div>
         </div>
       </div>
 
       {isLoading ? (
         <div className="glass p-12 rounded-2xl text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">

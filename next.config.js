@@ -7,6 +7,9 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Output configuration for Docker
+  output: 'standalone',
+  
   // Performance optimizations
   compress: true, // Enable gzip compression
   poweredByHeader: false, // Remove X-Powered-By header
@@ -28,6 +31,7 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
     optimizeCss: true, // Optimize CSS
+    instrumentationHook: true, // Enable Sentry instrumentation
   },
   
   // Webpack optimizations (simplified for dev stability)
@@ -92,19 +96,61 @@ const nextConfig = {
     ]
   },
   
-  // Headers for caching
+  // Security and caching headers
   async headers() {
+    const securityHeaders = [
+      {
+        key: 'X-DNS-Prefetch-Control',
+        value: 'on'
+      },
+      {
+        key: 'X-Frame-Options',
+        value: 'SAMEORIGIN'
+      },
+      {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff'
+      },
+      {
+        key: 'X-XSS-Protection',
+        value: '1; mode=block'
+      },
+      {
+        key: 'Referrer-Policy',
+        value: 'strict-origin-when-cross-origin'
+      },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=()'
+      },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=31536000; includeSubDomains; preload'
+      },
+    ]
+
+    // Content Security Policy - adjust based on your needs
+    const cspHeader = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.sentry-cdn.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.sentry.io https://*.ingest.sentry.io wss://*.sentry.io",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join('; ')
+
     return [
       {
         source: '/:path*',
         headers: [
+          ...securityHeaders,
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            key: 'Content-Security-Policy',
+            value: cspHeader
           },
         ],
       },
@@ -114,6 +160,11 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=10, stale-while-revalidate=59',
+          },
+          // API routes need less restrictive CSP
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
           },
         ],
       },

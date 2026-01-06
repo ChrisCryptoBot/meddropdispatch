@@ -48,7 +48,7 @@ export async function POST(
     // Get current load to verify status
     const currentLoad = await prisma.loadRequest.findUnique({
       where: { id },
-      select: { status: true, quoteAmount: true }
+      select: { status: true, quoteAmount: true, quoteExpiresAt: true }
     })
 
     if (!currentLoad) {
@@ -61,6 +61,11 @@ export async function POST(
 
     if (!currentLoad.quoteAmount) {
       throw new ValidationError('No quote available to accept')
+    }
+
+    // EDGE CASE: Check if quote has expired
+    if (currentLoad.quoteExpiresAt && new Date() > currentLoad.quoteExpiresAt) {
+      throw new ValidationError('This quote has expired. Please request a new quote.')
     }
 
     // Update load to QUOTE_ACCEPTED status
@@ -123,3 +128,4 @@ export async function POST(
     })
   })(request)
 }
+

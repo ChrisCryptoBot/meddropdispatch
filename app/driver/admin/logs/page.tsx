@@ -22,16 +22,41 @@ export default function SystemLogsPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    const adminMode = localStorage.getItem('driverAdminMode') === 'true'
-    
-    if (!driverData || !adminMode) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const adminMode = localStorage.getItem('driverAdminMode') === 'true'
+        
+        if (!data.user.isAdmin || !adminMode) {
+          setIsLoading(false)
+          router.push('/driver/dashboard')
+          return
+        }
+        
+        fetchLogs()
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    fetchLogs()
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchLogs = async () => {
     try {
@@ -67,8 +92,8 @@ export default function SystemLogsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading system logs...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading system logs...</p>
           </div>
         </div>
       </div>

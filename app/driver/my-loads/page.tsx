@@ -64,16 +64,34 @@ export default function DriverMyLoadsPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchLoads(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchLoads(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchLoads = async (driverId: string) => {
     try {
@@ -156,8 +174,8 @@ export default function DriverMyLoadsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your loads...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading your loads...</p>
           </div>
         </div>
       </div>
@@ -165,70 +183,73 @@ export default function DriverMyLoadsPage() {
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+    <div className="p-6 md:p-8 print:p-4">
+      {/* Header Section - Gold Standard */}
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Loads</h1>
-            <p className="text-gray-600 print:text-sm">View all loads you've accepted with complete documentation and records</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+              My Loads
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">View all loads you've accepted with complete documentation and records</p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-gray-900">{loads.length}</div>
-          <div className="text-xs text-gray-600">Total Loads</div>
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{loads.length}</div>
+          <div className="text-xs text-slate-400">Total Loads</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
             {loads.filter(l => ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
           </div>
-          <div className="text-xs text-gray-600">Active</div>
+          <div className="text-xs text-slate-400">Active</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-green-600">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
             {loads.filter(l => l.status === 'DELIVERED').length}
           </div>
-          <div className="text-xs text-gray-600">Completed</div>
+          <div className="text-xs text-slate-400">Completed</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-accent-700">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
             {loads.reduce((sum, l) => sum + l.documents.length, 0)}
           </div>
-          <div className="text-xs text-gray-600">Documents</div>
+          <div className="text-xs text-slate-400">Documents</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-green-700">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
             ${loads.reduce((sum, l) => sum + (l.quoteAmount || 0), 0).toLocaleString()}
           </div>
-          <div className="text-xs text-gray-600">Total Earned</div>
+          <div className="text-xs text-slate-400">Total Earned</div>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="glass-accent p-4 rounded-xl mb-6 border-2 border-teal-200/30 shadow-medical">
+      <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by tracking code, commodity, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter by Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Status</label>
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Statuses</option>
               <option value="scheduled">Scheduled</option>
@@ -241,11 +262,11 @@ export default function DriverMyLoadsPage() {
 
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -259,9 +280,9 @@ export default function DriverMyLoadsPage() {
 
       {/* Loads List */}
       {sortedLoads.length === 0 ? (
-        <div className="glass-accent rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-medical">
+        <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
           <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
+            className="w-16 h-16 text-slate-400 mx-auto mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -273,8 +294,8 @@ export default function DriverMyLoadsPage() {
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No loads found</h3>
-          <p className="text-gray-600">
+          <h3 className="text-xl font-bold text-white mb-2">No loads found</h3>
+          <p className="text-slate-300">
             {searchQuery || filterBy !== 'all'
               ? 'No loads match your search or filters'
               : 'You haven\'t accepted any loads yet. Check the Load Board to accept loads.'}
@@ -283,24 +304,24 @@ export default function DriverMyLoadsPage() {
       ) : (
         <div className="space-y-4">
           {sortedLoads.map((load) => (
-            <div key={load.id} className="glass-accent rounded-xl p-6 border-2 border-teal-200/30 shadow-medical">
+            <div key={load.id} className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg font-mono">{load.publicTrackingCode}</h3>
+                    <h3 className="font-bold text-white text-lg font-mono">{load.publicTrackingCode}</h3>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                         LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS] ||
-                        'bg-gray-100 text-gray-800 border-gray-200'
+                        'bg-slate-700/50 text-slate-300 border-slate-600/50'
                       }`}
                     >
                       {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS] || load.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">
+                  <p className="text-sm text-slate-300 mb-1">
                     {load.shipper.companyName} • {load.commodityDescription}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-slate-400">
                     Created: {formatDate(load.createdAt)}
                     {load.actualPickupTime && ` • Picked up: ${formatDateTime(load.actualPickupTime)}`}
                     {load.actualDeliveryTime && ` • Delivered: ${formatDateTime(load.actualDeliveryTime)}`}
@@ -308,21 +329,21 @@ export default function DriverMyLoadsPage() {
                 </div>
                 <div className="text-right">
                   {load.quoteAmount && (
-                    <p className="text-lg font-bold text-gray-900 mb-1">
+                    <p className="text-lg font-bold text-white mb-1">
                       ${load.quoteAmount.toLocaleString()}
                     </p>
                   )}
                   <div className="flex items-center gap-3 justify-end">
                     <Link
                       href={`/driver/loads/${load.id}`}
-                      className="text-sm text-accent-700 hover:text-accent-800 font-medium"
+                      className="text-sm text-cyan-400 hover:text-cyan-300 font-medium"
                     >
                       View Details →
                     </Link>
                     {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
                       <button
                         onClick={() => handleDeleteLoad(load.id)}
-                        className="p-2 text-urgent-600 hover:bg-urgent-50 rounded-lg transition-colors"
+                        className="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
                         title="Delete this load"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,29 +358,29 @@ export default function DriverMyLoadsPage() {
               {/* Route */}
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border border-green-500/30">
+                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{load.pickupFacility.name}</p>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="font-semibold text-white truncate">{load.pickupFacility.name}</p>
+                    <p className="text-sm text-slate-300 truncate">
                       {load.pickupFacility.addressLine1}, {load.pickupFacility.city}, {load.pickupFacility.state}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-urgent-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-urgent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border border-red-500/30">
+                    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{load.dropoffFacility.name}</p>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="font-semibold text-white truncate">{load.dropoffFacility.name}</p>
+                    <p className="text-sm text-slate-300 truncate">
                       {load.dropoffFacility.addressLine1}, {load.dropoffFacility.city}, {load.dropoffFacility.state}
                     </p>
                   </div>
@@ -367,67 +388,67 @@ export default function DriverMyLoadsPage() {
               </div>
 
               {/* Compliance Data */}
-              <div className="grid md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-gray-200">
+              <div className="grid md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-slate-700/50">
                 {/* Signatures */}
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Signatures</p>
+                  <p className="text-xs text-slate-400 mb-1">Signatures</p>
                   <div className="flex gap-2">
                     {load.pickupSignature ? (
-                      <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
+                      <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-medium border border-green-500/30">
                         Pickup ✓
                       </span>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">No Pickup</span>
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 rounded text-xs">No Pickup</span>
                     )}
                     {load.deliverySignature ? (
-                      <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
+                      <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-medium border border-green-500/30">
                         Delivery ✓
                       </span>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">No Delivery</span>
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 rounded text-xs">No Delivery</span>
                     )}
                   </div>
                 </div>
 
                 {/* Temperatures */}
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Temperatures</p>
+                  <p className="text-xs text-slate-400 mb-1">Temperatures</p>
                   <div className="flex gap-2 text-sm">
                     {load.pickupTemperature !== null && load.pickupTemperature !== undefined && (
-                      <span className="text-gray-700">
+                      <span className="text-slate-300">
                         Pickup: <span className="font-medium">{load.pickupTemperature}°C</span>
                       </span>
                     )}
                     {load.deliveryTemperature !== null && load.deliveryTemperature !== undefined && (
-                      <span className="text-gray-700">
+                      <span className="text-slate-300">
                         Delivery: <span className="font-medium">{load.deliveryTemperature}°C</span>
                       </span>
                     )}
                     {!load.pickupTemperature && !load.deliveryTemperature && (
-                      <span className="text-gray-500 text-xs">No temps recorded</span>
+                      <span className="text-slate-400 text-xs">No temps recorded</span>
                     )}
                   </div>
                 </div>
 
                 {/* Tracking Events */}
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Tracking Events</p>
-                  <p className="text-sm text-gray-700 font-medium">{load.trackingEvents.length} events</p>
+                  <p className="text-xs text-slate-400 mb-1">Tracking Events</p>
+                  <p className="text-sm text-slate-300 font-medium">{load.trackingEvents.length} events</p>
                 </div>
               </div>
 
               {/* Documents */}
               {load.documents.length > 0 && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2">Documents & Proof ({load.documents.length})</p>
+                <div className="pt-4 border-t border-slate-700/50">
+                  <p className="text-xs text-slate-400 mb-2">Documents & Proof ({load.documents.length})</p>
                   <div className="flex flex-wrap gap-2">
                     {load.documents.map((doc) => (
                       <Link
                         key={doc.id}
                         href={`/driver/loads/${load.id}#documents`}
-                        className="px-3 py-1 bg-accent-100 text-accent-700 rounded-lg text-xs font-medium hover:bg-accent-200 transition-colors flex items-center gap-1 border border-accent-200"
+                        className="px-3 py-1 bg-cyan-900/30 text-cyan-300 rounded-lg text-xs font-medium hover:bg-cyan-900/40 transition-colors flex items-center gap-1 border border-cyan-700/50"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         {getDocumentTypeLabel(doc.type)}

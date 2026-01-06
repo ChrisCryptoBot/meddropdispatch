@@ -275,6 +275,7 @@ model LoadRequest {
   quoteAmount     Float?
   quoteCurrency   String    @default("USD")
   quoteNotes      String? // Internal notes about the quote
+  quoteExpiresAt  DateTime? // Admin quote expiration (24 hours default)
   quoteAcceptedAt DateTime? // When shipper accepted quote
 
   // Billing

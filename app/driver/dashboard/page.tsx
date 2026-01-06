@@ -105,21 +105,40 @@ export default function DriverDashboardPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
   const [enableLocationTracking, setEnableLocationTracking] = useState(false)
 
+  // Get driver from layout's auth state - no need to duplicate auth check
+  // The layout handles authentication, we just fetch data here
   useEffect(() => {
-    // Check if driver is logged in
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Wait a moment for layout to complete auth check, then fetch driver data
+    const fetchDriverData = async () => {
+      try {
+        const authResponse = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!authResponse.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const authData = await authResponse.json()
+        if (!authData.authenticated || authData.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const driverData = authData.user
+        setDriver(driverData)
+        // Fetch all loads and vehicles
+        fetchLoads(driverData.id)
+        fetchVehicles(driverData.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-
-    // Fetch all loads and vehicles
-    fetchLoads(parsedDriver.id)
-    fetchVehicles(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchLoads = async (driverId: string) => {
     try {
@@ -425,24 +444,30 @@ export default function DriverDashboardPage() {
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load Board</h1>
-            <p className="text-gray-600 print:text-sm">View and accept available loads</p>
+    <div>
+      {/* Header Section - Integrated with dark theme - Sticky */}
+      <div className="sticky top-[73px] z-50 bg-slate-900 pb-4 mb-0 pt-0 border-b border-slate-700/50 w-full">
+        <div className="px-6 md:px-8">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+                Load Board
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">View and accept available loads</p>
+            </div>
           </div>
         </div>
       </div>
+      <div className="p-6 md:p-8 print:p-4">
 
-      {/* Driver Info Card */}
-      <div className="sticky top-[185px] z-20 glass-accent p-6 rounded-2xl mb-4 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical print:static print:top-0">
+      {/* Driver Info Card - Redesigned for dark theme */}
+      <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-white">
               {driver.firstName} {driver.lastName}
             </h2>
-            <p className="text-teal-700">{driver.vehicleType} • {driver.vehiclePlate}</p>
+            <p className="text-cyan-400">{driver.vehicleType} • {driver.vehiclePlate}</p>
           </div>
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-success-100 text-success-700 border-2 border-success-200">
             {driver.status}
@@ -453,7 +478,7 @@ export default function DriverDashboardPage() {
         <div>
           <Link
             href="/driver/manual-load"
-            className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-accent text-white rounded-xl font-semibold hover:shadow-lg transition-all shadow-lg"
+            className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -463,37 +488,37 @@ export default function DriverDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+      {/* Quick Stats Cards - Redesigned for dark theme */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
           <div className="text-center">
-            <p className="text-3xl font-bold text-gradient mb-1">{allLoads.length}</p>
-            <p className="text-sm text-teal-700 font-medium">All Loads</p>
+            <p className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1">{allLoads.length}</p>
+            <p className="text-sm text-slate-400 font-medium">All Loads</p>
           </div>
         </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
           <div className="text-center">
-            <p className="text-3xl font-bold text-accent-700 mb-1">{myLoads.length}</p>
-            <p className="text-sm text-teal-700 font-medium">My Loads</p>
+            <p className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1">{myLoads.length}</p>
+            <p className="text-sm text-slate-400 font-medium">My Loads</p>
           </div>
         </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
           <div className="text-center">
-            <p className="text-3xl font-bold text-green-600 mb-1">
+            <p className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1">
               {myLoads.filter(l => ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
             </p>
-            <p className="text-sm text-teal-700 font-medium">Active</p>
+            <p className="text-sm text-slate-400 font-medium">Active</p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-teal-200/30">
+      {/* Tabs - Redesigned for dark theme */}
+      <div className="flex gap-2 mb-6 border-b border-slate-700/50">
         <button
           onClick={() => setActiveTab('all')}
           className={`px-6 py-3 font-semibold transition-all border-b-2 ${activeTab === 'all'
-              ? 'border-teal-600 text-teal-900'
-              : 'border-transparent text-gray-600 hover:text-teal-700'
+              ? 'border-cyan-500 text-cyan-300'
+              : 'border-transparent text-slate-400 hover:text-cyan-400'
             }`}
         >
           All Loads ({allLoads.length})
@@ -501,27 +526,27 @@ export default function DriverDashboardPage() {
         <button
           onClick={() => setActiveTab('my')}
           className={`px-6 py-3 font-semibold transition-all border-b-2 ${activeTab === 'my'
-              ? 'border-teal-600 text-teal-900'
-              : 'border-transparent text-gray-600 hover:text-teal-700'
+              ? 'border-cyan-500 text-cyan-300'
+              : 'border-transparent text-slate-400 hover:text-cyan-400'
             }`}
         >
           My Loads ({myLoads.length})
         </button>
       </div>
 
-      {/* Filters and Sort */}
-      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+      {/* Filters and Sort - Redesigned for dark theme */}
+      <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search by tracking, city, facility, commodity..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-10 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+                className="w-full px-4 py-3 pl-10 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
               />
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -529,7 +554,7 @@ export default function DriverDashboardPage() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -541,11 +566,11 @@ export default function DriverDashboardPage() {
 
           {/* Filter by Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Status</label>
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Statuses</option>
               <option value="new">New/Requested</option>
@@ -560,11 +585,11 @@ export default function DriverDashboardPage() {
 
           {/* Sort By */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -581,7 +606,7 @@ export default function DriverDashboardPage() {
       {/* Loads List */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">
+          <h3 className="text-xl font-bold text-white">
             {activeTab === 'my' ? 'My Accepted Loads' : 'All Available Loads'}
           </h3>
           <div className="flex items-center gap-4">
@@ -614,7 +639,7 @@ export default function DriverDashboardPage() {
                     setIsCalculatingRoute(false)
                   }
                 }}
-                className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2 shadow-lg"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/30"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -622,7 +647,7 @@ export default function DriverDashboardPage() {
                 Smart Route ({selectedLoads.size} loads)
               </button>
             )}
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-slate-300">
               Showing {filteredLoads.length} of {displayLoads.length} loads
             </span>
           </div>
@@ -645,7 +670,7 @@ export default function DriverDashboardPage() {
               const isMyLoad = load.driver?.id === driver?.id
 
               return (
-                <div key={load.id} className="glass-accent p-5 rounded-2xl border-2 border-teal-200/30 hover:shadow-medical transition-all hover:border-teal-300/50">
+                <div key={load.id} className="glass-primary p-5 rounded-xl border border-slate-700/50 hover:border-cyan-500/50 hover:shadow-lg transition-all">
                   {/* Checkbox for Smart Route */}
                   <div className="flex items-start gap-3 mb-3">
                     <input
@@ -662,30 +687,30 @@ export default function DriverDashboardPage() {
                         setSelectedLoads(newSelected)
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                      className="mt-1 w-4 h-4 text-cyan-500 rounded focus:ring-cyan-500"
                     />
                     <Link
                       href={`/driver/loads/${load.id}`}
-                      className="flex-1 block hover:bg-white/60 transition-base"
+                      className="flex-1 block hover:bg-slate-700/30 transition-base"
                     >
                       {/* Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <p className="font-mono font-bold text-primary-700 text-lg">
+                            <p className="font-mono font-bold text-cyan-400 text-lg">
                               {load.publicTrackingCode}
                             </p>
-                            {load.driver?.id === driver.id && (
+                            {load.driver?.id === driver?.id && (
                               <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                                 My Load
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">{(load.serviceType || 'N/A').replace(/_/g, ' ')}</p>
+                          <p className="text-sm text-slate-300">{(load.serviceType || 'N/A').replace(/_/g, ' ')}</p>
                         </div>
                         <div className="text-right">
                           {load.quoteAmount && (
-                            <p className="text-lg font-bold text-gray-900 mb-1">
+                            <p className="text-lg font-bold text-white mb-1">
                               ${load.quoteAmount.toLocaleString()}
                             </p>
                           )}
@@ -698,16 +723,16 @@ export default function DriverDashboardPage() {
                       {/* Route */}
                       <div className="space-y-3 mb-4">
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border border-green-500/30">
+                            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{load.pickupFacility.name}</p>
-                            <p className="text-sm text-gray-600 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                            <p className="font-semibold text-white truncate">{load.pickupFacility.name}</p>
+                            <p className="text-sm text-slate-300 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
                             {load.readyTime && (
-                              <p className="text-xs text-gray-500 mt-1">Ready: {formatDateTime(load.readyTime)}</p>
+                              <p className="text-xs text-slate-400 mt-1">Ready: {formatDateTime(load.readyTime)}</p>
                             )}
                           </div>
                         </div>
@@ -717,16 +742,16 @@ export default function DriverDashboardPage() {
                         </div>
 
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border border-red-500/30">
+                            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{load.dropoffFacility.name}</p>
-                            <p className="text-sm text-gray-600 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                            <p className="font-semibold text-white truncate">{load.dropoffFacility.name}</p>
+                            <p className="text-sm text-slate-300 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
                             {load.deliveryDeadline && (
-                              <p className="text-xs text-gray-500 mt-1">Deadline: {formatDateTime(load.deliveryDeadline)}</p>
+                              <p className="text-xs text-slate-400 mt-1">Deadline: {formatDateTime(load.deliveryDeadline)}</p>
                             )}
                           </div>
                         </div>
@@ -734,21 +759,21 @@ export default function DriverDashboardPage() {
 
                       {/* Cargo Info */}
                       <div className="pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+                        <div className="flex items-center gap-4 text-xs text-slate-300 mb-2">
                           <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
                             {load.estimatedContainers || 'N/A'} containers
                           </span>
                           <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
                             </svg>
                             {load.temperatureRequirement}
                           </span>
-                          {load.driver && load.driver.id !== driver.id && (
-                            <span className="text-gray-500">
+                          {load.driver && load.driver.id !== driver?.id && (
+                            <span className="text-slate-400">
                               Driver: {load.driver.firstName} {load.driver.lastName}
                             </span>
                           )}
@@ -782,12 +807,12 @@ export default function DriverDashboardPage() {
                               <div className="flex items-center gap-3 text-xs">
                                 <span className="text-gray-500">Temps:</span>
                                 {load.pickupTemperature !== null && load.pickupTemperature !== undefined && (
-                                  <span className="text-gray-700">
+                                  <span className="text-slate-300">
                                     Pickup: <span className="font-medium">{load.pickupTemperature}°C</span>
                                   </span>
                                 )}
                                 {load.deliveryTemperature !== null && load.deliveryTemperature !== undefined && (
-                                  <span className="text-gray-700">
+                                  <span className="text-slate-300">
                                     Delivery: <span className="font-medium">{load.deliveryTemperature}°C</span>
                                   </span>
                                 )}
@@ -804,9 +829,9 @@ export default function DriverDashboardPage() {
                                       e.stopPropagation()
                                       router.push(`/driver/loads/${load.id}#documents`)
                                     }}
-                                    className="text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1"
+                                    className="text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1"
                                   >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
@@ -866,7 +891,7 @@ export default function DriverDashboardPage() {
                         </button>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-gray-500">View Details</span>
-                          <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </div>
@@ -877,7 +902,7 @@ export default function DriverDashboardPage() {
                   {/* Rate Calculator & Actions */}
                   <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
                     {/* Rate Calculator - Always visible for drivers */}
-                    <div className="p-3 bg-teal-50 rounded-lg border border-teal-200/30">
+                    <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                       <RateCalculator
                         loadId={load.id}
                         pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
@@ -904,7 +929,7 @@ export default function DriverDashboardPage() {
                             setDenyLoadId(load.id)
                             setShowDenyModal(true)
                           }}
-                          className="w-full px-4 py-3 rounded-lg bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 transition-all"
+                          className="w-full px-4 py-3 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-all border border-slate-600/50"
                         >
                           Deny Load
                         </button>
@@ -934,19 +959,19 @@ export default function DriverDashboardPage() {
         {/* Deny Load Modal */}
         {showDenyModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDenyModal(false)}>
-            <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Deny Load</h3>
-              <p className="text-sm text-gray-600 mb-4">Why are you declining this load?</p>
+            <div className="glass-primary max-w-md w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-white mb-4">Deny Load</h3>
+              <p className="text-sm text-slate-300 mb-4">Why are you declining this load?</p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">
                     Reason *
                   </label>
                   <select
                     value={denyReason}
                     onChange={(e) => setDenyReason(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   >
                     <option value="PRICE_TOO_LOW">Price Too Low</option>
                     <option value="ROUTE_NOT_FEASIBLE">Route Not Feasible</option>
@@ -966,7 +991,7 @@ export default function DriverDashboardPage() {
                     value={denyNotes}
                     onChange={(e) => setDenyNotes(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                     placeholder="Provide more details..."
                   />
                 </div>
@@ -980,7 +1005,7 @@ export default function DriverDashboardPage() {
                     setDenyReason('OTHER')
                     setDenyNotes('')
                   }}
-                  className="flex-1 px-4 py-3 rounded-lg bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                 >
                   Cancel
                 </button>
@@ -999,9 +1024,9 @@ export default function DriverDashboardPage() {
         {/* Submit Quote Modal */}
         {showQuoteModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowQuoteModal(false)}>
-            <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Quote</h3>
-              <p className="text-sm text-gray-600 mb-4">Provide your quote amount and any notes for the shipper.</p>
+            <div className="glass-primary max-w-md w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-white mb-4">Submit Quote</h3>
+              <p className="text-sm text-slate-300 mb-4">Provide your quote amount and any notes for the shipper.</p>
 
               <div className="space-y-4">
                 <div>
@@ -1016,7 +1041,7 @@ export default function DriverDashboardPage() {
                       onChange={(e) => setQuoteAmount(e.target.value)}
                       min="0"
                       step="0.01"
-                      className="w-full pl-8 pr-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
+                      className="w-full pl-8 pr-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                       placeholder="0.00"
                       required
                     />
@@ -1031,7 +1056,7 @@ export default function DriverDashboardPage() {
                     value={quoteNotes}
                     onChange={(e) => setQuoteNotes(e.target.value)}
                     rows={3}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-400 bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                     placeholder="Add any terms, conditions, or notes for the shipper..."
                   />
                   <p className="text-xs text-gray-500 mt-1">Quote expires in 48 hours if not approved.</p>
@@ -1065,16 +1090,16 @@ export default function DriverDashboardPage() {
         {/* Smart Route Modal */}
         {showSmartRouteModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSmartRouteModal(false)}>
-            <div className="glass-accent max-w-4xl w-full rounded-2xl p-6 max-h-[90vh] overflow-y-auto border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
+            <div className="glass-primary max-w-4xl w-full rounded-xl p-6 max-h-[90vh] overflow-y-auto border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">Smart Route Optimization</h3>
+                <h3 className="text-2xl font-bold text-white">Smart Route Optimization</h3>
                 <button
                   onClick={() => {
                     setShowSmartRouteModal(false)
                     setSmartRoute(null)
                     setSelectedLoads(new Set())
                   }}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-slate-400 hover:text-slate-300"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1084,33 +1109,33 @@ export default function DriverDashboardPage() {
 
               {isCalculatingRoute ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
                   <p className="text-gray-600">Calculating optimal route...</p>
                 </div>
               ) : smartRoute ? (
                 <div className="space-y-4">
                   {/* Route Summary Stats */}
-                  <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg p-6 mb-4 border-2 border-teal-200/30">
+                  <div className="bg-slate-800/50 rounded-lg p-6 mb-4 border border-slate-700/50">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div className="glass-accent p-3 rounded-lg border border-teal-200/30">
+                      <div className="glass-primary p-3 rounded-lg border border-slate-700/50">
                         <p className="text-2xl font-bold text-gradient">{smartRoute.totalDistance?.toFixed(1) || 'N/A'}</p>
-                        <p className="text-xs text-teal-700 mt-1">Total Miles</p>
+                        <p className="text-xs text-slate-400 mt-1">Total Miles</p>
                       </div>
-                      <div className="glass-accent p-3 rounded-lg border border-teal-200/30">
+                      <div className="glass-primary p-3 rounded-lg border border-slate-700/50">
                         <p className="text-2xl font-bold text-gradient">{smartRoute.totalTime || 'N/A'}</p>
-                        <p className="text-xs text-teal-700 mt-1">Total Time</p>
+                        <p className="text-xs text-slate-400 mt-1">Total Time</p>
                       </div>
-                      <div className="glass-accent p-3 rounded-lg border border-teal-200/30">
+                      <div className="glass-primary p-3 rounded-lg border border-slate-700/50">
                         <p className="text-2xl font-bold text-gradient">{smartRoute.optimizedRoute?.length || 0}</p>
-                        <p className="text-xs text-teal-700 mt-1">Total Stops</p>
+                        <p className="text-xs text-slate-400 mt-1">Total Stops</p>
                       </div>
-                      <div className="glass-accent p-3 rounded-lg border border-teal-200/30">
+                      <div className="glass-primary p-3 rounded-lg border border-slate-700/50">
                         <p className="text-2xl font-bold text-gradient">{smartRoute.loadCount || 0}</p>
-                        <p className="text-xs text-teal-700 mt-1">Loads</p>
+                        <p className="text-xs text-slate-400 mt-1">Loads</p>
                       </div>
                     </div>
                     {/* Estimated Fuel Cost */}
-                    <div className="mt-4 pt-4 border-t border-teal-200/30">
+                    <div className="mt-4 pt-4 border-t border-slate-700/50">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-600">Estimated Fuel Cost (at $3.50/gal, 20 mpg):</span>
                         <span className="font-semibold text-gray-900">
@@ -1132,7 +1157,7 @@ export default function DriverDashboardPage() {
                           navigator.clipboard.writeText(routeText)
                           toast.success('Route copied to clipboard!')
                         }}
-                        className="px-3 py-2 text-sm bg-teal-100 hover:bg-teal-200 rounded-lg transition-all flex items-center gap-2"
+                        className="px-3 py-2 text-sm bg-slate-700/50 hover:bg-slate-700 rounded-lg transition-all flex items-center gap-2 text-slate-200 border border-slate-600/50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1152,10 +1177,25 @@ export default function DriverDashboardPage() {
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-blue-100 text-blue-800'
                                 }`}>
-                                {stop.type === 'pickup' ? '📍 PICKUP' : '🎯 DELIVERY'}
+                                {stop.type === 'pickup' ? (
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    PICKUP
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    DELIVERY
+                                  </span>
+                                )}
                               </span>
                               {stop.loadCode && (
-                                <span className="text-xs font-mono text-teal-600 font-semibold bg-teal-50 px-2 py-1 rounded border border-teal-200">
+                                <span className="text-xs font-mono text-cyan-400 font-semibold bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
                                   {stop.loadCode}
                                 </span>
                               )}
@@ -1164,16 +1204,16 @@ export default function DriverDashboardPage() {
                             <p className="text-sm text-gray-700 mt-1">{stop.address}</p>
                             <div className="flex flex-wrap gap-3 mt-2 text-xs">
                               {stop.timeWindow && (
-                                <span className="flex items-center gap-1 text-gray-600">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="flex items-center gap-1 text-slate-400">
+                                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                   </svg>
                                   {stop.timeWindow}
                                 </span>
                               )}
                               {stop.distanceFromPrevious && (
-                                <span className="flex items-center gap-1 text-gray-600">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="flex items-center gap-1 text-slate-400">
+                                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                   </svg>
                                   {stop.distanceFromPrevious} mi
@@ -1202,9 +1242,9 @@ export default function DriverDashboardPage() {
             setPendingLoadId(null)
             setSelectedVehicleId('')
           }}>
-            <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Select Vehicle</h3>
-              <p className="text-sm text-gray-600 mb-4">Choose which vehicle you'll use for this load.</p>
+            <div className="glass-primary max-w-md w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-white mb-4">Select Vehicle</h3>
+              <p className="text-sm text-slate-300 mb-4">Choose which vehicle you'll use for this load.</p>
 
               <div className="space-y-3 mb-6">
                 {vehicles.filter(v => v.isActive).map((vehicle) => (
@@ -1212,7 +1252,7 @@ export default function DriverDashboardPage() {
                     key={vehicle.id}
                     className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedVehicleId === vehicle.id
                         ? 'border-teal-600 bg-teal-50'
-                        : 'border-teal-200 hover:border-teal-300 bg-white/80'
+                        : 'border-slate-600/50 hover:border-cyan-500/50 bg-slate-800/50'
                       }`}
                   >
                     <input
@@ -1225,21 +1265,21 @@ export default function DriverDashboardPage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-white">
                           {vehicle.nickname || `${(vehicle.vehicleType || 'N/A').replace(/_/g, ' ')}`}
                         </p>
                         {vehicle.hasRefrigeration && (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                          <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs font-medium border border-green-500/30">
                             Refrigerated
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-slate-300">
                         {vehicle.vehicleYear && vehicle.vehicleMake && vehicle.vehicleModel
                           ? `${vehicle.vehicleYear} ${vehicle.vehicleMake} ${vehicle.vehicleModel}`
                           : (vehicle.vehicleType || 'N/A').replace(/_/g, ' ')}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Plate: {vehicle.vehiclePlate}</p>
+                      <p className="text-xs text-slate-400 mt-1">Plate: {vehicle.vehiclePlate}</p>
                     </div>
                   </label>
                 ))}
@@ -1247,7 +1287,7 @@ export default function DriverDashboardPage() {
 
               {vehicles.filter(v => v.isActive).length === 0 && (
                 <div className="text-center py-8 mb-6">
-                  <p className="text-gray-600 mb-4">No active vehicles available</p>
+                  <p className="text-slate-300 mb-4">No active vehicles available</p>
                   <button
                     onClick={() => {
                       setShowVehicleSelectModal(false)
@@ -1262,19 +1302,19 @@ export default function DriverDashboardPage() {
 
               {/* Location Tracking Toggle */}
               {vehicles.filter(v => v.isActive).length > 0 && (
-                <div className="mb-6 p-4 bg-teal-50 border-2 border-teal-200 rounded-lg">
+                <div className="mb-6 p-4 bg-slate-800/50 border border-slate-700/50 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <label htmlFor="enableLocationTracking" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                        <label htmlFor="enableLocationTracking" className="text-sm font-semibold text-white cursor-pointer">
                           Track My Location
                         </label>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-slate-300 mt-1">
                         Allow shipper to see your real-time location during this delivery
                       </p>
                     </div>
@@ -1303,7 +1343,7 @@ export default function DriverDashboardPage() {
                     setSelectedVehicleId('')
                     setEnableLocationTracking(false)
                   }}
-                  className="flex-1 px-4 py-3 rounded-lg bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                 >
                   Cancel
                 </button>
@@ -1318,6 +1358,7 @@ export default function DriverDashboardPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

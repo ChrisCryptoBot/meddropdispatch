@@ -34,6 +34,38 @@ function getSessionFromRequest(request: NextRequest): { userId: string; userType
 }
 
 /**
+ * Lightweight rate limiter for public tracking pages (Edge-compatible)
+ * Note: In-memory storage is per-edge-instance and best-effort only.
+ */
+const trackingRateStore: Map<string, { count: number; reset: number }> = new Map()
+const TRACK_WINDOW_MS = 60_000
+const TRACK_MAX_REQ = 30
+
+function rateLimitTracking(request: NextRequest): boolean {
+  try {
+    const forwarded = request.headers.get('x-forwarded-for')
+    const realIp = request.headers.get('x-real-ip')
+    const ip = (forwarded?.split(',')[0] || realIp || 'unknown').trim()
+    const ua = (request.headers.get('user-agent') || 'unknown').slice(0, 64)
+    const key = `track:${ip}:${ua}`
+    const now = Date.now()
+    const rec = trackingRateStore.get(key)
+    if (!rec || rec.reset < now) {
+      trackingRateStore.set(key, { count: 1, reset: now + TRACK_WINDOW_MS })
+      return true
+    }
+    rec.count += 1
+    if (rec.count > TRACK_MAX_REQ) {
+      return false
+    }
+    return true
+  } catch {
+    // Fail open on unexpected errors
+    return true
+  }
+}
+
+/**
  * Middleware for route protection
  * Protects driver, shipper, and admin routes
  * Runs in Edge Runtime - must be Edge-compatible
@@ -41,6 +73,14 @@ function getSessionFromRequest(request: NextRequest): { userId: string; userType
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  // Public tracking page rate-limiting
+  if (pathname.startsWith('/track')) {
+    const allowed = rateLimitTracking(request)
+    if (!allowed) {
+      return new NextResponse('Too many requests. Please slow down.', { status: 429 })
+    }
+  }
+
   // Get session from cookies (Edge-compatible)
   const session = getSessionFromRequest(request)
 

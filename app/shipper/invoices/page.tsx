@@ -40,14 +40,34 @@ export default function ShipperInvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
+        fetchInvoices()
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-    setShipper(JSON.parse(shipperData))
-    fetchInvoices()
-  }, [router, filter])
+    
+    fetchShipperData()
+  }, [filter]) // Keep filter dependency for invoice filtering
 
   const fetchInvoices = async () => {
     try {
@@ -164,11 +184,11 @@ export default function ShipperInvoicesPage() {
   return (
     <div className="p-8 print:p-4">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Invoices</h1>
-            <p className="text-gray-600 print:text-sm">View and download your invoices</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Invoices</h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">View and download your invoices</p>
           </div>
         </div>
       </div>

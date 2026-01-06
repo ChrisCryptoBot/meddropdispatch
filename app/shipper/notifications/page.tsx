@@ -18,16 +18,34 @@ export default function ShipperNotificationsPage() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
+        fetchNotifications(data.user.id)
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(shipperData)
-    setShipper(parsed)
-    fetchNotifications(parsed.id)
-  }, [router])
+    
+    fetchShipperData()
+  }, [])
 
   const fetchNotifications = async (shipperId: string) => {
     try {
@@ -123,15 +141,15 @@ export default function ShipperNotificationsPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Notifications</h1>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Notifications</h1>
             {unreadCount > 0 ? (
-              <p className="text-sm text-gray-600">
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
             ) : (
-              <p className="text-sm text-gray-600">View all your notifications</p>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">View all your notifications</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -317,4 +335,5 @@ export default function ShipperNotificationsPage() {
     </div>
   )
 }
+
 

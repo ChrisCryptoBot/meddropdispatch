@@ -94,6 +94,26 @@ export async function POST(
     // Calculate SHA-256 hash for immutability marker
     const fileHash = createHash('sha256').update(buffer).digest('hex')
 
+    // Deduplication: prevent duplicate document uploads for a load (same hash)
+    const duplicate = await prisma.document.findFirst({
+      where: {
+        loadRequestId: id,
+        fileHash,
+      },
+      select: { id: true, createdAt: true, title: true, type: true },
+    })
+
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: 'DuplicateDocument',
+          message: 'An identical document has already been uploaded for this load.',
+          existingDocument: duplicate,
+        },
+        { status: 409 }
+      )
+    }
+
     // Get load request with shipper info for email
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },

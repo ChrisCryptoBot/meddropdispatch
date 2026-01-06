@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
-      console.warn('⚠️  GOOGLE_MAPS_API_KEY not configured - place details disabled')
+      console.warn('WARNING: GOOGLE_MAPS_API_KEY not configured - place details disabled')
       return NextResponse.json(
         { error: 'Google Maps API key not configured' },
         { status: 503 }

@@ -24,16 +24,41 @@ export default function UserActivityPage() {
   const [showImpersonateModal, setShowImpersonateModal] = useState(false)
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    const adminMode = localStorage.getItem('driverAdminMode') === 'true'
-    
-    if (!driverData || !adminMode) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const adminMode = localStorage.getItem('driverAdminMode') === 'true'
+        
+        if (!data.user.isAdmin || !adminMode) {
+          setIsLoading(false)
+          router.push('/driver/dashboard')
+          return
+        }
+        
+        fetchUsers()
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    fetchUsers()
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchUsers = async () => {
     try {
@@ -83,8 +108,8 @@ export default function UserActivityPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading users...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading users...</p>
           </div>
         </div>
       </div>
@@ -171,7 +196,12 @@ export default function UserActivityPage() {
               You are about to log in as <strong>{selectedUser.email}</strong> ({selectedUser.userType}).
             </p>
             <p className="text-sm text-yellow-600 mb-6 bg-yellow-50 p-3 rounded-lg">
-              ⚠️ This action will be logged in the audit trail. Use only for debugging shipper issues.
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                This action will be logged in the audit trail. Use only for debugging shipper issues.
+              </span>
             </p>
             <div className="flex gap-4">
               <button

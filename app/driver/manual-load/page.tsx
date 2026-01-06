@@ -62,31 +62,47 @@ function DriverManualLoadPageContent() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
-    }
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchDrivers()
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchDrivers()
 
-    // Check for callbackId and shipperId in URL params
-    const urlCallbackId = searchParams.get('callbackId')
-    const urlShipperId = searchParams.get('shipperId')
-    
-    if (urlCallbackId) {
-      setCallbackId(urlCallbackId)
+        // Check for callbackId and shipperId in URL params
+        const urlCallbackId = searchParams.get('callbackId')
+        const urlShipperId = searchParams.get('shipperId')
+        
+        if (urlCallbackId) {
+          setCallbackId(urlCallbackId)
+        }
+        
+        if (urlShipperId) {
+          // Fetch shipper data and pre-fill form
+          fetchShipperData(urlShipperId)
+        } else {
+          // Load most recent draft if no shipperId in URL
+          loadMostRecentDraft(data.user.id)
+        }
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        // Don't redirect here - let layout handle it
+      }
     }
     
-    if (urlShipperId) {
-      // Fetch shipper data and pre-fill form
-      fetchShipperData(urlShipperId)
-    } else {
-      // Load most recent draft if no shipperId in URL
-      loadMostRecentDraft(parsedDriver.id)
-    }
-  }, [router, searchParams])
+    fetchDriverData()
+  }, [searchParams])
 
   // Auto-save draft every 30 seconds
   useEffect(() => {
@@ -384,8 +400,8 @@ function DriverManualLoadPageContent() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading...</p>
           </div>
         </div>
       </div>
@@ -394,27 +410,25 @@ function DriverManualLoadPageContent() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4 flex-1">
+      <div className="max-w-4xl mx-auto">
+        <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
+          <div className="flex items-center gap-4 mb-2">
             <Link
-              href="/driver/documents"
-              className="text-accent-700 hover:text-accent-800 transition-colors"
+              href="/driver/dashboard"
+              className="text-slate-300 hover:text-cyan-400 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Record Manual Load</h1>
-              <p className="text-gray-600 print:text-sm">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Record Manual Load</h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">
                 Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
               </p>
             </div>
           </div>
         </div>
-      </div>
-      <div className="max-w-4xl mx-auto">
 
         {/* Workflow Explanation Banner */}
         <div className="glass p-6 rounded-xl mb-6 bg-blue-50 border border-blue-200">
@@ -1376,8 +1390,8 @@ export default function DriverManualLoadPage() {
       <div className="p-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading...</p>
           </div>
         </div>
       </div>
@@ -1386,4 +1400,5 @@ export default function DriverManualLoadPage() {
     </Suspense>
   )
 }
+
 

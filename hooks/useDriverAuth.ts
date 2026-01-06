@@ -5,10 +5,7 @@ import { useAuth } from './useAuth'
 import { getDriver, setDriver, removeDriver } from '@/lib/storage'
 
 export function useDriverAuth() {
-  const { user, isLoading, isAuthenticated } = useAuth({
-    userType: 'driver',
-    redirectTo: '/driver/login',
-  })
+  const { user, isLoading, isAuthenticated } = useAuth()
 
   return {
     driver: user,

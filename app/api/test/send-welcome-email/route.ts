@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('📧 [Test] Attempting to send welcome email to:', email)
-    console.log('📧 [Test] RESEND_API_KEY configured:', !!process.env.RESEND_API_KEY)
-    console.log('📧 [Test] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL)
+    console.log('[Test] Attempting to send welcome email to:', email)
+    console.log('[Test] RESEND_API_KEY configured:', !!process.env.RESEND_API_KEY)
+    console.log('[Test] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL)
 
     // Send email and catch any errors - use throwOnError to see actual issues
     try {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       // Also test direct sendEmail with throwOnError to catch any silent failures
       // This is just for debugging - the welcome email function should work
     } catch (emailError: any) {
-      console.error('❌ [Test] Email sending error:', emailError)
+      console.error('ERROR: [Test] Email sending error:', emailError)
       return NextResponse.json(
         {
           error: 'Email sending failed',
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       email,
     })
   } catch (error) {
-    console.error('❌ [Test] Failed to send welcome email:', error)
+    console.error('ERROR: [Test] Failed to send welcome email:', error)
     return NextResponse.json(
       {
         error: 'Failed to send email',
@@ -77,4 +77,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
 

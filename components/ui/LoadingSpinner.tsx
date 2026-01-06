@@ -73,10 +73,10 @@ export function LoadingSpinner({
   }
 
   const portalColors = {
-    driver: 'border-accent-600',
-    shipper: 'border-primary-600',
+    driver: 'border-cyan-500',
+    shipper: 'border-blue-500',
     admin: 'border-blue-600',
-    default: 'border-gray-600',
+    default: 'border-slate-600',
   }
 
   const spinner = (
@@ -103,10 +103,10 @@ export function LoadingSpinner({
         <p
           className={cn(
             'mt-4 text-sm font-medium',
-            portal === 'driver' && 'text-accent-700',
-            portal === 'shipper' && 'text-primary-700',
-            portal === 'admin' && 'text-blue-700',
-            portal === 'default' && 'text-gray-600'
+            portal === 'driver' && 'text-slate-300',
+            portal === 'shipper' && 'text-slate-300',
+            portal === 'admin' && 'text-slate-300',
+            portal === 'default' && 'text-slate-300'
           )}
         >
           {label}
@@ -139,13 +139,3 @@ export function InlineSpinner({ size = 'small', className }: { size?: 'small' | 
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-

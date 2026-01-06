@@ -5,10 +5,7 @@ import { useAuth } from './useAuth'
 import { getShipper, setShipper, removeShipper } from '@/lib/storage'
 
 export function useShipperAuth() {
-  const { user, isLoading, isAuthenticated } = useAuth({
-    userType: 'shipper',
-    redirectTo: '/shipper/login',
-  })
+  const { user, isLoading, isAuthenticated } = useAuth()
 
   return {
     shipper: user,

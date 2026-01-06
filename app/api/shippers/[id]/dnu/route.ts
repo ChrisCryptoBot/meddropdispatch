@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, AuthenticationError, AuthorizationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { verifyPassword } from '@/lib/auth'
 import { z } from 'zod'
 
 const dnuSchema = z.object({
   reason: z.string().optional(),
   blockEmail: z.boolean().default(true), // Whether to block the email from future signups
+  password: z.string().min(1, 'Password is required'),
+  driverId: z.string().optional(), // If called by driver
+  adminId: z.string().optional(), // If called by admin
 })
 
 /**
  * POST /api/shippers/[id]/dnu
- * Mark shipper as DNU (Do Not Use) - Hard delete and block email
+ * Mark shipper as DNU (Do Not Use) - Soft delete and block email
+ * Requires password verification from driver or admin
  */
 export async function POST(
   request: NextRequest,
@@ -40,7 +45,51 @@ export async function POST(
       )
     }
 
-    const { reason, blockEmail } = validation.data
+    const { reason, blockEmail, password, driverId, adminId } = validation.data
+
+    // Verify password - check if driver or admin
+    let actorId: string | null = null
+    let actorType: 'DRIVER' | 'ADMIN' = 'DRIVER'
+    
+    if (adminId) {
+      // Verify admin password
+      const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        select: { id: true, passwordHash: true, role: true },
+      })
+      
+      if (!admin || admin.role !== 'ADMIN') {
+        throw new AuthorizationError('Admin access required')
+      }
+      
+      const isValidPassword = await verifyPassword(password, admin.passwordHash)
+      if (!isValidPassword) {
+        throw new AuthenticationError('Invalid admin password')
+      }
+      
+      actorId = admin.id
+      actorType = 'ADMIN'
+    } else if (driverId) {
+      // Verify driver password
+      const driver = await prisma.driver.findUnique({
+        where: { id: driverId },
+        select: { id: true, passwordHash: true },
+      })
+      
+      if (!driver) {
+        throw new NotFoundError('Driver')
+      }
+      
+      const isValidPassword = await verifyPassword(password, driver.passwordHash)
+      if (!isValidPassword) {
+        throw new AuthenticationError('Invalid password')
+      }
+      
+      actorId = driver.id
+      actorType = 'DRIVER'
+    } else {
+      throw new AuthenticationError('Driver ID or Admin ID required with password')
+    }
 
     // Get shipper details
     const shipper = await prisma.shipper.findUnique({
@@ -93,23 +142,44 @@ export async function POST(
             isActive: true,
             reason: reason || existingBlock.reason,
             blockedAt: new Date(),
+            blockedBy: actorId,
+          },
+        })
+      } else {
+        // Update existing active block
+        await prisma.blockedEmail.update({
+          where: { id: existingBlock.id },
+          data: {
+            reason: reason || existingBlock.reason,
+            blockedBy: actorId,
           },
         })
       }
     }
 
-    // Hard delete the shipper account
-    // This will cascade delete facilities, templates, etc.
-    await prisma.shipper.delete({
+    // Soft delete the shipper account (preserves data for admin restoration)
+    // This maintains the record for historical purposes but hides it from active lists
+    const updatedShipper = await prisma.shipper.update({
       where: { id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+        deletedBy: actorId,
+        deletedReason: reason || `DNU: ${shipper.companyName} (by ${actorType})`,
+      },
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Shipper marked as DNU and deleted. Email has been blocked from future signups.',
+      message: 'Shipper marked as DNU. Email has been blocked from future signups. Admins can restore this account later if needed.',
       emailBlocked: blockEmail,
+      shipper: {
+        id: updatedShipper.id,
+        companyName: updatedShipper.companyName,
+        email: updatedShipper.email,
+        deletedAt: updatedShipper.deletedAt,
+      },
     })
   })(request)
 }
-
 

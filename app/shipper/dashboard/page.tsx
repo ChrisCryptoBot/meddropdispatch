@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
 import { getLoadStatusColor, getLoadStatusLabel } from '@/lib/constants'
+import { formatDate } from '@/lib/utils'
 
 interface LoadRequest {
   id: string
@@ -82,23 +83,42 @@ export default function ShipperDashboardPage() {
     }
   }
 
+  // Get shipper from layout's auth state - no need to duplicate auth check
+  // The layout handles authentication, we just fetch data here
   useEffect(() => {
-    // Check authentication
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    const fetchShipperData = async () => {
+      try {
+        const authResponse = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!authResponse.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const authData = await authResponse.json()
+        if (!authData.authenticated || authData.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const shipperData = authData.user
+        setShipper(shipperData)
+        
+        // Fetch full shipper details including dispatcher info (don't await - let it run in background)
+        fetchShipperDetails(shipperData.id)
+        
+        // Fetch loads (this will set isLoading to false in finally block)
+        fetchLoads(shipperData.id)
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedShipper = JSON.parse(shipperData)
-    setShipper(parsedShipper)
-
-    // Fetch full shipper details including dispatcher info
-    fetchShipperDetails(parsedShipper.id)
-
-    // Fetch loads
-    fetchLoads(parsedShipper.id)
-  }, [router])
+    
+    fetchShipperData()
+  }, [])
 
   const fetchShipperDetails = async (shipperId: string) => {
     try {
@@ -135,10 +155,7 @@ export default function ShipperDashboardPage() {
   const fetchLoads = async (shipperId: string, page: number = 1) => {
     try {
       setIsLoading(true)
-      // Use proper caching - Next.js will handle cache revalidation
-      const response = await fetch(`/api/shippers/${shipperId}/loads?page=${page}&limit=50`, {
-        next: { revalidate: 10 } // Revalidate every 10 seconds
-      })
+      const response = await fetch(`/api/shippers/${shipperId}/loads?page=${page}&limit=50`)
       if (!response.ok) throw new Error('Failed to fetch loads')
 
       const data = await response.json()
@@ -313,164 +330,189 @@ export default function ShipperDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your loads...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300 text-lg">Loading your loads...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 print:p-4">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Loads</h1>
-            <p className="text-gray-600 print:text-sm">Manage and track all your shipment requests</p>
+    <div>
+      {/* Header Section - Sticky - Keep as is */}
+      <div className="sticky top-[73px] z-50 bg-slate-900 pb-4 mb-0 pt-0 border-b border-slate-700/50 w-full">
+        <div className="px-6 md:px-8">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+                My Loads
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage and track all your shipment requests</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Dedicated Dispatcher Card - Premium Tier Only */}
-      {shipper?.subscriptionTier === 'BROKERAGE' && dispatcher && (
-        <div className="mb-8 print:mb-4">
-          <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="flex items-start gap-4 flex-1">
-                <div className="w-16 h-16 bg-gradient-accent rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h2 className="text-2xl font-bold text-gray-900 print:text-xl">Your Dedicated Dispatcher</h2>
-                    <span className="px-3 py-1 bg-gradient-accent text-white text-xs font-semibold rounded-full shadow-lg">
-                      Premium
-                    </span>
+      <div className="p-6 md:p-8 print:p-4">
+        {/* Dedicated Dispatcher Card - Premium Tier Only */}
+        {shipper?.subscriptionTier === 'BROKERAGE' && dispatcher && (
+          <div className="mb-6 print:mb-4">
+            <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-16 h-16 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
-                  <p className="text-gray-700 mb-4 print:text-sm">
-                    You have a dedicated dispatcher assigned to handle your loads and provide personalized service.
-                  </p>
-                  <div className="bg-white/60 rounded-lg p-4 mb-4 border border-teal-200/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-accent rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">
-                          {dispatcher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900 text-lg">{dispatcher.name}</div>
-                        <div className="text-sm text-gray-600">{dispatcher.email}</div>
-                        <div className="text-xs text-teal-600 font-medium mt-1">
-                          {dispatcher.role === 'ADMIN' ? 'Administrator' : 'Dispatcher'}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-2xl font-bold text-white print:text-xl">Your Dedicated Dispatcher</h2>
+                      <span className="px-3 py-1 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white text-xs font-semibold rounded-full shadow-lg shadow-cyan-500/30">
+                        Premium
+                      </span>
+                    </div>
+                    <p className="text-slate-300 mb-4 print:text-sm">
+                      You have a dedicated dispatcher assigned to handle your loads and provide personalized service.
+                    </p>
+                    <div className="bg-slate-800/50 rounded-lg p-4 mb-4 border border-slate-700/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30">
+                          <span className="text-white font-bold text-lg">
+                            {dispatcher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-white text-lg">{dispatcher.name}</div>
+                          <div className="text-sm text-slate-300">{dispatcher.email}</div>
+                          <div className="text-xs text-cyan-400 font-medium mt-1">
+                            {dispatcher.role === 'ADMIN' ? 'Administrator' : 'Dispatcher'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <a
-                      href={`mailto:${dispatcher.email}?subject=Load Request - ${shipper.companyName}`}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg min-h-[44px]"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      Email Dispatcher
-                    </a>
-                    <Link
-                      href="/shipper/load-request"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-teal-700 rounded-lg font-semibold hover:bg-teal-50 transition-all border-2 border-teal-200 min-h-[44px]"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Request New Load
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href={`mailto:${dispatcher.email}?subject=Load Request - ${shipper.companyName}`}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px]"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Email Dispatcher
+                      </a>
+                      <Link
+                        href="/shipper/request-load"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all border border-slate-600/50 min-h-[44px]"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Request New Load
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Call to Book Loads - Prominent CTA - Separate, scrolls with page */}
-      <div className="mb-8 print:mb-4">
-        <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-1 print:text-xl">Need to Book a Load?</h2>
-                <p className="text-medical mb-2 print:text-sm">Call us to schedule your medical courier service. Our team will help you get started quickly.</p>
-                <a
-                  href="tel:+1234567890"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg min-h-[44px]"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Quick Action CTA - Compact Design */}
+        <div className="mb-6 print:mb-4">
+          <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  Call to Book: (123) 456-7890
-                </a>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-white mb-1 print:text-base">Need to Book a Load?</h2>
+                  <p className="text-sm text-slate-300 print:text-xs">Call us to schedule your medical courier service</p>
+                </div>
               </div>
+              <a
+                href="tel:+19039140386"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-blue-500/50 transition-all shadow-lg shadow-blue-500/30 min-h-[44px] whitespace-nowrap"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                (903) 914-0386
+              </a>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
-          <div className="text-sm text-teal-700 font-medium">Total Loads</div>
+        {/* Stats Grid - Enhanced Visual Design */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 hover:shadow-xl transition-all cursor-pointer group">
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+                {stats.total}
+              </div>
+              <div className="text-xs md:text-sm text-slate-400 font-medium">Total</div>
+            </div>
+          </div>
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-yellow-500/50 hover:shadow-xl transition-all cursor-pointer group">
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+                {stats.pending}
+              </div>
+              <div className="text-xs md:text-sm text-slate-400 font-medium">Pending</div>
+            </div>
+          </div>
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer group">
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+                {stats.active}
+              </div>
+              <div className="text-xs md:text-sm text-slate-400 font-medium">Active</div>
+            </div>
+          </div>
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-green-500/50 hover:shadow-xl transition-all cursor-pointer group">
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+                {stats.delivered}
+              </div>
+              <div className="text-xs md:text-sm text-slate-400 font-medium">Delivered</div>
+            </div>
+          </div>
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-red-500/50 hover:shadow-xl transition-all cursor-pointer group">
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+                {stats.cancelled}
+              </div>
+              <div className="text-xs md:text-sm text-slate-400 font-medium">Cancelled</div>
+            </div>
+          </div>
         </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
-          <div className="text-sm text-teal-700 font-medium">Pending</div>
-        </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-3xl font-bold text-accent-700 mb-1">{stats.active}</div>
-          <div className="text-sm text-teal-700 font-medium">Active</div>
-        </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-3xl font-bold text-green-600 mb-1">{stats.delivered}</div>
-          <div className="text-sm text-teal-700 font-medium">Delivered</div>
-        </div>
-        <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-3xl font-bold text-accent-700 mb-1">{stats.cancelled}</div>
-          <div className="text-sm text-teal-700 font-medium">Cancelled</div>
-        </div>
-      </div>
 
-        {/* Filters, Search, and Sort */}
-        <div className="glass-primary p-6 rounded-2xl mb-6 border-2 border-blue-200/30">
+        {/* Filters, Search, and Sort - Compact Design */}
+        <div className="glass-primary p-5 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
           <div className="grid md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search by tracking, facility, city, driver..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+                  className="w-full px-4 py-2.5 pl-10 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500 text-sm"
                 />
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -482,11 +524,11 @@ export default function ShipperDashboardPage() {
 
             {/* Filter by Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Status</label>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 text-sm"
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -498,11 +540,11 @@ export default function ShipperDashboardPage() {
 
             {/* Sort By */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 text-sm"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -516,16 +558,21 @@ export default function ShipperDashboardPage() {
           </div>
         </div>
 
-        {/* Pending Acceptance Section */}
+        {/* Pending Acceptance Section - Enhanced Design */}
         {pendingAcceptance.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Available Loads ({pendingAcceptance.length})</h2>
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <h2 className="text-lg font-bold text-white">Available Loads ({pendingAcceptance.length})</h2>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
               <div className="group relative">
-                <svg className="w-5 h-5 text-gray-400 cursor-help hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-400 cursor-help hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-xl">
+                <div className="absolute right-0 bottom-full mb-2 w-72 p-3 bg-slate-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50 shadow-xl border border-slate-700">
                   <p className="mb-2 font-semibold">About Available Loads:</p>
                   <p className="mb-2">These loads were created by drivers and are already active in the system. They're being tracked and managed by drivers.</p>
                   <p className="mb-2"><strong>Claiming a load</strong> allows you to view and manage it in your portal, but it's completely optional.</p>
@@ -533,63 +580,66 @@ export default function ShipperDashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {pendingAcceptance.map((load) => (
                 <div
                   key={load.id}
-                  className="glass-accent rounded-xl p-6 border-2 border-warning-300"
+                  className="glass-primary rounded-xl p-5 border-2 border-blue-500/30 hover:border-blue-500/50 hover:shadow-xl transition-all bg-gradient-to-br from-slate-800/50 to-slate-800/30"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-gray-900 text-lg font-mono">{load.publicTrackingCode}</h3>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <h3 className="font-mono font-bold text-blue-400 text-lg">{load.publicTrackingCode}</h3>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
                           Available to Claim
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-slate-400">
                         Created by driver • {new Date(load.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{load.pickupFacility.name}</p>
-                        <p className="text-sm text-gray-600">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                  {/* Route - Horizontal Layout */}
+                  <div className="flex items-center gap-4 mb-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-400 mb-0.5">PICKUP</p>
+                          <p className="font-semibold text-white truncate text-sm">{load.pickupFacility.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{load.dropoffFacility.name}</p>
-                        <p className="text-sm text-gray-600">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-0.5 bg-gradient-to-r from-green-400 to-red-400"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-6 h-6 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-400 mb-0.5">DELIVERY</p>
+                          <p className="font-semibold text-white truncate text-sm">{load.dropoffFacility.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-3 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleAcceptLoad(load.id)
-                      }}
-                      disabled={isAccepting === load.id || isRejecting === load.id}
-                      className="flex-1 px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isAccepting === load.id ? 'Claiming...' : '✓ Claim in Portal'}
-                    </button>
+                  {/* Actions */}
+                  <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-700/50">
                     <button
                       onClick={(e) => {
                         e.preventDefault()
@@ -597,17 +647,49 @@ export default function ShipperDashboardPage() {
                         handleRejectLoad(load.id)
                       }}
                       disabled={isAccepting === load.id || isRejecting === load.id}
-                      className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 text-sm rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-200 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isRejecting === load.id ? 'Dismissing...' : '✗ Dismiss'}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      {isRejecting === load.id ? 'Dismissing...' : 'Dismiss'}
                     </button>
-                    <Link
-                      href={`/shipper/loads/${load.id}`}
-                      className="px-6 py-3 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-all"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View Details
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/shipper/loads/${load.id}`}
+                        className="px-4 py-2 text-sm rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-200 font-medium transition-colors flex items-center gap-2 border border-slate-600/50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        View Details
+                      </Link>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleAcceptLoad(load.id)
+                        }}
+                        disabled={isAccepting === load.id || isRejecting === load.id}
+                        className="px-5 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                      >
+                        {isAccepting === load.id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Claiming...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Claim in Portal
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -615,206 +697,241 @@ export default function ShipperDashboardPage() {
           </div>
         )}
 
-        {/* All Loads List */}
+        {/* All Loads List - Redesigned Cards */}
         {filteredLoads.length === 0 ? (
-          <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30">
-            <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
+          <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50">
+            <div className="w-16 h-16 mx-auto mb-4 text-slate-400">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-xl font-bold text-white mb-2">
               {filter === 'all' ? 'No load requests yet' : `No ${filter} loads`}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-slate-300 mb-6">
               {filter === 'all' 
                 ? 'Get started by creating your first shipment request using the button above' 
                 : 'There are no loads matching this filter'}
             </p>
+            {filter === 'all' && (
+              <Link
+                href="/shipper/request-load"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-blue-500/50 transition-all shadow-lg shadow-blue-500/30"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create Your First Load
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
             {filteredLoads.map((load) => (
               <div
                 key={load.id}
-                className="glass-primary p-5 rounded-2xl hover:shadow-glass-lg transition-all relative border-2 border-blue-200/30 hover:border-blue-300/50"
+                className="glass-primary rounded-xl border border-slate-700/50 hover:border-cyan-500/50 hover:shadow-xl transition-all overflow-hidden group"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <Link href={`/shipper/loads/${load.id}`}>
-                        <h3 className="font-bold text-gray-900 text-lg font-mono hover:text-blue-600 transition-colors">{load.publicTrackingCode}</h3>
-                      </Link>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
-                        {getStatusLabel(load.status)}
-                      </span>
-                      {/* GPS Tracking Badge */}
+                {/* Card Header - Compact */}
+                <div className="p-5 border-b border-slate-700/50 bg-slate-800/30">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <Link 
+                          href={`/shipper/loads/${load.id}`} 
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          <h3 className="font-mono font-bold text-cyan-400 text-lg hover:text-cyan-300 transition-colors">
+                            {load.publicTrackingCode}
+                          </h3>
+                        </Link>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getLoadStatusColor(load.status)}`}>
+                          {getLoadStatusLabel(load.status)}
+                        </span>
+                        {load.driver && load.gpsTrackingEnabled && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1.5">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Live GPS
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-slate-400">
+                        <span>Created {new Date(load.createdAt).toLocaleDateString()}</span>
+                        {load.driver && (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            {load.driver.firstName} {load.driver.lastName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {load.quoteAmount && (
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-white">
+                            ${load.quoteAmount.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-slate-400">Quote</div>
+                        </div>
+                      )}
+                      {['CANCELLED', 'DELIVERED', 'SCHEDULED'].includes(load.status) && (
+                        <button
+                          onClick={(e) => handleDeleteLoad(load.id, e)}
+                          disabled={deletingLoadId === load.id}
+                          className="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50 hover:text-red-300"
+                          title="Delete load"
+                        >
+                          {deletingLoadId === load.id ? (
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Route - Enhanced Horizontal Layout */}
+                <div className="p-5">
+                  <div className="flex items-center gap-4 mb-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-400 mb-0.5 uppercase tracking-wide">Pickup</p>
+                          <p className="font-semibold text-white truncate text-sm mb-0.5">{load.pickupFacility.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                          {load.readyTime && (
+                            <p className="text-xs text-cyan-400 mt-1.5 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Ready: {formatDate(load.readyTime)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 flex flex-col items-center">
+                      <div className="w-8 h-0.5 bg-gradient-to-r from-green-400 via-cyan-400 to-red-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-cyan-400 my-1"></div>
+                      <div className="w-8 h-0.5 bg-gradient-to-r from-red-400 via-cyan-400 to-green-400"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-6 h-6 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-400 mb-0.5 uppercase tracking-wide">Delivery</p>
+                          <p className="font-semibold text-white truncate text-sm mb-0.5">{load.dropoffFacility.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                          {load.deliveryDeadline && (
+                            <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Deadline: {formatDate(load.deliveryDeadline)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Messages */}
+                  {load.status === 'REQUESTED' && (
+                    <div className={`mb-4 p-3 rounded-lg border ${load.driver ? 'bg-green-500/10 border-green-500/30' : 'bg-cyan-500/10 border-cyan-500/30'}`}>
+                      {load.driver ? (
+                        <div className="flex items-center gap-2 text-green-400">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-medium">
+                            Driver Reviewed: {load.driver.firstName} {load.driver.lastName} - Awaiting scheduling confirmation
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-cyan-400">
+                          <svg className="w-4 h-4 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-medium">Awaiting driver review - Not yet reviewed</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {load.status === 'QUOTED' && (
+                    <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                      <div className="flex items-center gap-2 text-yellow-400">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span className="text-sm font-semibold">Action Required: Review and accept quote</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {load.status === 'SCHEDULED' && load.driver && (
+                    <div className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                      <div className="flex items-center gap-2 text-purple-400">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-semibold">
+                          Accepted & Scheduled - Driver: {load.driver.firstName} {load.driver.lastName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                    <div className="flex items-center gap-2">
                       {load.driver && load.gpsTrackingEnabled && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <Link
+                          href={`/shipper/loads/${load.id}#gps-tracking`}
+                          className="px-4 py-2 text-sm rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-colors flex items-center gap-2 shadow-lg shadow-green-500/20"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          Live GPS
-                        </span>
+                          View Map
+                        </Link>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Created {new Date(load.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {load.quoteAmount && (
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-gray-900">
-                          ${load.quoteAmount.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-gray-500">Quote Amount</div>
-                      </div>
-                    )}
-                    {/* Delete button for completed/cancelled/delivered/scheduled loads */}
-                    {['CANCELLED', 'DELIVERED', 'SCHEDULED'].includes(load.status) && (
-                      <button
-                        onClick={(e) => handleDeleteLoad(load.id, e)}
-                        disabled={deletingLoadId === load.id}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="Delete load"
-                      >
-                        {deletingLoadId === load.id ? (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  {/* Pickup */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-1">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 mb-1">Pickup</div>
-                      <div className="font-medium text-gray-900 truncate">{load.pickupFacility.name}</div>
-                      <div className="text-sm text-gray-600">
-                        {load.pickupFacility.city}, {load.pickupFacility.state}
-                      </div>
-                      {load.readyTime && (
-                        <div className="text-sm text-gray-600">
-                          Ready: {new Date(load.readyTime).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delivery */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-1">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 mb-1">Delivery</div>
-                      <div className="font-medium text-gray-900 truncate">{load.dropoffFacility.name}</div>
-                      <div className="text-sm text-gray-600">
-                        {load.dropoffFacility.city}, {load.dropoffFacility.state}
-                      </div>
-                      {load.deliveryDeadline && (
-                        <div className="text-sm text-gray-600">
-                          Deadline: {new Date(load.deliveryDeadline).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review/Acceptance Status for REQUESTED loads */}
-                {load.status === 'REQUESTED' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    {load.driver ? (
-                      <div className="flex items-center gap-2 text-green-700">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="font-semibold text-sm">
-                          Driver Reviewed: {load.driver.firstName} {load.driver.lastName} - Awaiting scheduling confirmation
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-blue-700">
-                        <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="font-semibold text-sm">Awaiting driver review - Not yet reviewed</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Action Required Badge */}
-                {load.status === 'QUOTED' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-yellow-700">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <span className="font-semibold text-sm">Action Required: Review and accept quote</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Scheduled/Accepted Status */}
-                {load.status === 'SCHEDULED' && load.driver && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-purple-700">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-semibold text-sm">
-                        Accepted & Scheduled - Driver: {load.driver.firstName} {load.driver.lastName}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-3 flex-wrap">
-                  {/* GPS Tracking Button - Show when GPS is enabled */}
-                  {load.driver && load.gpsTrackingEnabled && ['SCHEDULED', 'EN_ROUTE', 'PICKED_UP', 'IN_TRANSIT'].includes(load.status) && (
                     <Link
-                      href={`/shipper/loads/${load.id}#gps-tracking`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm shadow-md"
+                      href={`/shipper/loads/${load.id}`}
+                      className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center gap-2 text-sm"
                     >
+                      <span>View Details</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      View Map
                     </Link>
-                  )}
-                  <Link
-                    href={`/shipper/loads/${load.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm shadow-lg"
-                  >
-                    View Details
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
     </div>
   )
 }

@@ -11,6 +11,7 @@ export default function RequestLoadPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [companyName, setCompanyName] = useState('')
   const [selectedShipper, setSelectedShipper] = useState<{
     id: string
@@ -120,6 +121,7 @@ export default function RequestLoadPage() {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
+    setFieldErrors({})
 
     const formData = new FormData(e.currentTarget)
     const baseData = Object.fromEntries(formData.entries())
@@ -178,8 +180,22 @@ export default function RequestLoadPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to submit request')
+        const errorData = await response.json()
+        
+        // Handle field-specific errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorsMap: Record<string, string> = {}
+          errorData.errors.forEach((err: any) => {
+            if (err.field && err.message) {
+              errorsMap[err.field] = err.message
+            }
+          })
+          setFieldErrors(errorsMap)
+        }
+        
+        setError(errorData.message || errorData.error || 'Failed to submit request')
+        setIsSubmitting(false)
+        return
       }
 
       const result = await response.json()
@@ -234,7 +250,16 @@ export default function RequestLoadPage() {
 
         {error && (
           <div className="glass p-4 rounded-lg border-l-4 border-red-500 mb-6">
-            <p className="text-red-700 font-medium">{error}</p>
+            <p className="text-red-700 font-medium mb-2">{error}</p>
+            {Object.keys(fieldErrors).length > 0 && (
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-600">
+                {Object.entries(fieldErrors).map(([field, message]) => (
+                  <li key={field}>
+                    <strong className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</strong> {message}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
@@ -577,3 +602,4 @@ export default function RequestLoadPage() {
     </div>
   )
 }
+

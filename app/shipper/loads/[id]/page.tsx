@@ -98,22 +98,39 @@ export default function ShipperLoadDetailPage() {
   const [showFullScreenMap, setShowFullScreenMap] = useState(false)
 
   useEffect(() => {
-    // Check authentication
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
-    }
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
 
-    const parsedShipper = JSON.parse(shipperData)
-    setShipper(parsedShipper)
-
-    // Fetch load details
-    if (params?.id) {
-      fetchLoad()
-      fetchDocuments()
+        // Fetch load details
+        if (params?.id) {
+          fetchLoad()
+          fetchDocuments()
+        }
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-  }, [router, params])
+    
+    fetchShipperData()
+  }, [params])
 
   useEffect(() => {
     // Fetch existing rating if load is delivered or completed
@@ -1524,3 +1541,4 @@ export default function ShipperLoadDetailPage() {
     </div>
   )
 }
+

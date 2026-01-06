@@ -104,9 +104,9 @@ export async function POST(request: NextRequest) {
         contactName: shipper.contactName,
         email: shipper.email,
       })
-      console.log('✅ Shipper welcome email sent successfully to:', shipper.email)
+      console.log('SUCCESS: Shipper welcome email sent successfully to:', shipper.email)
     } catch (error) {
-      console.error('❌ Failed to send shipper welcome email:', error)
+      console.error('ERROR: Failed to send shipper welcome email:', error)
       // Don't fail signup if email fails
     }
 
@@ -124,4 +124,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
 

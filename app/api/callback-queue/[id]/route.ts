@@ -31,13 +31,34 @@ export async function PATCH(
     }
 
     const updateData: any = { status }
-    
+
     if (status === 'CALLED') {
       updateData.calledAt = new Date()
       if (driverId) {
         updateData.driverId = driverId
       }
     } else if (status === 'COMPLETED') {
+      // CRITICAL: Require driverId when marking callback as COMPLETED
+      // This ensures a driver was actually assigned before completing the callback
+      // Check existing callback state first
+      const existingCallback = await prisma.callbackQueue.findUnique({
+        where: { id },
+        select: { driverId: true, loadRequestId: true }
+      })
+      
+      const hasDriver = driverId || existingCallback?.driverId
+      const hasLoad = existingCallback?.loadRequestId
+      
+      if (!hasDriver && !hasLoad) {
+        return NextResponse.json(
+          {
+            error: 'Driver assignment required',
+            message: 'Cannot mark callback as COMPLETED without driver assignment or load creation. Please assign a driver or create a load first.'
+          },
+          { status: 400 }
+        )
+      }
+      
       updateData.completedAt = new Date()
       if (driverId) {
         updateData.driverId = driverId
@@ -157,11 +178,11 @@ export async function PATCH(
         const { sendCallbackCalledEmail } = await import('@/lib/email')
         const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
         const callbackQueueUrl = `${baseUrl}/shipper/request-load`
-        
+
         // Get driver info if available
         let driverName = 'A MED DROP driver'
         let driverPhone = ''
-        
+
         if (driverId) {
           const driver = await prisma.driver.findUnique({
             where: { id: driverId },

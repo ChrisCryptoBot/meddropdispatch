@@ -50,16 +50,34 @@ export default function DriverShippersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchShippers(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchShippers(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchShippers = async (driverId: string) => {
     try {
@@ -200,8 +218,8 @@ export default function DriverShippersPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading...</p>
           </div>
         </div>
       </div>
@@ -210,11 +228,11 @@ export default function DriverShippersPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Shippers & Clients</h1>
-            <p className="text-gray-600 print:text-sm">View all shippers you've worked with and track your business relationships</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Shippers & Clients</h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">View all shippers you've worked with and track your business relationships</p>
           </div>
         </div>
       </div>
@@ -336,8 +354,8 @@ export default function DriverShippersPage() {
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading shippers...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading shippers...</p>
           </div>
         </div>
       ) : filteredAndSortedShippers.length === 0 ? (

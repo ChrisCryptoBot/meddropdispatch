@@ -14,26 +14,43 @@ export default function DriverAdminDashboardPage() {
   const [stats, setStats] = useState<any>(null)
 
   useEffect(() => {
-    // Check if driver is logged in and has admin mode enabled
-    const driverData = localStorage.getItem('driver')
-    const adminMode = localStorage.getItem('driverAdminMode') === 'true'
-
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const adminMode = localStorage.getItem('driverAdminMode') === 'true'
+        
+        // Check if driver has admin privileges and admin mode is enabled
+        if (!data.user.isAdmin || !adminMode) {
+          setIsLoading(false)
+          router.push('/driver/dashboard')
+          return
+        }
+        
+        setDriver(data.user)
+        fetchStats()
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(driverData)
-    setDriver(parsed)
-
-    // Check if driver has admin privileges and admin mode is enabled
-    if (!parsed.isAdmin || !adminMode) {
-      router.push('/driver/dashboard')
-      return
-    }
-
-    fetchStats()
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchStats = async () => {
     try {
@@ -54,8 +71,8 @@ export default function DriverAdminDashboardPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading admin dashboard...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading admin dashboard...</p>
           </div>
         </div>
       </div>
@@ -189,4 +206,5 @@ export default function DriverAdminDashboardPage() {
     </div>
   )
 }
+
 

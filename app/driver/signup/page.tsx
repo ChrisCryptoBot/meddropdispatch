@@ -88,25 +88,35 @@ export default function DriverSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 py-12">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-10 pointer-events-none"></div>
+
+      <div className="relative w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold text-gradient mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
               MED DROP
             </h1>
+            <p className="text-xs font-medium text-slate-400">Medical Courier Services</p>
           </Link>
-          <p className="text-medical">Join as Driver</p>
+          <p className="text-slate-300 mt-2">Join as Driver</p>
         </div>
 
         {/* Signup Card */}
-        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
+        <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-8">
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-lg">
-              <p className="text-urgent-700 text-sm font-medium">{error}</p>
+            <div className="mb-6 p-4 bg-red-900/30 border-2 border-red-500/50 rounded-lg">
+              <p className="text-red-300 text-sm font-medium">{error}</p>
             </div>
           )}
 
@@ -114,11 +124,11 @@ export default function DriverSignupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h3>
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Personal Information</h3>
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-slate-300 mb-2">
                     First Name *
                   </label>
                   <input
@@ -128,12 +138,12 @@ export default function DriverSignupPage() {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-slate-300 mb-2">
                     Last Name *
                   </label>
                   <input
@@ -143,13 +153,13 @@ export default function DriverSignupPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                   Email Address *
                 </label>
                 <input
@@ -159,13 +169,13 @@ export default function DriverSignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="your@email.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-300 mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -175,13 +185,13 @@ export default function DriverSignupPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="(555) 123-4567"
                 />
               </div>
 
               <div>
-                <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="licenseNumber" className="block text-sm font-medium text-slate-300 mb-2">
                   Driver's License Number
                 </label>
                 <input
@@ -190,17 +200,17 @@ export default function DriverSignupPage() {
                   name="licenseNumber"
                   value={formData.licenseNumber}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                 />
               </div>
             </div>
 
             {/* Vehicle Information */}
-            <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Vehicle Information</h3>
+            <div className="space-y-4 pt-4 border-t border-slate-700">
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Vehicle Information</h3>
               
               <div>
-                <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="vehicleType" className="block text-sm font-medium text-slate-300 mb-2">
                   Vehicle Type
                 </label>
                 <select
@@ -208,7 +218,7 @@ export default function DriverSignupPage() {
                   name="vehicleType"
                   value={formData.vehicleType}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white"
                 >
                   <option value="">Select vehicle type</option>
                   <option value="SEDAN">Sedan</option>
@@ -220,7 +230,7 @@ export default function DriverSignupPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="vehicleMake" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="vehicleMake" className="block text-sm font-medium text-slate-300 mb-2">
                     Make
                   </label>
                   <input
@@ -229,13 +239,13 @@ export default function DriverSignupPage() {
                     name="vehicleMake"
                     value={formData.vehicleMake}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                     placeholder="Toyota"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="vehicleModel" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="vehicleModel" className="block text-sm font-medium text-slate-300 mb-2">
                     Model
                   </label>
                   <input
@@ -244,7 +254,7 @@ export default function DriverSignupPage() {
                     name="vehicleModel"
                     value={formData.vehicleModel}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                     placeholder="Sienna"
                   />
                 </div>
@@ -252,7 +262,7 @@ export default function DriverSignupPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="vehicleYear" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="vehicleYear" className="block text-sm font-medium text-slate-300 mb-2">
                     Year
                   </label>
                   <input
@@ -263,13 +273,13 @@ export default function DriverSignupPage() {
                     onChange={handleChange}
                     min="1900"
                     max={new Date().getFullYear() + 1}
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                     placeholder="2020"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="vehiclePlate" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="vehiclePlate" className="block text-sm font-medium text-slate-300 mb-2">
                     License Plate
                   </label>
                   <input
@@ -278,7 +288,7 @@ export default function DriverSignupPage() {
                     name="vehiclePlate"
                     value={formData.vehiclePlate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                     placeholder="ABC-1234"
                   />
                 </div>
@@ -291,20 +301,20 @@ export default function DriverSignupPage() {
                   name="hasRefrigeration"
                   checked={formData.hasRefrigeration}
                   onChange={handleChange}
-                  className="w-4 h-4 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-600 border-slate-600 rounded focus:ring-blue-500 bg-slate-700"
                 />
-                <label htmlFor="hasRefrigeration" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="hasRefrigeration" className="ml-2 text-sm text-slate-300">
                   My vehicle has refrigeration capabilities
                 </label>
               </div>
             </div>
 
             {/* Account Information */}
-            <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Account Information</h3>
+            <div className="space-y-4 pt-4 border-t border-slate-700">
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Account Information</h3>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
                   Password *
                 </label>
                 <input
@@ -315,13 +325,13 @@ export default function DriverSignupPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="At least 6 characters"
                 />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
                   Confirm Password *
                 </label>
                 <input
@@ -331,7 +341,7 @@ export default function DriverSignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -339,21 +349,21 @@ export default function DriverSignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating Account...' : 'Create Driver Account'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-medical">
+          <div className="mt-6 text-center text-sm text-slate-400">
             <p>
               Already have an account?{' '}
-              <Link href="/driver/login" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/driver/login" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
                 Sign in
               </Link>
             </p>
-            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
+            <Link href="/" className="text-slate-400 hover:text-slate-300 mt-2 inline-block transition-colors">
               ← Back to Home
             </Link>
           </div>

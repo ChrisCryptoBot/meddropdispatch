@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyShipperAccess } from '@/lib/authorization'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/shippers/[id]/loads
@@ -10,7 +12,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Rate limit public list access
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'RateLimitError', message: 'Too many requests. Please slow down.' },
+        { status: 429 }
+      )
+    }
+
     const { id } = await params
+
+    // Ownership guard: authenticated shipper must match requested id
+    await verifyShipperAccess(request, id)
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')

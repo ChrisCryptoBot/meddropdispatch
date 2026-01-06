@@ -62,11 +62,16 @@ export async function PATCH(
       throw new NotFoundError('Load request')
     }
 
-    // Update load with quoted rate
+    // Calculate quote expiration (24 hours from now for admin quotes)
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24)
+
+    // Update load with quoted rate and expiration
     const updatedLoad = await prisma.loadRequest.update({
       where: { id },
       data: {
         quoteAmount: quoteAmount,
+        quoteExpiresAt: expiresAt,
       },
       include: {
         shipper: true,

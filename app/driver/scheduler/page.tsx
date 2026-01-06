@@ -51,16 +51,34 @@ export default function DriverSchedulerPage() {
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchLoads(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchLoads(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchLoads = async (driverId: string) => {
     try {
@@ -157,15 +175,15 @@ export default function DriverSchedulerPage() {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'SCHEDULED':
-        return 'bg-blue-100 text-blue-700 border-blue-300'
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/50'
       case 'EN_ROUTE':
-        return 'bg-purple-100 text-purple-700 border-purple-300'
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/50'
       case 'PICKED_UP':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50'
       case 'IN_TRANSIT':
-        return 'bg-orange-100 text-orange-700 border-orange-300'
+        return 'bg-orange-500/20 text-orange-300 border-orange-500/50'
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300'
+        return 'bg-slate-700/50 text-slate-300 border-slate-600/50'
     }
   }
 
@@ -187,13 +205,13 @@ export default function DriverSchedulerPage() {
   const getTemperatureColor = (temp: string): string => {
     switch (temp) {
       case 'FROZEN':
-        return 'bg-blue-50 text-blue-700 border-blue-200'
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/50'
       case 'REFRIGERATED':
-        return 'bg-teal-50 text-teal-700 border-teal-200'
+        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
       case 'AMBIENT':
-        return 'bg-gray-50 text-gray-700 border-gray-200'
+        return 'bg-slate-700/50 text-slate-300 border-slate-600/50'
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200'
+        return 'bg-slate-700/50 text-slate-300 border-slate-600/50'
     }
   }
 
@@ -279,7 +297,7 @@ export default function DriverSchedulerPage() {
         {/* Week day headers */}
         <div className="grid grid-cols-7 gap-2 mb-4">
           {weekDays.map((day) => (
-            <div key={day} className="text-center text-sm font-semibold text-gray-700 py-2">
+            <div key={day} className="text-center text-sm font-semibold text-slate-300 py-2">
               {day}
             </div>
           ))}
@@ -297,13 +315,13 @@ export default function DriverSchedulerPage() {
                 key={index}
                 className={`min-h-[100px] p-2 rounded-lg border-2 transition-all ${
                   isCurrentDay
-                    ? 'bg-gradient-accent border-teal-400 shadow-medical'
+                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 border-teal-400 shadow-medical'
                     : isCurrentMonthDay
                     ? 'bg-white/40 border-teal-200/30 hover:bg-white/60'
-                    : 'bg-gray-50/40 border-gray-200/30 opacity-60'
+                    : 'bg-slate-800/40 border-slate-700/30 opacity-60'
                 }`}
               >
-                <div className={`text-sm font-semibold mb-1 ${isCurrentDay ? 'text-white' : 'text-gray-700'}`}>
+                <div className={`text-sm font-semibold mb-1 ${isCurrentDay ? 'text-white' : 'text-slate-300'}`}>
                   {day.getDate()}
                 </div>
                 <div className="space-y-1">
@@ -311,14 +329,14 @@ export default function DriverSchedulerPage() {
                     <Link
                       key={load.id}
                       href={`/driver/loads/${load.id}`}
-                      className="block text-xs p-1.5 rounded bg-blue-100 hover:bg-blue-200 text-blue-900 font-medium truncate border border-blue-300 transition-colors"
+                      className="block text-xs p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 font-medium truncate border border-blue-500/50 transition-colors"
                       title={`${load.publicTrackingCode} - ${load.commodityDescription}`}
                     >
                       {formatTime(load.readyTime)} {load.publicTrackingCode}
                     </Link>
                   ))}
                   {dayLoads.length > 3 && (
-                    <div className="text-xs text-gray-600 font-medium px-1.5">
+                    <div className="text-xs text-slate-300 font-medium px-1.5">
                       +{dayLoads.length - 3} more
                     </div>
                   )}
@@ -347,11 +365,11 @@ export default function DriverSchedulerPage() {
                 key={index}
                 className={`min-h-[400px] p-4 rounded-lg border-2 ${
                   isCurrentDay
-                    ? 'bg-gradient-accent border-teal-400 shadow-medical'
+                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 border-teal-400 shadow-medical'
                     : 'bg-white/40 border-teal-200/30'
                 }`}
               >
-                <div className={`mb-4 ${isCurrentDay ? 'text-white' : 'text-gray-900'}`}>
+                <div className={`mb-4 ${isCurrentDay ? 'text-white' : 'text-white'}`}>
                   <div className="text-sm font-semibold">{dayNames[index]}</div>
                   <div className="text-lg font-bold">{day.getDate()}</div>
                   <div className="text-xs opacity-80">
@@ -360,7 +378,7 @@ export default function DriverSchedulerPage() {
                 </div>
                 <div className="space-y-2">
                   {dayLoads.length === 0 ? (
-                    <p className={`text-sm ${isCurrentDay ? 'text-white/80' : 'text-gray-500'}`}>
+                    <p className={`text-sm ${isCurrentDay ? 'text-white/80' : 'text-slate-400'}`}>
                       No loads
                     </p>
                   ) : (
@@ -368,7 +386,7 @@ export default function DriverSchedulerPage() {
                       <Link
                         key={load.id}
                         href={`/driver/loads/${load.id}`}
-                        className="block p-3 rounded-lg bg-white/90 hover:bg-white border-2 border-teal-200/30 shadow-sm hover:shadow-md transition-all"
+                        className="block p-3 rounded-lg bg-white/90 hover:bg-white border border-slate-700/50 shadow-sm hover:shadow-md transition-all"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-mono font-bold text-accent-700 text-sm">
@@ -378,11 +396,11 @@ export default function DriverSchedulerPage() {
                             {getStatusLabel(load.status)}
                           </span>
                         </div>
-                        <p className="text-xs font-medium text-gray-900 mb-1 truncate">
+                        <p className="text-xs font-medium text-white mb-1 truncate">
                           {load.commodityDescription}
                         </p>
                         {load.readyTime && (
-                          <p className="text-xs text-blue-600 font-medium">
+                          <p className="text-xs text-blue-300 font-medium">
                             {formatTime(load.readyTime)}
                           </p>
                         )}
@@ -411,20 +429,20 @@ export default function DriverSchedulerPage() {
       <div className="p-6">
         <div className={`mb-6 p-4 rounded-lg border-2 ${
           isCurrentDay
-            ? 'bg-gradient-accent border-teal-400 shadow-medical'
-            : 'bg-white/40 border-teal-200/30'
+            ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 border-cyan-500 shadow-lg shadow-cyan-500/30'
+            : 'bg-slate-800/40 border-slate-700/50'
         }`}>
-          <div className={`text-2xl font-bold ${isCurrentDay ? 'text-white' : 'text-gray-900'}`}>
+          <div className={`text-2xl font-bold ${isCurrentDay ? 'text-white' : 'text-white'}`}>
             {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
         
         {dayLoads.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">No loads scheduled for this day</p>
+            <p className="text-slate-400 text-lg mb-4">No loads scheduled for this day</p>
             <Link
               href="/driver/dashboard"
-              className="inline-block px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
             >
               View Load Board
             </Link>
@@ -435,7 +453,7 @@ export default function DriverSchedulerPage() {
               <Link
                 key={load.id}
                 href={`/driver/loads/${load.id}`}
-                className="block glass-primary rounded-xl p-5 border-2 border-teal-200/30 shadow-medical hover:shadow-lg transition-all"
+                className="block glass-primary rounded-xl p-5 border border-slate-700/50 shadow-medical hover:shadow-lg transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -450,8 +468,8 @@ export default function DriverSchedulerPage() {
                         {load.temperatureRequirement}
                       </span>
                     </div>
-                    <p className="text-gray-900 font-semibold mb-1">{load.commodityDescription}</p>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-white font-semibold mb-1">{load.commodityDescription}</p>
+                    <p className="text-sm text-slate-300 mb-3">
                       {load.shipper.companyName} • {load.serviceType}
                     </p>
                   </div>
@@ -463,36 +481,36 @@ export default function DriverSchedulerPage() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3 p-3 bg-blue-50/50 rounded-lg border border-blue-200/30">
+                  <div className="flex items-start gap-3 p-3 bg-blue-500/20 rounded-lg border border-blue-500/50">
                     <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-blue-700 mb-1">PICKUP</p>
-                      <p className="text-sm font-medium text-gray-900 truncate">{load.pickupFacility.name}</p>
-                      <p className="text-xs text-gray-600">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                      <p className="text-xs font-semibold text-blue-300 mb-1">PICKUP</p>
+                      <p className="text-sm font-medium text-white truncate">{load.pickupFacility.name}</p>
+                      <p className="text-xs text-slate-300">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
                       {load.readyTime && (
-                        <p className="text-xs text-blue-600 font-medium mt-1">
+                        <p className="text-xs text-blue-300 font-medium mt-1">
                           Ready: {formatTime(load.readyTime)}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 bg-green-50/50 rounded-lg border border-green-200/30">
+                  <div className="flex items-start gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/50">
                     <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-green-700 mb-1">DELIVERY</p>
-                      <p className="text-sm font-medium text-gray-900 truncate">{load.dropoffFacility.name}</p>
-                      <p className="text-xs text-gray-600">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                      <p className="text-xs font-semibold text-green-300 mb-1">DELIVERY</p>
+                      <p className="text-sm font-medium text-white truncate">{load.dropoffFacility.name}</p>
+                      <p className="text-xs text-slate-300">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
                       {load.deliveryDeadline && (
-                        <p className="text-xs text-green-600 font-medium mt-1">
+                        <p className="text-xs text-green-300 font-medium mt-1">
                           Deadline: {formatTime(load.deliveryDeadline)}
                         </p>
                       )}
@@ -512,8 +530,8 @@ export default function DriverSchedulerPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading scheduler...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading scheduler...</p>
           </div>
         </div>
       </div>
@@ -522,21 +540,23 @@ export default function DriverSchedulerPage() {
 
   return (
     <div className="p-8 print:p-4">
-      {/* Title Container - Gold Standard */}
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load Scheduler</h1>
-            <p className="text-gray-600 print:text-sm">Visual timeline of your scheduled loads</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-teal-200/30 mr-4">
+      {/* Header - Sticky */}
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 border-b border-slate-700/50 -mx-8 px-8">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+                Load Scheduler
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">Visual timeline of your scheduled loads</p>
+            </div>
+            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 glass-primary rounded-lg p-2 border border-slate-700/50">
               <button
                 onClick={() => setViewMode('timeline')}
                 className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                   viewMode === 'timeline'
-                    ? 'bg-gradient-accent text-white shadow-medical'
-                    : 'text-gray-700 hover:bg-teal-50/60'
+                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                    : 'text-slate-300 hover:bg-slate-700/50'
                 }`}
               >
                 Timeline
@@ -545,8 +565,8 @@ export default function DriverSchedulerPage() {
                 onClick={() => setViewMode('calendar')}
                 className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                   viewMode === 'calendar'
-                    ? 'bg-gradient-accent text-white shadow-medical'
-                    : 'text-gray-700 hover:bg-teal-50/60'
+                    ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                    : 'text-slate-300 hover:bg-slate-700/50'
                 }`}
               >
                 Calendar
@@ -556,29 +576,30 @@ export default function DriverSchedulerPage() {
         </div>
       </div>
 
+      <div className="p-8 print:p-4">
       {/* Stats - Separate, scrolls with page */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-gray-900">{loads.length}</div>
-          <div className="text-xs text-gray-600">Total Scheduled</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{loads.length}</div>
+          <div className="text-xs text-slate-400">Total Scheduled</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
             {loads.filter(l => l.status === 'SCHEDULED').length}
           </div>
-          <div className="text-xs text-gray-600">Scheduled</div>
+          <div className="text-xs text-slate-400">Scheduled</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-orange-600">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
             {loads.filter(l => ['PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
           </div>
-          <div className="text-xs text-gray-600">In Progress</div>
+          <div className="text-xs text-slate-400">In Progress</div>
         </div>
-        <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl font-bold text-teal-600">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
             ${loads.reduce((sum, l) => sum + (l.quoteAmount || 0), 0).toFixed(0)}
           </div>
-          <div className="text-xs text-gray-600">Total Value</div>
+          <div className="text-xs text-slate-400">Total Value</div>
         </div>
       </div>
 
@@ -586,28 +607,28 @@ export default function DriverSchedulerPage() {
       {viewMode === 'timeline' && (
         <div className="space-y-8">
           {groupedLoads.length === 0 ? (
-            <div className="glass-accent rounded-2xl p-12 text-center border-2 border-teal-200/30 shadow-medical">
-              <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="glass-primary rounded-2xl p-12 text-center border border-slate-700/50 shadow-lg">
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/30">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No Scheduled Loads</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-xl font-bold text-white mb-2">No Scheduled Loads</h3>
+              <p className="text-slate-300 mb-6">
                 You don't have any scheduled loads yet. Once you accept a load and submit a finalized rate, it will appear here.
               </p>
               <Link
                 href="/driver/dashboard"
-                className="inline-block px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg shadow-cyan-500/30"
               >
                 View Load Board
               </Link>
             </div>
           ) : (
             groupedLoads.map((dayGroup) => (
-              <div key={dayGroup.date.toISOString()} className="glass-accent rounded-2xl border-2 border-teal-200/30 shadow-medical overflow-hidden">
+              <div key={dayGroup.date.toISOString()} className="glass-primary rounded-2xl border border-slate-700/50 shadow-medical overflow-hidden">
                 {/* Day Header */}
-                <div className="bg-gradient-accent px-6 py-4 border-b-2 border-teal-200/30">
+                <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-6 py-4 border-b-2 border-slate-700/50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
@@ -632,7 +653,7 @@ export default function DriverSchedulerPage() {
                 <div className="p-6">
                   <div className="relative">
                     {/* Timeline Line */}
-                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-teal-200/50"></div>
+                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-700/50"></div>
 
                     {/* Load Items */}
                     <div className="space-y-6">
@@ -644,16 +665,16 @@ export default function DriverSchedulerPage() {
                             load.status === 'EN_ROUTE' ? 'bg-purple-500' :
                             load.status === 'PICKED_UP' ? 'bg-yellow-500' :
                             load.status === 'IN_TRANSIT' ? 'bg-orange-500' :
-                            'bg-gray-500'
+                            'bg-slate-500'
                           }`}></div>
 
                           {/* Load Card */}
                           <Link href={`/driver/loads/${load.id}`}>
-                            <div className="glass-primary rounded-xl p-5 border-2 border-teal-200/30 shadow-medical hover:shadow-lg transition-all cursor-pointer group">
+                            <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-medical hover:shadow-lg transition-all cursor-pointer group">
                               <div className="flex items-start justify-between mb-4">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
-                                    <span className="font-mono font-bold text-accent-700 text-lg">
+                                    <span className="font-mono font-bold text-cyan-400 text-lg">
                                       {load.publicTrackingCode}
                                     </span>
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
@@ -663,14 +684,14 @@ export default function DriverSchedulerPage() {
                                       {load.temperatureRequirement}
                                     </span>
                                   </div>
-                                  <p className="text-gray-900 font-semibold mb-1">{load.commodityDescription}</p>
-                                  <p className="text-sm text-gray-600 mb-3">
+                                  <p className="text-white font-semibold mb-1">{load.commodityDescription}</p>
+                                  <p className="text-sm text-slate-300 mb-3">
                                     {load.shipper.companyName} • {load.serviceType}
                                   </p>
                                 </div>
                                 {load.quoteAmount && (
                                   <div className="text-right ml-4">
-                                    <p className="text-2xl font-bold text-accent-700">${load.quoteAmount.toFixed(2)}</p>
+                                    <p className="text-2xl font-bold text-white">${load.quoteAmount.toFixed(2)}</p>
                                   </div>
                                 )}
                               </div>
@@ -678,18 +699,18 @@ export default function DriverSchedulerPage() {
                               {/* Route Info */}
                               <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 {/* Pickup */}
-                                <div className="flex items-start gap-3 p-3 bg-blue-50/50 rounded-lg border border-blue-200/30">
+                                <div className="flex items-start gap-3 p-3 bg-blue-500/20 rounded-lg border border-blue-500/50">
                                   <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-blue-700 mb-1">PICKUP</p>
-                                    <p className="text-sm font-medium text-gray-900 truncate">{load.pickupFacility.name}</p>
-                                    <p className="text-xs text-gray-600">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                                    <p className="text-xs font-semibold text-blue-300 mb-1">PICKUP</p>
+                                    <p className="text-sm font-medium text-white truncate">{load.pickupFacility.name}</p>
+                                    <p className="text-xs text-slate-300">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
                                     {load.readyTime && (
-                                      <p className="text-xs text-blue-600 font-medium mt-1">
+                                      <p className="text-xs text-blue-300 font-medium mt-1">
                                         Ready: {formatTime(load.readyTime)}
                                       </p>
                                     )}
@@ -697,18 +718,18 @@ export default function DriverSchedulerPage() {
                                 </div>
 
                                 {/* Delivery */}
-                                <div className="flex items-start gap-3 p-3 bg-green-50/50 rounded-lg border border-green-200/30">
+                                <div className="flex items-start gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/50">
                                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-green-700 mb-1">DELIVERY</p>
-                                    <p className="text-sm font-medium text-gray-900 truncate">{load.dropoffFacility.name}</p>
-                                    <p className="text-xs text-gray-600">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                                    <p className="text-xs font-semibold text-green-300 mb-1">DELIVERY</p>
+                                    <p className="text-sm font-medium text-white truncate">{load.dropoffFacility.name}</p>
+                                    <p className="text-xs text-slate-300">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
                                     {load.deliveryDeadline && (
-                                      <p className="text-xs text-green-600 font-medium mt-1">
+                                      <p className="text-xs text-green-300 font-medium mt-1">
                                         Deadline: {formatTime(load.deliveryDeadline)}
                                       </p>
                                     )}
@@ -717,10 +738,10 @@ export default function DriverSchedulerPage() {
                               </div>
 
                               {/* Time Summary */}
-                              <div className="flex items-center gap-4 text-xs text-gray-600 pt-3 border-t border-teal-200/30">
+                              <div className="flex items-center gap-4 text-xs text-slate-300 pt-3 border-t border-slate-700/50">
                                 {load.readyTime && (
                                   <div className="flex items-center gap-1">
-                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span>Ready: {formatDateTime(load.readyTime)}</span>
@@ -728,7 +749,7 @@ export default function DriverSchedulerPage() {
                                 )}
                                 {load.deliveryDeadline && (
                                   <div className="flex items-center gap-1">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <span>Deadline: {formatDateTime(load.deliveryDeadline)}</span>
@@ -752,7 +773,7 @@ export default function DriverSchedulerPage() {
       {viewMode === 'calendar' && (
         <div className="space-y-6">
           {/* Calendar Controls */}
-          <div className="glass-accent rounded-xl p-4 border-2 border-teal-200/30 shadow-medical">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-medical">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <button
@@ -767,15 +788,15 @@ export default function DriverSchedulerPage() {
                     }
                     setSelectedDate(newDate)
                   }}
-                  className="px-3 py-2 rounded-lg bg-white/60 hover:bg-white/80 border border-teal-200/30 transition-colors"
+                  className="px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 transition-colors"
                 >
-                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
                 <button
                   onClick={() => setSelectedDate(new Date())}
-                  className="px-4 py-2 rounded-lg bg-gradient-accent text-white font-semibold hover:shadow-lg transition-all shadow-lg"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-lg transition-all shadow-lg"
                 >
                   Today
                 </button>
@@ -791,15 +812,15 @@ export default function DriverSchedulerPage() {
                     }
                     setSelectedDate(newDate)
                   }}
-                  className="px-3 py-2 rounded-lg bg-white/60 hover:bg-white/80 border border-teal-200/30 transition-colors"
+                  className="px-3 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 border border-slate-600/50 transition-colors"
                 >
-                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900 min-w-[200px] text-center">
+                <h2 className="text-xl font-bold text-white min-w-[200px] text-center">
                   {calendarView === 'month'
                     ? selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                     : calendarView === 'week'
@@ -807,13 +828,13 @@ export default function DriverSchedulerPage() {
                     : selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </h2>
               </div>
-              <div className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-teal-200/30">
+              <div className="flex items-center gap-2 bg-slate-800/50 backdrop-blur-sm rounded-lg p-1 border border-slate-700/50">
                 <button
                   onClick={() => setCalendarView('month')}
                   className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
                     calendarView === 'month'
-                      ? 'bg-gradient-accent text-white shadow-medical'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-medical'
+                      : 'text-slate-300 hover:bg-slate-700/50'
                   }`}
                 >
                   Month
@@ -822,8 +843,8 @@ export default function DriverSchedulerPage() {
                   onClick={() => setCalendarView('week')}
                   className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
                     calendarView === 'week'
-                      ? 'bg-gradient-accent text-white shadow-medical'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-medical'
+                      : 'text-slate-300 hover:bg-slate-700/50'
                   }`}
                 >
                   Week
@@ -832,8 +853,8 @@ export default function DriverSchedulerPage() {
                   onClick={() => setCalendarView('day')}
                   className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
                     calendarView === 'day'
-                      ? 'bg-gradient-accent text-white shadow-medical'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-medical'
+                      : 'text-slate-300 hover:bg-slate-700/50'
                   }`}
                 >
                   Day
@@ -843,14 +864,14 @@ export default function DriverSchedulerPage() {
           </div>
 
           {/* Calendar Display */}
-          <div className="glass-accent rounded-2xl border-2 border-teal-200/30 shadow-medical overflow-hidden">
+          <div className="glass-primary rounded-2xl border border-slate-700/50 shadow-medical overflow-hidden">
             {calendarView === 'month' && renderMonthView()}
             {calendarView === 'week' && renderWeekView()}
             {calendarView === 'day' && renderDayView()}
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
-

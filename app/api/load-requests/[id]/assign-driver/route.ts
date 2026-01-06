@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, ConflictError } from '@/lib/errors'
 import { assignDriverSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { validateDriverEligibility } from '@/lib/edge-case-validations'
 
 /**
  * POST /api/load-requests/[id]/assign-driver
@@ -41,28 +42,87 @@ export async function POST(
 
     const { driverId } = validation.data
 
-    // Get current load status
+    // Get current load request with requirements for eligibility validation
     const currentLoad = await prisma.loadRequest.findUnique({
       where: { id },
-      select: { status: true }
+      select: {
+        status: true,
+        temperatureRequirement: true,
+        specimenCategory: true,
+        readyTime: true,
+        deliveryDeadline: true,
+      }
     })
 
     if (!currentLoad) {
       throw new NotFoundError('Load request')
     }
 
-    // Determine new status based on current status
-    const shouldSchedule = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED'].includes(currentLoad.status)
+    // EDGE CASE VALIDATION: Section 3.1 - Driver Eligibility
+    // Prevent assignment of ineligible drivers (PENDING_APPROVAL, OFF_DUTY, INACTIVE, missing certs, etc.)
+    try {
+      await validateDriverEligibility(driverId, {
+        temperatureRequirement: currentLoad.temperatureRequirement || undefined,
+        specimenCategory: currentLoad.specimenCategory || undefined,
+        readyTime: currentLoad.readyTime || undefined,
+        deliveryDeadline: currentLoad.deliveryDeadline || undefined,
+      })
+    } catch (eligibilityError) {
+      if (eligibilityError instanceof ValidationError || eligibilityError instanceof ConflictError) {
+        return NextResponse.json(
+          {
+            error: eligibilityError.name,
+            message: eligibilityError.message,
+            code: eligibilityError.code,
+            timestamp: new Date().toISOString(),
+          },
+          { status: eligibilityError.statusCode }
+        )
+      }
+      throw eligibilityError
+    }
 
-    // Update load with driver assignment
-    const updatedLoad = await prisma.loadRequest.update({
-      where: { id },
+    // Status gating - prevent assignment in mid-transit or terminal states
+    const acceptableStatuses = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED']
+    if (!acceptableStatuses.includes(currentLoad.status)) {
+      throw new ValidationError(`Cannot assign driver when load status is ${currentLoad.status}`)
+    }
+
+    // Determine if we should auto-schedule (only for early statuses)
+    const shouldSchedule = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED'].includes(currentLoad.status)
+
+    // ATOMIC UPDATE: Only assign if driverId is null (or already set to same driver for idempotency) AND status acceptable
+    const atomicResult = await prisma.loadRequest.updateMany({
+      where: {
+        id,
+        OR: [{ driverId: null }, { driverId }],
+        status: { in: acceptableStatuses },
+      },
       data: {
         driverId,
         assignedAt: new Date(),
-        // Auto-update status if still NEW or QUOTED
         ...(shouldSchedule ? { status: 'SCHEDULED' } : {}),
       },
+    })
+
+    if (atomicResult.count === 0) {
+      // Re-check current state to provide meaningful error
+      const latest = await prisma.loadRequest.findUnique({
+        where: { id },
+        select: { driverId: true, status: true },
+      })
+      if (!latest) {
+        throw new NotFoundError('Load request')
+      }
+      if (latest.driverId && latest.driverId !== driverId) {
+        throw new ConflictError('Load already assigned to another driver')
+      }
+      throw new ConflictError('Load could not be assigned due to concurrent update')
+    }
+
+    // Fetch updated entity with relations for response and logging
+    const updatedLoad = await prisma.loadRequest.findUnique({
+      where: { id },
       include: {
         driver: {
           select: {
@@ -84,8 +144,8 @@ export async function POST(
       data: {
         loadRequestId: id,
         code: 'SHIPPER_CONFIRMED',
-        label: `Assigned to driver: ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
-        description: `Load scheduled with driver ${updatedLoad.driver?.firstName} ${updatedLoad.driver?.lastName}`,
+        label: `Assigned to driver: ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`,
+        description: `Load scheduled with driver ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`,
         locationText: 'MED DROP Dispatch',
         actorType: 'ADMIN',
       },
@@ -95,13 +155,13 @@ export async function POST(
       loadId: id,
       driverId,
       previousStatus: currentLoad.status,
-      newStatus: updatedLoad.status,
-      trackingCode: updatedLoad.publicTrackingCode,
+      newStatus: updatedLoad?.status,
+      trackingCode: updatedLoad?.publicTrackingCode,
     })
 
     return NextResponse.json({
       success: true,
-      loadRequest: updatedLoad,
+      loadRequest: updatedLoad!,
     })
   })(request)
 }

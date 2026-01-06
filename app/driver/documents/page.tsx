@@ -39,16 +39,34 @@ export default function DriverDocumentsPage() {
   const [sortBy, setSortBy] = useState<SortField>('newest')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchDocuments(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    fetchDocuments(parsedDriver.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchDocuments = async (driverId: string) => {
     try {
@@ -149,38 +167,44 @@ export default function DriverDocumentsPage() {
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Documents</h1>
-            <p className="text-gray-600 print:text-sm">View all documents from your assigned loads</p>
+    <div>
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 border-b border-slate-700/50">
+        <div className="px-8">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+                Documents
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">View all documents from your assigned loads</p>
+            </div>
           </div>
         </div>
       </div>
 
+      <div className="p-8 print:p-4">
+
       {/* Filters */}
-      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+      <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by title, tracking code, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter by Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Type</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Type</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Types</option>
               <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
@@ -192,11 +216,11 @@ export default function DriverDocumentsPage() {
 
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none bg-teal-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -217,36 +241,36 @@ export default function DriverDocumentsPage() {
           title={searchQuery || filter !== 'all' ? 'No documents match your filters' : 'No documents found'}
           description={searchQuery || filter !== 'all' ? 'Try adjusting your search or filters' : 'Documents uploaded for your loads will appear here'}
           icon={
-            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           }
         />
       ) : (
         <div className="space-y-4">
-          <div className="text-sm text-gray-600 mb-2">
+          <div className="text-sm text-slate-300 mb-2">
             Showing {filteredAndSortedDocuments.length} of {documents.length} documents
           </div>
           {filteredAndSortedDocuments.map((doc) => (
-            <div key={doc.id} className="glass-accent rounded-xl p-6 border-2 border-teal-200/30 shadow-medical">
+            <div key={doc.id} className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg">{doc.title}</h3>
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-accent-100 text-accent-700 border border-accent-200">
+                    <h3 className="font-bold text-white text-lg">{doc.title}</h3>
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                       {getDocumentTypeLabel(doc.type)}
                     </span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-600">
-                      Load: <Link href={`/driver/loads/${doc.loadRequest.id}`} className="font-mono text-accent-700 hover:text-accent-800 underline">{doc.loadTrackingCode}</Link>
+                    <p className="text-sm text-slate-300">
+                      Load: <Link href={`/driver/loads/${doc.loadRequest.id}`} className="font-mono text-cyan-400 hover:text-cyan-300 underline">{doc.loadTrackingCode}</Link>
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-400">
                       Uploaded: {formatDate(doc.createdAt)}
                       {doc.uploadedBy && ` by ${doc.uploadedBy}`}
                     </p>
                     {doc.fileSize && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-400">
                         Size: {(doc.fileSize / 1024).toFixed(2)} KB
                       </p>
                     )}
@@ -276,6 +300,7 @@ export default function DriverDocumentsPage() {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -160,37 +160,55 @@ export default function DriverProfilePage() {
   }
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const driverData = data.user
+        setDriver(driverData)
+        setFormData({
+          firstName: driverData.firstName || '',
+          lastName: driverData.lastName || '',
+          email: driverData.email || '',
+          phone: driverData.phone || '',
+          licenseNumber: driverData.licenseNumber || '',
+          licenseExpiry: driverData.licenseExpiry ? new Date(driverData.licenseExpiry).toISOString().split('T')[0] : '',
+          emergencyContact: driverData.emergencyContact || '',
+          emergencyPhone: driverData.emergencyPhone || '',
+          profilePicture: driverData.profilePicture || '',
+          bio: driverData.bio || '',
+          specialties: driverData.specialties || '',
+          yearsOfExperience: driverData.yearsOfExperience?.toString() || '',
+          languages: driverData.languages || '',
+          serviceAreas: driverData.serviceAreas || '',
+        })
+        setIsLoading(false)
+        if (driverData?.id) {
+          fetchDocuments(driverData.id)
+          fetchRatings(driverData.id)
+        }
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
-    setFormData({
-      firstName: parsedDriver.firstName || '',
-      lastName: parsedDriver.lastName || '',
-      email: parsedDriver.email || '',
-      phone: parsedDriver.phone || '',
-      licenseNumber: parsedDriver.licenseNumber || '',
-      licenseExpiry: parsedDriver.licenseExpiry ? new Date(parsedDriver.licenseExpiry).toISOString().split('T')[0] : '',
-      emergencyContact: parsedDriver.emergencyContact || '',
-      emergencyPhone: parsedDriver.emergencyPhone || '',
-      profilePicture: parsedDriver.profilePicture || '',
-      bio: parsedDriver.bio || '',
-      specialties: parsedDriver.specialties || '',
-      yearsOfExperience: parsedDriver.yearsOfExperience?.toString() || '',
-      languages: parsedDriver.languages || '',
-      serviceAreas: parsedDriver.serviceAreas || '',
-    })
-    setIsLoading(false)
-    if (parsedDriver?.id) {
-      fetchDocuments(parsedDriver.id)
-      fetchRatings(parsedDriver.id)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchRatings = async (driverId: string) => {
     try {
@@ -237,7 +255,7 @@ export default function DriverProfilePage() {
 
       const data = await response.json()
       setDriver(data.driver)
-      localStorage.setItem('driver', JSON.stringify(data.driver))
+      // Don't update localStorage - auth is handled via httpOnly cookies
       setIsEditing(false)
       showToast.success('Profile updated successfully!')
     } catch (error) {
@@ -286,25 +304,28 @@ export default function DriverProfilePage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading profile...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+    <div className="p-6 md:p-8 print:p-4">
+      {/* Header Section - Gold Standard - Sticky */}
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">My Profile</h1>
-            <p className="text-gray-600 print:text-sm">Manage your personal information and settings</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+              My Profile
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your personal information and settings</p>
           </div>
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical flex items-center gap-2 mr-6"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -318,58 +339,58 @@ export default function DriverProfilePage() {
       {isEditing ? (
         <form onSubmit={handleProfileUpdate} className="space-y-6">
           {/* Profile Picture Section */}
-          <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Profile Picture</h2>
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+            <h2 className="text-xl font-bold text-white mb-6">Profile Picture</h2>
             <ProfilePictureUpload
               currentImage={formData.profilePicture}
               onImageChange={(base64) => setFormData({ ...formData, profilePicture: base64 })}
               size={200}
             />
-            <p className="text-sm text-gray-600 mt-4">
+            <p className="text-sm text-slate-300 mt-4">
               Your profile picture helps shippers recognize you. It will be visible to shippers when you're assigned to their loads.
             </p>
           </div>
 
-          <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+            <h2 className="text-xl font-bold text-white mb-6">Personal Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">First Name *</label>
                 <input
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Last Name *</label>
                 <input
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   disabled
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 bg-slate-800/30 text-slate-400 cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone *</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Phone *</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   required
                 />
               </div>
@@ -413,46 +434,46 @@ export default function DriverProfilePage() {
           </div>
 
           {/* Personalization Section */}
-          <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Profile Personalization</h2>
-            <p className="text-sm text-gray-600 mb-6">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+            <h2 className="text-xl font-bold text-white mb-6">Profile Personalization</h2>
+            <p className="text-sm text-slate-300 mb-6">
               Help shippers get to know you better. This information will be visible to shippers when you're assigned to their loads.
             </p>
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Bio / About Me</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Bio / About Me</label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   rows={4}
                   placeholder="Tell shippers about yourself, your experience, and what makes you a great medical courier..."
                   maxLength={500}
                 />
-                <p className="text-xs text-gray-500 mt-1">{formData.bio.length}/500 characters</p>
+                <p className="text-xs text-slate-500 mt-1">{formData.bio.length}/500 characters</p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Specialties</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Specialties</label>
                   <input
                     type="text"
                     value={formData.specialties}
                     onChange={(e) => setFormData({ ...formData, specialties: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., STAT, Temperature-Controlled, Long Distance"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Comma-separated list of your specialties</p>
+                  <p className="text-xs text-slate-500 mt-1">Comma-separated list of your specialties</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Years of Experience</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Years of Experience</label>
                   <input
                     type="number"
                     value={formData.yearsOfExperience}
                     onChange={(e) => setFormData({ ...formData, yearsOfExperience: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., 5"
                     min="0"
                     max="50"
@@ -460,27 +481,27 @@ export default function DriverProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Languages Spoken</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Languages Spoken</label>
                   <input
                     type="text"
                     value={formData.languages}
                     onChange={(e) => setFormData({ ...formData, languages: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., English, Spanish, French"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Comma-separated list of languages</p>
+                  <p className="text-xs text-slate-500 mt-1">Comma-separated list of languages</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Service Areas</label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Service Areas</label>
                   <input
                     type="text"
                     value={formData.serviceAreas}
                     onChange={(e) => setFormData({ ...formData, serviceAreas: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., Dallas Metro, Houston, Austin"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Regions or areas you typically serve</p>
+                  <p className="text-xs text-slate-500 mt-1">Regions or areas you typically serve</p>
                 </div>
               </div>
             </div>
@@ -490,7 +511,7 @@ export default function DriverProfilePage() {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
             >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -516,7 +537,7 @@ export default function DriverProfilePage() {
                   serviceAreas: driver.serviceAreas || '',
                 })
               }}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
             >
               Cancel
             </button>

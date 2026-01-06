@@ -16,11 +16,11 @@ export default function ShipperTrackingPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Track Shipment</h1>
-            <p className="text-gray-600 print:text-sm">Enter your tracking code to view delivery status and tracking events</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Track Shipment</h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">Enter your tracking code to view delivery status and tracking events</p>
           </div>
         </div>
       </div>

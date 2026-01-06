@@ -210,3 +210,4 @@ Shipper → Request Load → Dedicated Dispatcher → Dispatcher Assigns Driver 
 
 
 
+

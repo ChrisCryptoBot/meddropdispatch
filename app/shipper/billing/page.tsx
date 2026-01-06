@@ -23,18 +23,35 @@ export default function ShipperBillingPage() {
   })
 
   useEffect(() => {
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
+        // Load shipper details including billing info
+        fetchShipperDetails(data.user.id)
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(shipperData)
-    setShipper(parsed)
     
-    // Load shipper details including billing info
-    fetchShipperDetails(parsed.id)
-  }, [router])
+    fetchShipperData()
+  }, [])
 
   const fetchShipperDetails = async (shipperId: string) => {
     try {
@@ -103,11 +120,11 @@ export default function ShipperBillingPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="sticky top-[73px] z-[50] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Billing & Payments</h1>
-            <p className="text-gray-600 print:text-sm">Manage your payment terms and billing information</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Billing & Payments</h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your payment terms and billing information</p>
           </div>
         </div>
       </div>
@@ -270,3 +287,4 @@ export default function ShipperBillingPage() {
     </div>
   )
 }
+

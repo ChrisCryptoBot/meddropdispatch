@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createErrorResponse, withErrorHandling, NotFoundError, AuthorizationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, AuthorizationError, ValidationError, ConflictError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 import { getCoordinates } from '@/lib/geocoding'
+import { requireAdmin, verifyDriverAssignedToLoad } from '@/lib/authorization'
+import { calculateDistanceFromCoordinates } from '@/lib/distance-calculator'
 
 const enableGPSTrackingSchema = z.object({
   enabled: z.boolean(),
@@ -49,14 +51,14 @@ export async function PATCH(
     }
 
     const { enabled } = validation.data
-
     // Get load request
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },
-      include: {
-        driver: {
-          select: { id: true },
-        },
+      select: {
+        status: true,
+        driverId: true,
+        gpsTrackingEnabled: true,
+        gpsTrackingStartedAt: true,
       },
     })
 
@@ -64,8 +66,7 @@ export async function PATCH(
       throw new NotFoundError('Load request')
     }
 
-    // Only the assigned driver can enable/disable GPS tracking
-    // For now, we'll allow any authenticated user (can add driver check later)
+    // AuthZ: Only assigned driver or admin can enable/disable tracking
     if (!loadRequest.driverId) {
       return NextResponse.json(
         {
@@ -74,6 +75,23 @@ export async function PATCH(
         },
         { status: 400 }
       )
+    }
+
+    try {
+      // Allow admins OR the assigned driver
+      await verifyDriverAssignedToLoad(request as NextRequest, id)
+    } catch (e) {
+      try {
+        await requireAdmin(request as NextRequest)
+      } catch {
+        throw new AuthorizationError('Only the assigned driver or an admin can change GPS tracking state')
+      }
+    }
+
+    // Do not allow enabling/disabling after terminal states
+    const terminalOrLockedStatuses = ['DELIVERED', 'DENIED', 'CANCELLED']
+    if (terminalOrLockedStatuses.includes((loadRequest as any).status)) {
+      throw new ValidationError('GPS tracking cannot be modified for loads in a terminal state')
     }
 
     // Update GPS tracking status
@@ -130,13 +148,16 @@ export async function POST(
 
     const { latitude, longitude, accuracy, heading, speed, altitude } = validation.data
 
+    // AuthZ: Only the assigned driver can submit GPS points
+    await verifyDriverAssignedToLoad(request as NextRequest, id)
+
     // Get load request
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },
-      include: {
-        driver: {
-          select: { id: true },
-        },
+      select: {
+        status: true,
+        gpsTrackingEnabled: true,
+        driverId: true,
       },
     })
 
@@ -166,6 +187,56 @@ export async function POST(
         },
         { status: 400 }
       )
+    }
+
+    // Do not accept GPS updates for terminal states
+    const terminalStatuses = ['DELIVERED', 'DENIED', 'CANCELLED']
+    if (terminalStatuses.includes((loadRequest as any).status)) {
+      throw new ValidationError('Cannot submit GPS updates for loads in a terminal state')
+    }
+
+    // Anti-spoof: Compare with last point for implausible jumps
+    const lastPoint = await prisma.gPSTrackingPoint.findFirst({
+      where: { loadRequestId: id },
+      orderBy: { timestamp: 'desc' },
+      select: { latitude: true, longitude: true, timestamp: true },
+    })
+
+    if (lastPoint) {
+      try {
+        const distanceMiles = calculateDistanceFromCoordinates(
+          lastPoint.latitude,
+          lastPoint.longitude,
+          latitude,
+          longitude
+        )
+        const now = new Date()
+        const dtSeconds = Math.max(1, (now.getTime() - new Date(lastPoint.timestamp).getTime()) / 1000)
+        const speedMph = (distanceMiles / (dtSeconds / 3600))
+
+        // Reject impossible movement (> 120 mph sustained) or huge jumps in < 2 seconds
+        if (speedMph > 120 || (dtSeconds < 2 && distanceMiles > 0.1)) {
+          console.warn('[GPS Tracking API] Anti-spoof triggered. Distance:', distanceMiles, 'mi, dt:', dtSeconds, 's, speed:', speedMph, 'mph')
+          throw new ConflictError('Implausible GPS movement detected')
+        }
+
+        // Ignore micro-jitter (< 15 meters ~ 0.0093 miles) by early return success with no new point
+        if (distanceMiles < 0.0093) {
+          return NextResponse.json({
+            success: true,
+            ignored: true,
+            reason: 'Jitter below threshold',
+          })
+        }
+      } catch (antiSpoofError) {
+        if (antiSpoofError instanceof ConflictError) {
+          return NextResponse.json(
+            { error: 'InvalidMovement', message: antiSpoofError.message },
+            { status: 409 }
+          )
+        }
+        // Fallthrough on unexpected errors
+      }
     }
 
     // Create GPS tracking point

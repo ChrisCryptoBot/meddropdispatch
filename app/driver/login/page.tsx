@@ -57,9 +57,8 @@ export default function DriverLoginPage() {
         return
       }
 
-      // Store driver info in localStorage (in production, use httpOnly cookies/sessions)
-      localStorage.setItem('driver', JSON.stringify(data.driver))
-
+      // Authentication cookie is set by backend (httpOnly)
+      // Redirect to dashboard (auth will be verified via cookie in layout)
       router.push('/driver/dashboard')
     } catch (err) {
       console.error('Login error:', err)
@@ -103,24 +102,34 @@ export default function DriverLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-10 pointer-events-none"></div>
+
+      <div className="relative w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold text-gradient mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
               MED DROP
             </h1>
+            <p className="text-xs font-medium text-slate-400">Medical Courier Services</p>
           </Link>
-          <p className="text-medical">Driver Portal Login</p>
+          <p className="text-slate-300 mt-2">Driver Portal Login</p>
         </div>
 
         {/* Login Card */}
-        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
+        <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address
               </label>
               <input
@@ -128,7 +137,7 @@ export default function DriverLoginPage() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                 placeholder="your@email.com"
                 required
                 autoComplete="email"
@@ -138,13 +147,13 @@ export default function DriverLoginPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
                   Password
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-sm text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
                 >
                   Forgot Password?
                 </button>
@@ -154,7 +163,7 @@ export default function DriverLoginPage() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
@@ -163,30 +172,72 @@ export default function DriverLoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-urgent-50 border-2 border-urgent-200 text-urgent-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-900/30 border-2 border-red-500/50 text-red-300 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
+
+            {/* Demo Credentials */}
+            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs font-semibold text-blue-300">Demo Account</span>
+              </div>
+              <div className="text-xs text-slate-300 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Email:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEmail('driver@meddrop.com')}
+                    className="font-mono text-cyan-400 hover:text-cyan-300 hover:underline transition-colors"
+                  >
+                    driver@meddrop.com
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Password:</span>
+                  <button
+                    type="button"
+                    onClick={() => setPassword('driver123')}
+                    className="font-mono text-cyan-400 hover:text-cyan-300 hover:underline transition-colors"
+                  >
+                    driver123
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('driver@meddrop.com')
+                  setPassword('driver123')
+                }}
+                className="w-full mt-2 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Fill Demo Credentials
+              </button>
+            </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full min-h-[44px] bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full min-h-[44px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-medical">
+          <div className="mt-6 text-center text-sm text-slate-400">
             <p>
               Don't have an account?{' '}
-              <Link href="/driver/signup" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/driver/signup" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors">
                 Sign up as Driver
               </Link>
             </p>
-            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
+            <Link href="/" className="text-slate-400 hover:text-slate-300 mt-2 inline-block transition-colors">
               ← Back to Home
             </Link>
           </div>
@@ -194,10 +245,10 @@ export default function DriverLoginPage() {
 
         {/* Forgot Password Modal */}
         {showForgotPassword && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="glass-primary p-8 rounded-2xl max-w-md w-full border-2 border-blue-200/30 shadow-glass">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800/95 backdrop-blur-xl p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Forgot Password</h2>
+                <h2 className="text-2xl font-bold text-white">Forgot Password</h2>
                 <button
                   onClick={() => {
                     setShowForgotPassword(false)
@@ -205,7 +256,7 @@ export default function DriverLoginPage() {
                     setResetMessage(null)
                     setError(null)
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -214,24 +265,24 @@ export default function DriverLoginPage() {
               </div>
 
               {resetMessage ? (
-                <div className="mb-6 p-4 bg-success-50 border-2 border-success-200 rounded-lg">
-                  <p className="text-success-700 text-sm font-medium">{resetMessage}</p>
+                <div className="mb-6 p-4 bg-green-900/30 border-2 border-green-500/50 rounded-lg">
+                  <p className="text-green-300 text-sm font-medium">{resetMessage}</p>
                 </div>
               ) : (
                 <>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-slate-300 mb-6">
                     Enter your email address and we'll send you your username and a temporary password.
                   </p>
 
                   {error && (
-                    <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-lg">
-                      <p className="text-urgent-700 text-sm font-medium">{error}</p>
+                    <div className="mb-6 p-4 bg-red-900/30 border-2 border-red-500/50 rounded-lg">
+                      <p className="text-red-300 text-sm font-medium">{error}</p>
                     </div>
                   )}
 
                   <form onSubmit={handleForgotPassword} className="space-y-6">
                     <div>
-                      <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="forgot-email" className="block text-sm font-medium text-slate-300 mb-2">
                         Email Address
                       </label>
                       <input
@@ -240,7 +291,7 @@ export default function DriverLoginPage() {
                         value={forgotPasswordEmail}
                         onChange={(e) => setForgotPasswordEmail(e.target.value)}
                         required
-                        className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                        className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                         placeholder="your@email.com"
                         autoComplete="email"
                       />
@@ -249,7 +300,7 @@ export default function DriverLoginPage() {
                     <button
                       type="submit"
                       disabled={isSendingReset}
-                      className="w-full min-h-[44px] bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                      className="w-full min-h-[44px] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSendingReset ? 'Sending...' : 'Send Password Reset'}
                     </button>

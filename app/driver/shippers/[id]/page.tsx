@@ -67,6 +67,9 @@ export default function ShipperProfilePage() {
   const [loads, setLoads] = useState<any[]>([])
   const [isLoadingLoads, setIsLoadingLoads] = useState(false)
   const [isMarkingDNU, setIsMarkingDNU] = useState(false)
+  const [showDNUPasswordInput, setShowDNUPasswordInput] = useState(false)
+  const [dnuPassword, setDNUPassword] = useState('')
+  const [dnuPasswordError, setDNUPasswordError] = useState('')
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -88,19 +91,37 @@ export default function ShipperProfilePage() {
   })
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        
+        if (shipperId) {
+          fetchShipper(shipperId)
+        }
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsedDriver = JSON.parse(driverData)
-    setDriver(parsedDriver)
     
-    if (shipperId) {
-      fetchShipper(shipperId)
-    }
-  }, [router, shipperId])
+    fetchDriverData()
+  }, [shipperId])
 
   useEffect(() => {
     if (activeTab === 'loads' && shipperId && !loads.length) {
@@ -219,17 +240,39 @@ export default function ShipperProfilePage() {
   }
 
   const handleDNU = async () => {
-    if (!shipper) return
+    if (!shipper || !driver) return
 
-    const reason = prompt(`Mark ${shipper.companyName} as DNU (Do Not Use)?\n\nThis will:\n- Permanently delete the account\n- Block the email from future signups\n\nEnter reason (optional):`)
-    
-    if (reason === null) return // User cancelled
-
-    if (!confirm(`⚠️ WARNING: This will PERMANENTLY DELETE ${shipper.companyName} and BLOCK ${shipper.email} from signing up again.\n\nThis action cannot be undone. Continue?`)) {
+    if (!dnuPassword) {
+      setDNUPasswordError('Password is required')
       return
     }
 
+    // Verify password first
+    try {
+      const verifyResponse = await fetch('/api/auth/driver/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driver.id,
+          password: dnuPassword,
+        }),
+      })
+
+      if (!verifyResponse.ok) {
+        setDNUPasswordError('Invalid password')
+        return
+      }
+    } catch (error) {
+      setDNUPasswordError('Failed to verify password')
+      return
+    }
+
+    const reason = prompt(`Mark ${shipper.companyName} as DNU (Do Not Use)?\n\nThis will:\n- Deactivate the account\n- Block the email from future signups\n\nAdmins can restore this account later if needed.\n\nEnter reason (optional):`)
+    
+    if (reason === null) return // User cancelled
+
     setIsMarkingDNU(true)
+    setDNUPasswordError('')
     try {
       const response = await fetch(`/api/shippers/${shipperId}/dnu`, {
         method: 'POST',
@@ -237,21 +280,30 @@ export default function ShipperProfilePage() {
         body: JSON.stringify({
           reason: reason || `DNU: ${shipper.companyName}`,
           blockEmail: true,
+          password: dnuPassword,
+          driverId: driver.id,
         }),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to mark shipper as DNU')
+        if (error.message?.includes('password') || error.message?.includes('Password')) {
+          setDNUPasswordError(error.message)
+        } else {
+          throw new Error(error.message || 'Failed to mark shipper as DNU')
+        }
+        return
       }
 
-      showToast.success('Shipper marked as DNU and deleted. Email has been blocked.')
+      showToast.success('Shipper marked as DNU. Email has been blocked. Admins can restore this account later if needed.')
       router.push('/driver/shippers')
     } catch (error) {
       console.error('Error marking shipper as DNU:', error)
       showApiError(error, 'Failed to mark shipper as DNU')
     } finally {
       setIsMarkingDNU(false)
+      setDNUPassword('')
+      setShowDNUPasswordInput(false)
     }
   }
 
@@ -260,8 +312,8 @@ export default function ShipperProfilePage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading...</p>
           </div>
         </div>
       </div>
@@ -273,8 +325,8 @@ export default function ShipperProfilePage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading shipper profile...</p>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                  <p className="text-slate-300">Loading shipper profile...</p>
           </div>
         </div>
       </div>
@@ -303,24 +355,24 @@ export default function ShipperProfilePage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4 flex-1">
             <Link
               href="/driver/shippers"
-              className="text-accent-700 hover:text-accent-800 transition-colors"
+              className="text-slate-300 hover:text-cyan-400 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">{shipper.companyName}</h1>
-              <p className="text-gray-600 print:text-sm">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">{shipper.companyName}</h1>
+              <p className="text-slate-400 text-sm md:text-base print:text-sm">
                 {shipper.clientType.replace(/_/g, ' ')} • {shipper.isActive ? (
-                  <span className="text-success-600 font-semibold">Active</span>
+                  <span className="text-green-400 font-semibold">Active</span>
                 ) : (
-                  <span className="text-gray-500 font-semibold">Inactive</span>
+                  <span className="text-slate-500 font-semibold">Inactive</span>
                 )}
               </p>
             </div>
@@ -696,8 +748,8 @@ export default function ShipperProfilePage() {
               </div>
               {isLoadingLoads ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading loads...</p>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+                  <p className="text-slate-300">Loading loads...</p>
                 </div>
               ) : loads.length === 0 ? (
                 <div className="text-center py-12">
@@ -802,31 +854,74 @@ export default function ShipperProfilePage() {
               </div>
             </div>
 
-            {/* Danger Zone */}
+            {/* Mark as DNU */}
             <div className="glass-urgent p-6 rounded-2xl border-2 border-urgent-200/30 shadow-urgent">
-              <h2 className="text-2xl font-bold text-urgent-700 mb-4">Danger Zone</h2>
+              <h2 className="text-xl font-bold text-urgent-700 mb-2">Mark as DNU (Do Not Use)</h2>
               <p className="text-gray-700 mb-4">
-                Mark this shipper as DNU (Do Not Use). This will permanently delete the account and block the email from future signups.
+                Mark this shipper as DNU. This will deactivate the account and block the email from future signups. Admins can restore this account later if needed.
               </p>
-              <button
-                onClick={handleDNU}
-                disabled={isMarkingDNU}
-                className="px-6 py-3 bg-gradient-urgent text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isMarkingDNU ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
-                    Mark as DNU (Do Not Use)
-                  </>
-                )}
-              </button>
+              {!showDNUPasswordInput ? (
+                <button
+                  onClick={() => setShowDNUPasswordInput(true)}
+                  className="px-6 py-3 bg-gradient-urgent text-white rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  Mark as DNU
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter your password to confirm
+                    </label>
+                    <input
+                      type="password"
+                      value={dnuPassword}
+                      onChange={(e) => setDNUPassword(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-urgent-500 focus:border-transparent"
+                      placeholder="Your password"
+                      autoComplete="current-password"
+                    />
+                    {dnuPasswordError && (
+                      <p className="mt-1 text-sm text-red-600">{dnuPasswordError}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDNU}
+                      disabled={isMarkingDNU || !dnuPassword}
+                      className="px-6 py-3 bg-gradient-urgent text-white rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isMarkingDNU ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          Confirm Mark as DNU
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDNUPasswordInput(false)
+                        setDNUPassword('')
+                        setDNUPasswordError('')
+                      }}
+                      disabled={isMarkingDNU}
+                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -834,4 +929,5 @@ export default function ShipperProfilePage() {
     </div>
   )
 }
+
 

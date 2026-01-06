@@ -106,7 +106,7 @@ export async function GET(
         )
       } catch (e) {
         // Fix logger call and type safety
-        logger.error('Failed to serialize load request', { error: e instanceof Error ? e.message : 'Unknown error' })
+        logger.error('Failed to serialize load request', e instanceof Error ? e : new Error('Unknown error'))
         serializedLoadRequest = loadRequest // Fallback
       }
 
@@ -436,6 +436,9 @@ export async function PATCH(
       data: cleanUpdatePayload,
     })
 
+    // Get auth session for logging
+    const authSession = await getAuthSession(nextReq)
+
     // Log changes with detailed information
     logger.info('Load request updated', {
       loadId: id,
@@ -443,7 +446,8 @@ export async function PATCH(
       updatedFields: Object.keys(cleanUpdatePayload),
       changes: Object.keys(changes).length > 0 ? changes : undefined,
       status: currentLoad.status,
-      editedBy: 'admin', // TODO: Get from auth session
+      editedBy: authSession?.userType || 'unknown',
+      editedById: authSession?.userId || null,
     })
 
     return NextResponse.json({
@@ -472,6 +476,51 @@ export async function DELETE(
     }
 
     const { id } = await params
+
+    // Get request body for password and actor info
+    const body = await req.json().catch(() => ({}))
+    const { password, driverId } = body
+
+    // Require password verification for deletion
+    if (!password || !driverId) {
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: 'Password and driver ID are required to cancel a load',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Verify driver password
+    const driver = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { id: true, passwordHash: true },
+    })
+
+    if (!driver) {
+      return NextResponse.json(
+        {
+          error: 'NotFoundError',
+          message: 'Driver not found',
+        },
+        { status: 404 }
+      )
+    }
+
+    // Verify password using auth utility
+    const { verifyPassword } = await import('@/lib/auth')
+    const isValidPassword = await verifyPassword(password, driver.passwordHash)
+    
+    if (!isValidPassword) {
+      return NextResponse.json(
+        {
+          error: 'AuthenticationError',
+          message: 'Invalid password',
+        },
+        { status: 401 }
+      )
+    }
 
     // Get the load to check its status
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -512,7 +561,7 @@ export async function DELETE(
         data: {
           status: 'CANCELLED',
           cancelledAt: new Date(),
-          cancelledBy: 'API_USER', // In a real app, get this from auth context
+          cancelledBy: driverId, // Track who cancelled
           cancellationReason: 'SOFT_DELETE_REQUESTED',
         }
       })
@@ -567,3 +616,4 @@ export async function DELETE(
     })
   })(request)
 }
+

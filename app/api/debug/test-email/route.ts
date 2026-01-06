@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         lastName: 'Driver',
         email: testEmail,
       })
-      console.log('✅ [Test Email] Driver welcome email sent successfully')
+      console.log('SUCCESS: [Test Email] Driver welcome email sent successfully')
     } else if (emailType === 'shipper') {
       await sendShipperWelcomeEmail({
         to: testEmail,
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         contactName: 'Test Contact',
         email: testEmail,
       })
-      console.log('✅ [Test Email] Shipper welcome email sent successfully')
+      console.log('SUCCESS: [Test Email] Shipper welcome email sent successfully')
     } else {
       return NextResponse.json(
         { error: 'Invalid email type. Use ?type=driver or ?type=shipper' },
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('❌ [Test Email] Failed:', error)
+    console.error('ERROR: [Test Email] Failed:', error)
     return NextResponse.json(
       {
         error: 'Failed to send test email',

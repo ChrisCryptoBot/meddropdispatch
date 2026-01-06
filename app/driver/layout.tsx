@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import MobileBottomNav from '@/components/features/MobileBottomNav'
 
@@ -25,11 +24,13 @@ export default function DriverLayout({
   const [lastNotificationCount, setLastNotificationCount] = useState(0)
   const [pendingCallbackCount, setPendingCallbackCount] = useState(0)
   const [adminModeEnabled, setAdminModeEnabled] = useState(false)
+  const authCheckedRef = useRef(false)
 
   useEffect(() => {
     // Don't check auth on login or signup pages
     if (pathname === '/driver/login' || pathname === '/driver/signup') {
       setIsChecking(false)
+      authCheckedRef.current = false // Reset when on login/signup pages
       return
     }
 
@@ -38,24 +39,33 @@ export default function DriverLayout({
       return
     }
 
+    // Skip if we've already checked auth and have a driver (unless navigating to a new protected route)
+    if (authCheckedRef.current && driver) {
+      setIsChecking(false)
+      return
+    }
+
     // Check authentication via API (httpOnly cookies)
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/check')
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include' // Ensure cookies are sent
+        })
         const data = await response.json()
 
         if (data.authenticated && data.user && data.user.userType === 'driver') {
-          // Store in localStorage for backward compatibility with existing code
-          localStorage.setItem('driver', JSON.stringify(data.user))
+          // Auth verified via httpOnly cookie - store user data in state
           setDriver(data.user)
-          // Check if admin mode is enabled
+          // Check if admin mode is enabled (stored separately, not auth-related)
           const adminMode = localStorage.getItem('driverAdminMode') === 'true'
           setAdminModeEnabled(adminMode && data.user.isAdmin)
           setIsChecking(false)
+          authCheckedRef.current = true
         } else {
-          // Clear any stale localStorage data
-          localStorage.removeItem('driver')
+          // Not authenticated - clear any stale data
+          setDriver(null)
           setIsChecking(false)
+          authCheckedRef.current = false
           // Only redirect if we're not already on login/signup page
           if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
             router.push('/driver/login')
@@ -63,28 +73,18 @@ export default function DriverLayout({
         }
       } catch (error) {
         console.error('Error checking driver auth:', error)
-        // Fallback to localStorage check for backward compatibility
-        try {
-          const driverData = localStorage.getItem('driver')
-          if (driverData) {
-            setDriver(JSON.parse(driverData))
-          } else {
-            if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
-              router.push('/driver/login')
-            }
-          }
-        } catch (localError) {
-          console.error('Error with localStorage fallback:', localError)
-          if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
-            router.push('/driver/login')
-          }
-        }
+        // Authentication check failed - redirect to login
+        setDriver(null)
         setIsChecking(false)
+        authCheckedRef.current = false
+        if (pathname !== '/driver/login' && pathname !== '/driver/signup') {
+          router.push('/driver/login')
+        }
       }
     }
 
     checkAuth()
-  }, [pathname, router])
+  }, [pathname]) // Only re-run when pathname changes, but use ref to prevent unnecessary re-checks
 
   // Close dropdown when route changes
   useEffect(() => {
@@ -170,27 +170,30 @@ export default function DriverLayout({
 
   // Check if driver is pending approval and redirect
   useEffect(() => {
-    if (!isChecking && driver) {
+    // Only run after auth check is complete and we have driver data
+    if (!isChecking && driver && authCheckedRef.current) {
       if (driver.status === 'PENDING_APPROVAL') {
         // Allow access to pending-approval, profile, and support pages
         const allowedPaths = ['/driver/pending-approval', '/driver/profile', '/driver/support', '/driver/login', '/driver/signup']
         if (!allowedPaths.includes(pathname)) {
           router.push('/driver/pending-approval')
+          return // Prevent further execution
         }
       } else if (driver.status !== 'PENDING_APPROVAL' && pathname === '/driver/pending-approval') {
         // If approved and on pending page, redirect to dashboard
         router.push('/driver/dashboard')
+        return // Prevent further execution
       }
     }
-  }, [driver, pathname, router, isChecking])
+  }, [driver?.status, pathname, isChecking]) // Include isChecking to prevent premature redirects
 
   // Show loading while checking auth
   if (isChecking && pathname !== '/driver/login' && pathname !== '/driver/signup' && pathname !== '/driver/pending-approval') {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       </div>
     )
@@ -341,25 +344,15 @@ export default function DriverLayout({
     : navigation
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
       {/* Header - Same as Homepage */}
-      <header className="glass-accent sticky top-0 z-50 border-b border-teal-200/30 flex-shrink-0">
+      <header className="bg-slate-900/95 backdrop-blur-xl sticky top-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[73px]">
         <div className="w-full py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 pl-4 md:pl-4">
-              <div className="w-16 h-16 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={64}
-                  height={64}
-                  className="object-contain"
-                  priority
-                />
-              </div>
               <div>
-                <h1 className="text-4xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-sm font-semibold text-red-600">Superior One Logistics Software</p>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">MED DROP</h1>
+                <p className="text-sm font-semibold text-slate-400">Medical Courier Services</p>
               </div>
             </div>
             <nav className="flex items-center space-x-3 pr-4">
@@ -368,8 +361,8 @@ export default function DriverLayout({
                   onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
                   className={`p-3 rounded-lg transition-base relative ${
                     notificationDropdownOpen
-                      ? 'bg-gradient-accent text-white shadow-medical'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-800/80'
                   }`}
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -383,17 +376,17 @@ export default function DriverLayout({
                 </button>
                 {notificationDropdownOpen && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setNotificationDropdownOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-80 glass-accent rounded-lg shadow-medical z-20 border-2 border-teal-200/30 overflow-hidden max-h-96 overflow-y-auto">
-                      <div className="p-3 border-b border-teal-200/30 bg-teal-50/60">
-                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    <div className="fixed inset-0 z-[45] md:left-64" onClick={() => setNotificationDropdownOpen(false)}></div>
+                    <div className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-[60] border border-slate-700/50 overflow-hidden max-h-96 overflow-y-auto">
+                      <div className="p-3 border-b border-slate-700/50 bg-slate-800/80">
+                        <h3 className="font-semibold text-white">Notifications</h3>
                       </div>
                       {notifications.length === 0 ? (
                         <div className="p-6 text-center">
-                          <p className="text-gray-600 text-sm">No notifications</p>
+                          <p className="text-slate-400 text-sm">No notifications</p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-teal-200/30">
+                        <div className="divide-y divide-slate-700/50">
                           {notifications.map((notification) => {
                             // Determine the appropriate route based on notification type and metadata
                             const getNotificationRoute = (notif: any): string => {
@@ -491,17 +484,17 @@ export default function DriverLayout({
                                   }, 300)
                                 }
                               }}
-                              className={`block p-3 hover:bg-teal-50/60 transition-colors ${
-                                !notification.isRead ? 'bg-teal-50/40' : ''
+                              className={`block p-3 hover:bg-slate-700/50 transition-colors ${
+                                !notification.isRead ? 'bg-slate-700/30' : ''
                               }`}
                             >
                               <div className="flex items-start gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-medium ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <p className={`text-sm font-medium ${!notification.isRead ? 'text-white' : 'text-slate-300'}`}>
                                     {notification.title}
                                   </p>
-                                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
-                                  <p className="text-xs text-gray-400 mt-1">
+                                  <p className="text-xs text-slate-400 mt-1 line-clamp-2">{notification.message}</p>
+                                  <p className="text-xs text-slate-500 mt-1">
                                     {new Date(notification.createdAt).toLocaleString()}
                                   </p>
                                 </div>
@@ -514,11 +507,11 @@ export default function DriverLayout({
                           })}
                         </div>
                       )}
-                      <div className="p-2 border-t border-teal-200/30 bg-teal-50/60">
+                      <div className="p-2 border-t border-slate-700/50 bg-slate-800/80">
                         <Link
                           href="/driver/notifications"
                           onClick={() => setNotificationDropdownOpen(false)}
-                          className="block text-center text-sm text-accent-700 hover:text-accent-800 font-medium"
+                          className="block text-center text-sm text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
                         >
                           View All Notifications
                         </Link>
@@ -532,8 +525,8 @@ export default function DriverLayout({
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className={`px-5 py-3 rounded-lg text-base font-medium transition-base flex items-center gap-2 ${
                     pathname?.startsWith('/driver/profile') || pathname?.startsWith('/driver/vehicle') || pathname?.startsWith('/driver/settings')
-                      ? 'bg-gradient-accent text-white shadow-medical'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-800/80'
                   }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,15 +539,15 @@ export default function DriverLayout({
                 </button>
                 {profileDropdownOpen && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setProfileDropdownOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-56 glass-accent rounded-lg shadow-medical z-20 border-2 border-teal-200/30 overflow-hidden">
+                    <div className="fixed inset-0 z-[45] md:left-64" onClick={() => setProfileDropdownOpen(false)}></div>
+                    <div className="absolute right-0 mt-2 w-56 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-[60] border border-slate-700/50 overflow-hidden">
                       <Link
                         href="/driver/profile"
                         onClick={() => setProfileDropdownOpen(false)}
                         className={`block px-4 py-3 text-sm transition-base font-medium ${
                           pathname?.startsWith('/driver/profile')
-                            ? 'bg-gradient-accent text-white shadow-medical'
-                            : 'text-accent-700 hover:bg-teal-50/60'
+                            ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                            : 'text-slate-300 hover:bg-slate-700/50'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -567,10 +560,10 @@ export default function DriverLayout({
                       <Link
                         href="/driver/vehicle"
                         onClick={() => setProfileDropdownOpen(false)}
-                        className={`block px-4 py-3 text-sm transition-base font-medium border-t border-teal-200/30 ${
+                        className={`block px-4 py-3 text-sm transition-base font-medium border-t border-slate-700/50 ${
                           pathname?.startsWith('/driver/vehicle')
-                            ? 'bg-gradient-accent text-white shadow-medical'
-                            : 'text-accent-700 hover:bg-teal-50/60'
+                            ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                            : 'text-slate-300 hover:bg-slate-700/50'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -583,10 +576,10 @@ export default function DriverLayout({
                       <Link
                         href="/driver/settings"
                         onClick={() => setProfileDropdownOpen(false)}
-                        className={`block px-4 py-3 text-sm transition-base font-medium border-t border-teal-200/30 ${
+                        className={`block px-4 py-3 text-sm transition-base font-medium border-t border-slate-700/50 ${
                           pathname?.startsWith('/driver/settings')
-                            ? 'bg-gradient-accent text-white shadow-medical'
-                            : 'text-accent-700 hover:bg-teal-50/60'
+                            ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                            : 'text-slate-300 hover:bg-slate-700/50'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -605,13 +598,14 @@ export default function DriverLayout({
                           } catch (error) {
                             console.error('Error during logout:', error)
                           }
-                          // Clear localStorage for backward compatibility
-                          localStorage.removeItem('driver')
+                          // Clear local state and preferences (non-auth data)
+                          localStorage.removeItem('driverAdminMode')
+                          localStorage.removeItem('driverNotificationPreferences')
                           setDriver(null)
                           setProfileDropdownOpen(false)
                           router.push('/driver/login')
                         }}
-                        className="w-full block px-4 py-3 text-sm text-accent-700 hover:bg-urgent-50/60 hover:text-urgent-700 transition-base border-t border-teal-200/30 text-left font-medium"
+                        className="w-full block px-4 py-3 text-sm text-slate-300 hover:bg-red-900/20 hover:text-red-300 transition-base border-t border-slate-700/50 text-left font-medium"
                       >
                         <div className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -630,8 +624,8 @@ export default function DriverLayout({
       </header>
 
       {/* Sidebar - Fixed full height - Hidden on mobile */}
-      <aside className="hidden md:block fixed left-0 top-[73px] w-64 glass-accent border-r border-teal-200/30 z-40" style={{ height: 'calc(100vh - 73px)' }}>
-        <div className="flex flex-col h-full overflow-y-auto">
+      <aside className="hidden md:block fixed left-0 top-[73px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 73px)' }}>
+        <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
             {/* Driver Navigation */}
@@ -655,10 +649,10 @@ export default function DriverLayout({
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base relative ${
                     isActive
-                      ? 'bg-gradient-accent text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
                       : (item as any).highlight
-                      ? 'bg-accent-50 text-accent-700 hover:bg-accent-100 border-2 border-accent-200'
-                      : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-cyan-900/20 text-cyan-300 hover:bg-cyan-900/30 border-2 border-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-700/50'
                   }`}
                 >
                   {item.icon}
@@ -683,9 +677,9 @@ export default function DriverLayout({
             {/* Admin Navigation Separator */}
             {adminModeEnabled && driver?.isAdmin && (
               <>
-                <div className="my-4 border-t border-teal-200/30"></div>
+                <div className="my-4 border-t border-slate-700/50"></div>
                 <div className="px-4 py-2">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</p>
                 </div>
                 {adminNavigation.map((item) => {
                   const isActive =
@@ -698,8 +692,8 @@ export default function DriverLayout({
                       href={item.href}
                       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
                         isActive
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-blue-50/60'
+                          ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-500/30'
+                          : 'text-slate-300 hover:bg-slate-700/50'
                       }`}
                     >
                       {item.icon}
@@ -712,13 +706,13 @@ export default function DriverLayout({
           </nav>
 
           {/* Support */}
-          <div className="p-4 border-t border-teal-200/30">
+          <div className="p-4 border-t border-slate-700/50">
             <Link
               href="/driver/support"
               className={`w-full px-4 py-2 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 ${
                 pathname === '/driver/support' || pathname?.startsWith('/driver/support')
-                  ? 'bg-gradient-accent text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-teal-50/60'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-700/50'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -731,10 +725,12 @@ export default function DriverLayout({
       </aside>
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
-      <main className="md:ml-64 bg-gradient-medical-bg min-h-screen pb-16 md:pb-0 pt-[73px]">
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
+      <main className="md:ml-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen pb-16 md:pb-0 overflow-y-auto">
+        <div className="min-h-[calc(100vh-73px)]">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </div>
       </main>
 
       {/* Mobile Bottom Navigation */}
@@ -815,4 +811,3 @@ export default function DriverLayout({
     </div>
   )
 }
-

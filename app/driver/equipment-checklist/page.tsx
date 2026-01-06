@@ -18,21 +18,34 @@ export default function EquipmentChecklistPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchChecklist(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    try {
-      const parsedDriver = JSON.parse(driverData)
-      setDriver(parsedDriver)
-      fetchChecklist(parsedDriver.id)
-    } catch (error) {
-      console.error('Error parsing driver data:', error)
-      router.push('/driver/login')
-    }
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchChecklist = async (driverId: string) => {
     try {
@@ -104,8 +117,8 @@ export default function EquipmentChecklistPage() {
     return (
       <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       </div>
     )
@@ -240,8 +253,4 @@ export default function EquipmentChecklistPage() {
     </div>
   )
 }
-
-
-
-
 

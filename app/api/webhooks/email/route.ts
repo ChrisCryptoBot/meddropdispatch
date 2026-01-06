@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const rawBody = await req.text()
     const webhookData = JSON.parse(rawBody)
 
-    console.log('📧 Email webhook received:', {
+    console.log('Email webhook received:', {
       from: webhookData.from,
       subject: webhookData.subject,
     })
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      console.log('✅ Webhook signature verified')
+      console.log('SUCCESS: Webhook signature verified')
     }
 
     // Parse email data from webhook (inline implementation)
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      console.log('✅ Created new shipper:', shipper.id)
+            console.log('SUCCESS: Created new shipper:', shipper.id)
     }
 
     // Determine service type from email content
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
             suggestedRateMin = rateResult.suggestedRateMin
             suggestedRateMax = rateResult.suggestedRateMax
 
-            console.log('✅ Calculated distance and rate:', {
+            console.log('SUCCESS: Calculated distance and rate:', {
               distance: autoCalculatedDistance,
               rate: `$${suggestedRateMin} - $${suggestedRateMax}`,
             })
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('✅ Created load request:', loadRequest.publicTrackingCode)
+    console.log('SUCCESS: Created load request:', loadRequest.publicTrackingCode)
 
     // Send confirmation email to shipper (using existing email service)
     const trackingUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/track?code=${trackingCode}`

@@ -220,9 +220,62 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // Get request body for deletion reason
+    // Get request body for deletion reason and password
     const body = await request.json().catch(() => ({}))
     const deletionReason = body.reason || body.deletionReason || 'Account deletion requested'
+    const { password, driverId } = body
+
+    // Require password verification for deletion
+    if (!password || !driverId) {
+      return NextResponse.json(
+        {
+          error: 'ValidationError',
+          message: 'Password and driver ID are required to deactivate an account',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Verify driver password
+    const driverToVerify = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { id: true, passwordHash: true },
+    })
+
+    if (!driverToVerify) {
+      return NextResponse.json(
+        {
+          error: 'NotFoundError',
+          message: 'Driver not found',
+        },
+        { status: 404 }
+      )
+    }
+
+    // Verify password using auth utility
+    const { verifyPassword } = await import('@/lib/auth')
+    const isValidPassword = await verifyPassword(password, driverToVerify.passwordHash)
+    
+    if (!isValidPassword) {
+      return NextResponse.json(
+        {
+          error: 'AuthenticationError',
+          message: 'Invalid password',
+        },
+        { status: 401 }
+      )
+    }
+
+    // Ensure the driver ID matches
+    if (driverId !== id) {
+      return NextResponse.json(
+        {
+          error: 'AuthorizationError',
+          message: 'Driver ID mismatch',
+        },
+        { status: 403 }
+      )
+    }
 
     // Check if driver exists
     const driver = await prisma.driver.findUnique({
@@ -297,3 +350,4 @@ export async function DELETE(
     return createErrorResponse(error)
   }
 }
+

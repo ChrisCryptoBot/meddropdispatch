@@ -244,8 +244,14 @@ export default function AdminLayout({
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('admin')
+                  onClick={async () => {
+                    try {
+                      // Call logout API to clear httpOnly cookie
+                      await fetch('/api/auth/logout', { method: 'POST' })
+                    } catch (error) {
+                      console.error('Error during logout:', error)
+                    }
+                    setAdmin(null)
                     router.push('/admin/login')
                   }}
                   className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"
@@ -328,8 +334,14 @@ export default function AdminLayout({
               </div>
             </div>
             <button
-              onClick={() => {
-                localStorage.removeItem('admin')
+              onClick={async () => {
+                try {
+                  // Call logout API to clear httpOnly cookie
+                  await fetch('/api/auth/logout', { method: 'POST' })
+                } catch (error) {
+                  console.error('Error during logout:', error)
+                }
+                setAdmin(null)
                 router.push('/admin/login')
               }}
               className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"

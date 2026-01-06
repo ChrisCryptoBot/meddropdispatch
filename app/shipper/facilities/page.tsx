@@ -35,16 +35,34 @@ export default function SavedFacilitiesPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    const shipperData = localStorage.getItem('shipper')
-    if (!shipperData) {
-      router.push('/shipper/login')
-      return
+    // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchShipperData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'shipper') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setShipper(data.user)
+        fetchFacilities(data.user.id)
+      } catch (error) {
+        console.error('Error fetching shipper data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(shipperData)
-    setShipper(parsed)
-    fetchFacilities(parsed.id)
-  }, [router])
+    
+    fetchShipperData()
+  }, [])
 
   const fetchFacilities = async (shipperId: string) => {
     try {
@@ -227,11 +245,11 @@ export default function SavedFacilitiesPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="sticky top-[73px] z-[50] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Saved Facilities</h1>
-            <p className="text-gray-600 print:text-sm">View and manage your frequently used pickup and delivery locations</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Saved Facilities</h1>
+            <p className="text-slate-400 text-sm md:text-base print:text-sm">View and manage your frequently used pickup and delivery locations</p>
           </div>
         </div>
       </div>
@@ -313,7 +331,12 @@ export default function SavedFacilitiesPage() {
 
       {facilities.length === 0 ? (
         <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
-          <div className="text-gray-400 text-6xl mb-4">📍</div>
+          <div className="flex items-center justify-center mb-4">
+            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No saved facilities yet</h3>
           <p className="text-gray-600 mb-6">
             Facilities are automatically saved when loads are created. They will appear here for quick reference.
@@ -324,7 +347,11 @@ export default function SavedFacilitiesPage() {
         </div>
       ) : filteredAndSortedFacilities.length === 0 ? (
         <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
-          <div className="text-gray-400 text-6xl mb-4">🔍</div>
+          <div className="flex items-center justify-center mb-4">
+            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">No facilities match your filters</h3>
           <p className="text-gray-600">Try adjusting your search or filter criteria</p>
         </div>

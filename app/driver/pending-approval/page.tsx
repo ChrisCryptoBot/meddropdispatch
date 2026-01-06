@@ -30,29 +30,36 @@ export default function DriverPendingApprovalPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Check if driver is logged in
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
-    }
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
 
-    try {
-      const parsedDriver = JSON.parse(driverData)
-      setDriver(parsedDriver)
-
-      // If driver is already approved, redirect to dashboard
-      if (parsedDriver.status && parsedDriver.status !== 'PENDING_APPROVAL') {
-        router.push('/driver/dashboard')
-        return
+        // If driver is already approved, layout will handle redirect
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
       }
-
-      setIsLoading(false)
-    } catch (error) {
-      console.error('Error parsing driver data:', error)
-      router.push('/driver/login')
     }
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   // Fetch documents
   useEffect(() => {
@@ -157,8 +164,8 @@ export default function DriverPendingApprovalPage() {
     return (
       <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       </div>
     )
@@ -315,37 +322,32 @@ export default function DriverPendingApprovalPage() {
                     </div>
 
                     {(status === 'missing' || status === 'rejected') && !isUploading && (
-                      <FileUploader
-                        onUploadComplete={(url, file) => handleDocumentUpload(doc.type, url, file)}
-                        onUploadError={(err) => setError(err)}
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        maxSize={10 * 1024 * 1024}
-                        label=""
-                        className="mt-4"
-                      />
-                    )}
-
-                    {isUploading && (
-                      <div className="mt-4 p-4 bg-teal-50 rounded-lg border border-teal-200">
-                        <p className="text-sm text-teal-700 text-center">Uploading document...</p>
+                      <div className="mt-4">
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              handleDocumentUpload(doc.type, '', file)
+                            }
+                          }}
+                          className="hidden"
+                          id={`upload-${doc.type}`}
+                        />
+                        <label
+                          htmlFor={`upload-${doc.type}`}
+                          className="inline-block px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 cursor-pointer transition-colors"
+                        >
+                          Upload Document
+                        </label>
                       </div>
                     )}
 
-                    {docData && status !== 'missing' && (
-                      <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                        <a
-                          href={docData.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-teal-600 hover:text-teal-800 underline"
-                        >
-                          View uploaded document
-                        </a>
-                        {docData.expiryDate && (
-                          <span className="text-gray-500">
-                            • Expires: {new Date(docData.expiryDate).toLocaleDateString()}
-                          </span>
-                        )}
+                    {isUploading && (
+                      <div className="mt-4 flex items-center gap-2 text-amber-700">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                        <span className="text-sm">Uploading...</span>
                       </div>
                     )}
                   </div>
@@ -353,46 +355,8 @@ export default function DriverPendingApprovalPage() {
               })}
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/driver/profile"
-              className="flex-1 px-6 py-3 bg-gradient-accent text-white rounded-xl font-semibold hover:shadow-lg transition-all shadow-lg text-center"
-            >
-              Complete Profile
-            </Link>
-            <Link
-              href="/driver/support"
-              className="flex-1 px-6 py-3 bg-white/60 text-gray-700 rounded-xl font-semibold hover:bg-white/80 transition-all border-2 border-teal-200/30 text-center"
-            >
-              Contact Support
-            </Link>
-          </div>
-
-          {/* Auto-refresh notice */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500">
-              This page will automatically refresh when your account is approved. 
-              You can also check back later by logging in.
-            </p>
-          </div>
-        </div>
-
-        {/* Logout option */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              localStorage.removeItem('driver')
-              router.push('/driver/login')
-            }}
-            className="text-sm text-gray-600 hover:text-teal-700 transition-colors"
-          >
-            Sign Out
-          </button>
         </div>
       </div>
     </div>
   )
 }
-

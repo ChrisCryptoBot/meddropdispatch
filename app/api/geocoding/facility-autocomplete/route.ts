@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
-      console.warn('⚠️  GOOGLE_MAPS_API_KEY not configured - facility autocomplete disabled')
+      console.warn('WARNING: GOOGLE_MAPS_API_KEY not configured - facility autocomplete disabled')
       return NextResponse.json({ 
         predictions: [],
         error: 'Google Maps API key not configured',

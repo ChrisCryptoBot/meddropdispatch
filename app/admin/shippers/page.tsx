@@ -79,22 +79,30 @@ export default function ShippersPage() {
     const shipper = shippers.find(s => s.id === shipperId)
     if (!shipper) return
 
-    const reason = prompt(`Mark ${shipper.companyName} as DNU (Do Not Use)?\n\nThis will:\n- Permanently delete the account\n- Block the email from future signups\n\nEnter reason (optional):`)
+    const reason = prompt(`Mark ${shipper.companyName} as DNU (Do Not Use)?\n\nThis will:\n- Deactivate the account\n- Block the email from future signups\n\nAdmins can restore this account later if needed.\n\nEnter reason (optional):`)
     
     if (reason === null) return // User cancelled
 
-    if (!confirm(`⚠️ WARNING: This will PERMANENTLY DELETE ${shipper.companyName} and BLOCK ${shipper.email} from signing up again.\n\nThis action cannot be undone. Continue?`)) {
-      return
-    }
+    const password = prompt(`Enter your admin password to confirm:`)
+    if (!password) return
 
     setDeletingId(shipperId)
     try {
+      // Get admin user info
+      const adminData = localStorage.getItem('admin') || localStorage.getItem('user')
+      if (!adminData) {
+        throw new Error('Admin authentication required')
+      }
+      const admin = JSON.parse(adminData)
+
       const response = await fetch(`/api/shippers/${shipperId}/dnu`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reason: reason || `DNU: ${shipper.companyName}`,
           blockEmail: true,
+          password: password,
+          adminId: admin.id,
         }),
       })
 
@@ -103,7 +111,7 @@ export default function ShippersPage() {
         throw new Error(error.message || 'Failed to mark shipper as DNU')
       }
 
-      showToast.success('Shipper marked as DNU and deleted. Email has been blocked.')
+      showToast.success('Shipper marked as DNU. Email has been blocked. You can restore this account later if needed.')
       await fetchShippers() // Refresh the list
     } catch (error) {
       console.error('Error marking shipper as DNU:', error)

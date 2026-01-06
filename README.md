@@ -27,10 +27,32 @@ A modern web application for medical courier and logistics services, built with 
 
 ## Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- **Node.js 18+** ([Download](https://nodejs.org))
+- **npm** (comes with Node.js) or **yarn**
 
-## Setup Instructions
+## Quick Start (One Command)
+
+Run the setup script for your platform:
+
+**Windows (PowerShell):**
+```powershell
+npm run setup
+```
+
+**Unix/Linux/Mac:**
+```bash
+npm run setup
+```
+
+The setup script will:
+- ✅ Install dependencies
+- ✅ Create `.env` from `.env.example`
+- ✅ Generate Prisma client
+- ✅ Run database migrations
+- ✅ Seed the database
+- ✅ Validate configuration
+
+## Manual Setup
 
 ### 1. Install Dependencies
 
@@ -40,18 +62,24 @@ npm install
 
 ### 2. Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and configure:
+Edit `.env` with your configuration (see `.env.example` for all options):
 
+**Minimum required:**
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="file:./prisma/dev.db"
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
+```
+
+**Generate a secure secret:**
+```bash
+npm run generate:secret
 ```
 
 ### 3. Initialize Database
@@ -60,14 +88,20 @@ NEXTAUTH_URL="http://localhost:3000"
 # Generate Prisma client
 npm run prisma:generate
 
-# Create database and run migrations
+# Run migrations
 npm run prisma:migrate
 
-# Seed with sample data
+# Seed database (optional)
 npm run prisma:seed
 ```
 
-### 4. Start Development Server
+### 4. Validate Configuration
+
+```bash
+npm run setup:validate
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
@@ -92,6 +126,19 @@ Then login at http://localhost:3000/admin/login
 **Creating Other Users:**
 - **Drivers**: Add through admin portal (after logging in)
 - **Shippers**: Register through the public request form (will be created automatically)
+
+## Architecture
+
+For detailed architecture documentation, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+**Key Components:**
+- **Frontend:** Next.js 14 App Router (React Server Components)
+- **Backend:** Next.js API Routes
+- **Database:** Prisma ORM with PostgreSQL
+- **Authentication:** httpOnly cookie-based sessions
+- **Email:** Abstracted service (Resend/SendGrid/SMTP)
+- **Storage:** Vercel Blob (optional, defaults to base64)
+- **Monitoring:** Sentry integration
 
 ## Project Structure
 
@@ -188,21 +235,33 @@ export async function sendEmail(options: EmailOptions) {
 
 ## Deployment
 
-### Vercel (Recommended)
+### Quick Deploy to Vercel
 
-**🚀 Ready to deploy! See `DEPLOY_NOW.md` for complete step-by-step guide.**
+1. **Set up PostgreSQL database** (Supabase recommended - free tier)
+2. **Push code to GitHub**
+3. **Import project in Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Import Project"
+   - Select your GitHub repository
+4. **Configure environment variables** (see `.env.example`)
+5. **Deploy** - Vercel will automatically build and deploy
+6. **Run migrations:**
+   ```bash
+   npx prisma migrate deploy
+   ```
+7. **Create admin user:**
+   ```bash
+   npm run create:admin admin@yourdomain.com password "Admin Name"
+   ```
 
-Quick steps:
-1. ✅ Code is already configured for PostgreSQL
-2. Set up PostgreSQL database (Supabase recommended - free tier)
-3. Push code to GitHub
-4. Import project in Vercel
-5. Add environment variables (see `VERCEL_ENV_VARS.md`)
-6. Deploy!
-7. Run migrations: `npx prisma migrate deploy`
-8. Create admin user
+### Full Deployment Guide
 
-**Full guide:** See `DEPLOY_NOW.md` for detailed instructions.
+See [`docs/DEPLOYMENT_RUNBOOK.md`](docs/DEPLOYMENT_RUNBOOK.md) for:
+- Complete deployment instructions
+- Rollback procedures
+- Troubleshooting guide
+- Monitoring setup
+- Maintenance procedures
 
 ### Environment Variables for Production
 
@@ -270,18 +329,53 @@ await prisma.document.create({
 
 ## Available Scripts
 
+### Development
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
+npm run setup        # One-command setup (Windows/Unix)
+npm run setup:validate # Validate configuration
+```
 
-# Prisma commands
+### Database
+```bash
 npm run prisma:generate   # Generate Prisma client
 npm run prisma:migrate    # Run database migrations
 npm run prisma:studio     # Open Prisma Studio (database GUI)
 npm run prisma:seed       # Seed database with sample data
 ```
+
+### User Management
+```bash
+npm run create:admin      # Create admin user
+npm run create:shipper    # Create shipper account
+npm run create:driver     # Create driver account
+npm run set:driver-admin  # Grant driver admin access
+```
+
+### Utilities
+```bash
+npm run generate:secret   # Generate secure random secret
+npm run test              # Run test suite
+npm run test:coverage     # Run tests with coverage
+```
+
+## Testing
+
+```bash
+# Run all tests
+npm run test
+
+# Run with UI
+npm run test:ui
+
+# Run with coverage
+npm run test:coverage
+```
+
+See [`tests/`](tests/) directory for test suite.
 
 ## Future Enhancements
 
@@ -294,6 +388,32 @@ npm run prisma:seed       # Seed database with sample data
 - [ ] Automated routing and dispatch
 - [ ] Integration with accounting software
 
+## Documentation
+
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and architecture
+- **[Deployment Runbook](docs/DEPLOYMENT_RUNBOOK.md)** - Deployment and operations guide
+- **[Buyer Readiness](BUYER_READINESS_STATUS.md)** - Acquisition readiness assessment
+- **[Market Readiness](MARKET_READINESS_ASSESSMENT.md)** - Launch readiness assessment
+
+## Security
+
+- ✅ Input validation (Zod schemas)
+- ✅ XSS prevention (DOMPurify)
+- ✅ SQL injection prevention (Prisma ORM)
+- ✅ IDOR prevention (authorization checks)
+- ✅ Audit logging (HIPAA-ready)
+- ✅ Password hashing (bcrypt)
+- ✅ Rate limiting
+- ✅ httpOnly cookies (production)
+
+## Compliance
+
+- ✅ HIPAA audit logging
+- ✅ Data encryption (in transit)
+- ✅ Soft deletes (data preservation)
+- ✅ Access logging
+- ✅ Chain of custody tracking
+
 ## License
 
 Private and proprietary. All rights reserved.
@@ -304,4 +424,135 @@ For questions or support, contact your development team.
 
 ---
 
-**Built for MED DROP Medical Courier Services**
+**Built for MED DROP Medical Courier Services**  
+**Version:** 1.0.0  
+**Status:** Production Ready ✅
+
+## File Upload Integration
+
+To add document uploads, integrate with:
+
+- **Vercel Blob**: For Vercel deployments
+- **AWS S3**: Traditional cloud storage
+- **Cloudinary**: Image and document management
+- **UploadThing**: Next.js-friendly uploads
+
+Example with Vercel Blob:
+
+```typescript
+import { put } from '@vercel/blob'
+
+const blob = await put(file.name, file, {
+  access: 'public',
+})
+
+await prisma.document.create({
+  data: {
+    loadRequestId: loadId,
+    type: 'PROOF_OF_PICKUP',
+    title: file.name,
+    url: blob.url,
+  },
+})
+```
+
+## Available Scripts
+
+### Development
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run setup        # One-command setup (Windows/Unix)
+npm run setup:validate # Validate configuration
+```
+
+### Database
+```bash
+npm run prisma:generate   # Generate Prisma client
+npm run prisma:migrate    # Run database migrations
+npm run prisma:studio     # Open Prisma Studio (database GUI)
+npm run prisma:seed       # Seed database with sample data
+```
+
+### User Management
+```bash
+npm run create:admin      # Create admin user
+npm run create:shipper    # Create shipper account
+npm run create:driver     # Create driver account
+npm run set:driver-admin  # Grant driver admin access
+```
+
+### Utilities
+```bash
+npm run generate:secret   # Generate secure random secret
+npm run test              # Run test suite
+npm run test:coverage     # Run tests with coverage
+```
+
+## Testing
+
+```bash
+# Run all tests
+npm run test
+
+# Run with UI
+npm run test:ui
+
+# Run with coverage
+npm run test:coverage
+```
+
+See [`tests/`](tests/) directory for test suite.
+
+## Future Enhancements
+
+- [ ] Real-time driver location tracking
+- [ ] SMS notifications via Twilio
+- [ ] PDF generation for BOL and invoices
+- [ ] Multi-tenant support for franchises
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Automated routing and dispatch
+- [ ] Integration with accounting software
+
+## Documentation
+
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and architecture
+- **[Deployment Runbook](docs/DEPLOYMENT_RUNBOOK.md)** - Deployment and operations guide
+- **[Buyer Readiness](BUYER_READINESS_STATUS.md)** - Acquisition readiness assessment
+- **[Market Readiness](MARKET_READINESS_ASSESSMENT.md)** - Launch readiness assessment
+
+## Security
+
+- ✅ Input validation (Zod schemas)
+- ✅ XSS prevention (DOMPurify)
+- ✅ SQL injection prevention (Prisma ORM)
+- ✅ IDOR prevention (authorization checks)
+- ✅ Audit logging (HIPAA-ready)
+- ✅ Password hashing (bcrypt)
+- ✅ Rate limiting
+- ✅ httpOnly cookies (production)
+
+## Compliance
+
+- ✅ HIPAA audit logging
+- ✅ Data encryption (in transit)
+- ✅ Soft deletes (data preservation)
+- ✅ Access logging
+- ✅ Chain of custody tracking
+
+## License
+
+Private and proprietary. All rights reserved.
+
+## Support
+
+For questions or support, contact your development team.
+
+---
+
+**Built for MED DROP Medical Courier Services**  
+**Version:** 1.0.0  
+**Status:** Production Ready ✅

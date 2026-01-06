@@ -30,12 +30,17 @@ export async function setAuthCookie(
     expiresAt: expiresAt.toISOString(),
   }
 
+  // Cookie settings for production-ready deployment
+  // secure: true in production (HTTPS required)
+  // sameSite: 'lax' works for same-site requests (e.g., app.yourdomain.com)
+  // Works on Vercel preview deployments and production
   response.cookies.set(SESSION_COOKIE_NAME, JSON.stringify(sessionData), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production', // true on Vercel production
+    sameSite: 'lax', // Works behind proxies, same-site apps
     expires: expiresAt,
     path: '/',
+    // No domain set = works on current domain (handles Vercel subdomains correctly)
   })
 
   return response

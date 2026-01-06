@@ -15,6 +15,7 @@ import DocumentViewButton from '@/components/features/DocumentViewButton'
 import AddressAutocomplete from '@/components/features/AddressAutocomplete'
 import { openRouteInGPS, getAllRouteUrls, type GPSApp } from '@/lib/gps-routes'
 import GPSTrackingMap from '@/components/features/GPSTrackingMap'
+import { getClientAuth } from '@/lib/get-client-auth'
 
 interface Load {
   id: string
@@ -115,17 +116,20 @@ export default function DriverLoadDetailPage() {
   const [gpsLastError, setGpsLastError] = useState<GeolocationPositionError | null>(null)
   const [showMapsMenu, setShowMapsMenu] = useState<'pickup' | 'delivery' | 'route' | null>(null)
   const [showNavigationView, setShowNavigationView] = useState(false)
+  const [isDeletingLoad, setIsDeletingLoad] = useState(false)
+  const [showDeletePasswordInput, setShowDeletePasswordInput] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deletePasswordError, setDeletePasswordError] = useState('')
 
   useEffect(() => {
-    // Get driver from localStorage
-    const driverData = localStorage.getItem('driver')
-    if (driverData) {
-      try {
-        setDriver(JSON.parse(driverData))
-      } catch (e) {
-        console.error('Error parsing driver data:', e)
+    // Get driver from auth check API (httpOnly cookie)
+    const checkAuth = async () => {
+      const { user } = await getClientAuth()
+      if (user && user.userType === 'driver') {
+        setDriver(user)
       }
     }
+    checkAuth()
   }, [])
 
 
@@ -178,26 +182,64 @@ export default function DriverLoadDetailPage() {
   }
 
   const handleDeleteLoad = async () => {
-    if (!load) return
-    if (!confirm('Are you sure you want to permanently remove this load? This action cannot be undone and will delete all associated data including documents, tracking events, GPS tracking points, and ratings.')) {
+    if (!load || !driver) return
+
+    if (!deletePassword) {
+      setDeletePasswordError('Password is required')
       return
     }
 
+    // Verify password first
+    try {
+      const verifyResponse = await fetch('/api/auth/driver/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          driverId: driver.id,
+          password: deletePassword,
+        }),
+      })
+
+      if (!verifyResponse.ok) {
+        setDeletePasswordError('Invalid password')
+        return
+      }
+    } catch (error) {
+      setDeletePasswordError('Failed to verify password')
+      return
+    }
+
+    setIsDeletingLoad(true)
+    setDeletePasswordError('')
     try {
       const response = await fetch(`/api/load-requests/${load.id}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: deletePassword,
+          driverId: driver.id,
+        }),
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.message || 'Failed to delete load')
+        if (data.message?.includes('password') || data.message?.includes('Password')) {
+          setDeletePasswordError(data.message)
+        } else {
+          throw new Error(data.message || 'Failed to cancel load')
+        }
+        return
       }
 
-      showToast.success('Load deleted successfully')
+      showToast.success('Load cancelled successfully. All data has been preserved.')
       router.push('/driver/dashboard')
     } catch (error) {
-      console.error('Error deleting load:', error)
-      showToast.error('Failed to delete load', error instanceof Error ? error.message : 'Unknown error')
+      console.error('Error cancelling load:', error)
+      showToast.error('Failed to cancel load', error instanceof Error ? error.message : 'Unknown error')
+    } finally {
+      setIsDeletingLoad(false)
+      setDeletePassword('')
+      setShowDeletePasswordInput(false)
     }
   }
 
@@ -662,8 +704,8 @@ export default function DriverLoadDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading load details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading load details...</p>
         </div>
       </div>
     )
@@ -977,23 +1019,76 @@ export default function DriverLoadDetailPage() {
             )}
           </div>
           
-          {/* Permanently Remove Load Button - Available for all loads */}
+          {/* Remove Load Button - Available for all loads */}
           <div className="mt-6 pt-6 border-t-2 border-red-200">
             <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Danger Zone</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Remove Load</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Permanently remove this load from the system. This action cannot be undone and will delete all associated data including documents, tracking events, and GPS tracking points.
+                Cancel this load request. The load will be marked as cancelled. All data will be preserved. Admins can restore cancelled loads if needed.
               </p>
-              <button
-                onClick={handleDeleteLoad}
-                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                title="Permanently remove this load"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Permanently Remove This Load
-              </button>
+              {!showDeletePasswordInput ? (
+                <button
+                  onClick={() => setShowDeletePasswordInput(true)}
+                  className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                  title="Cancel this load"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Cancel This Load
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter your password to confirm
+                    </label>
+                    <input
+                      type="password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      placeholder="Your password"
+                      autoComplete="current-password"
+                    />
+                    {deletePasswordError && (
+                      <p className="mt-1 text-sm text-red-600">{deletePasswordError}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDeleteLoad}
+                      disabled={isDeletingLoad || !deletePassword}
+                      className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isDeletingLoad ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Cancelling...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Confirm Cancel
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeletePasswordInput(false)
+                        setDeletePassword('')
+                        setDeletePasswordError('')
+                      }}
+                      disabled={isDeletingLoad}
+                      className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

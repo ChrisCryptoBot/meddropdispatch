@@ -18,6 +18,7 @@ export default function ShipperSignupPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   // Handle email and tracking code from email links
   useEffect(() => {
@@ -48,7 +49,9 @@ export default function ShipperSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return // Prevent double-click
     setError(null)
+    setFieldErrors({})
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
@@ -81,7 +84,17 @@ export default function ShipperSignupPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Signup failed')
+        // Handle field-specific errors
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorsMap: Record<string, string> = {}
+          data.errors.forEach((err: any) => {
+            if (err.field && err.message) {
+              errorsMap[err.field] = err.message
+            }
+          })
+          setFieldErrors(errorsMap)
+        }
+        throw new Error(data.error || data.message || 'Signup failed')
       }
 
       // Store shipper info
@@ -101,46 +114,65 @@ export default function ShipperSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-medical-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 py-12">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-10 pointer-events-none"></div>
+
+      <div className="relative w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-bold text-gradient mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
               MED DROP
             </h1>
+            <p className="text-xs font-medium text-slate-400">Medical Courier Services</p>
           </Link>
-          <p className="text-medical">Join as Shipper</p>
+          <p className="text-slate-300 mt-2">Join as Shipper</p>
         </div>
 
         {/* Signup Card */}
-        <div className="glass-primary rounded-2xl shadow-glass border-2 border-blue-200/30 p-8">
+        <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-700/50 p-8">
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-lg">
-              <p className="text-urgent-700 text-sm font-medium">{error}</p>
+            <div className="mb-6 p-4 bg-red-900/30 border-2 border-red-500/50 rounded-lg">
+              <p className="text-red-300 text-sm font-medium mb-2">{error}</p>
+              {Object.keys(fieldErrors).length > 0 && (
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
+                  {Object.entries(fieldErrors).map(([field, message]) => (
+                    <li key={field}>
+                      <strong className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</strong> {message}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 
           {/* Service Plan Selection */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Your Service Plan</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Select Your Service Plan</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {/* Standard Plan */}
               <button
                 type="button"
                 onClick={() => handleTierChange('STANDARD')}
-                className={`p-6 rounded-xl border-2 text-left transition-all ${
+                className={`p-6 rounded-xl border-2 text-left transition-all relative ${
                   formData.subscriptionTier === 'STANDARD'
-                    ? 'border-blue-500 bg-blue-50/60 shadow-lg'
-                    : 'border-blue-200/50 bg-white/60 hover:border-blue-300 hover:shadow-md'
+                    ? 'border-blue-500 bg-blue-900/20 shadow-lg'
+                    : 'border-slate-600/50 bg-slate-700/30 hover:border-blue-500/50 hover:shadow-md'
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-1">Standard</h4>
-                    <p className="text-sm text-gray-600">Self-Service</p>
+                    <h4 className="text-lg font-bold text-white mb-1">Standard</h4>
+                    <p className="text-sm text-slate-400">Self-Service</p>
                   </div>
                   {formData.subscriptionTier === 'STANDARD' && (
                     <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -150,21 +182,21 @@ export default function ShipperSignupPage() {
                     </div>
                   )}
                 </div>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Access to load board</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Request loads independently</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Pay per load</span>
@@ -178,44 +210,44 @@ export default function ShipperSignupPage() {
                 onClick={() => handleTierChange('BROKERAGE')}
                 className={`p-6 rounded-xl border-2 text-left transition-all relative overflow-visible ${
                   formData.subscriptionTier === 'BROKERAGE'
-                    ? 'border-teal-500 bg-teal-50/60 shadow-lg'
-                    : 'border-teal-200/50 bg-white/60 hover:border-teal-300 hover:shadow-md'
+                    ? 'border-cyan-500 bg-cyan-900/20 shadow-lg'
+                    : 'border-slate-600/50 bg-slate-700/30 hover:border-cyan-500/50 hover:shadow-md'
                 }`}
               >
                 {/* Premium Badge integrated into border */}
                 <div className="absolute -top-3 right-4 z-10">
-                  <span className="px-3 py-1 bg-gradient-accent text-white text-xs font-bold rounded-full shadow-lg border-2 border-white">
+                  <span className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold rounded-full shadow-lg border-2 border-slate-800">
                     Premium
                   </span>
                 </div>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-1">Brokerage Package</h4>
-                    <p className="text-sm text-gray-600">White-Glove Service</p>
+                    <h4 className="text-lg font-bold text-white mb-1">Brokerage Package</h4>
+                    <p className="text-sm text-slate-400">White-Glove Service</p>
                   </div>
                   {formData.subscriptionTier === 'BROKERAGE' && (
-                    <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   )}
                 </div>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="space-y-2 text-sm text-slate-300">
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Dedicated dispatcher</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Personalized service</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     <span>Consolidated monthly invoicing</span>
@@ -228,10 +260,10 @@ export default function ShipperSignupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Company Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Company Information</h3>
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Company Information</h3>
               
               <div>
-                <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="companyName" className="block text-sm font-medium text-slate-300 mb-2">
                   Company Name *
                 </label>
                 <input
@@ -241,13 +273,13 @@ export default function ShipperSignupPage() {
                   value={formData.companyName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="Acme Healthcare"
                 />
               </div>
 
               <div>
-                <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="contactName" className="block text-sm font-medium text-slate-300 mb-2">
                   Contact Name *
                 </label>
                 <input
@@ -257,13 +289,13 @@ export default function ShipperSignupPage() {
                   value={formData.contactName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="John Doe"
                 />
               </div>
 
               <div>
-                <label htmlFor="clientType" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="clientType" className="block text-sm font-medium text-slate-300 mb-2">
                   Business Type *
                 </label>
                 <select
@@ -272,7 +304,7 @@ export default function ShipperSignupPage() {
                   value={formData.clientType}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white"
                 >
                   <option value="CLINIC">Clinic</option>
                   <option value="HOSPITAL">Hospital</option>
@@ -284,11 +316,11 @@ export default function ShipperSignupPage() {
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
+            <div className="space-y-4 pt-4 border-t border-slate-700">
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Contact Information</h3>
               
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                   Email Address *
                 </label>
                 <input
@@ -298,13 +330,13 @@ export default function ShipperSignupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="contact@company.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-300 mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -314,18 +346,18 @@ export default function ShipperSignupPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="(555) 123-4567"
                 />
               </div>
             </div>
 
             {/* Account Information */}
-            <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Account Information</h3>
+            <div className="space-y-4 pt-4 border-t border-slate-700">
+              <h3 className="text-lg font-semibold text-white border-b border-slate-700 pb-2">Account Information</h3>
               
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
                   Password *
                 </label>
                 <input
@@ -336,13 +368,13 @@ export default function ShipperSignupPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                   placeholder="At least 6 characters"
                 />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
                   Confirm Password *
                 </label>
                 <input
@@ -352,7 +384,7 @@ export default function ShipperSignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-white/80"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white placeholder:text-slate-400"
                 />
               </div>
             </div>
@@ -361,21 +393,21 @@ export default function ShipperSignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-primary text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-lg font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating Account...' : 'Create Shipper Account'}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm text-medical">
+          <div className="mt-6 text-center text-sm text-slate-400">
             <p>
               Already have an account?{' '}
-              <Link href="/shipper/login" className="text-blue-600 hover:text-blue-800 font-medium">
+              <Link href="/shipper/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                 Sign in
               </Link>
             </p>
-            <Link href="/" className="text-gray-600 hover:text-blue-700 mt-2 inline-block">
+            <Link href="/" className="text-slate-400 hover:text-slate-300 mt-2 inline-block transition-colors">
               ← Back to Home
             </Link>
           </div>

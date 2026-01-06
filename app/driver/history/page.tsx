@@ -43,16 +43,34 @@ export default function DriverHistoryPage() {
   const [groupBy, setGroupBy] = useState<'none' | 'day' | 'week' | 'month' | 'shipper'>('none')
 
   useEffect(() => {
-    const driverData = localStorage.getItem('driver')
-    if (!driverData) {
-      router.push('/driver/login')
-      return
+    // Get driver from API auth check (httpOnly cookie) - layout handles redirects
+    const fetchDriverData = async () => {
+      try {
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        if (!response.ok) {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        const data = await response.json()
+        if (!data.authenticated || data.user?.userType !== 'driver') {
+          setIsLoading(false)
+          return // Layout will handle redirect
+        }
+        
+        setDriver(data.user)
+        fetchDriverLoads(data.user.id)
+      } catch (error) {
+        console.error('Error fetching driver data:', error)
+        setIsLoading(false)
+        // Don't redirect here - let layout handle it
+      }
     }
-
-    const parsed = JSON.parse(driverData)
-    setDriver(parsed)
-    fetchDriverLoads(parsed.id)
-  }, [router])
+    
+    fetchDriverData()
+  }, [])
 
   const fetchDriverLoads = async (driverId: string) => {
     try {
@@ -203,9 +221,9 @@ export default function DriverHistoryPage() {
   }, [filteredLoads])
 
   const getStatusColor = (status: string) => {
-    if (status === 'DELIVERED') return 'bg-green-100 text-green-700 border-green-300'
-    if (status === 'IN_TRANSIT' || status === 'PICKED_UP') return 'bg-blue-100 text-blue-700 border-blue-300'
-    return 'bg-gray-100 text-gray-700 border-gray-300'
+    if (status === 'DELIVERED') return 'bg-green-500/20 text-green-300 border-green-500/50'
+    if (status === 'IN_TRANSIT' || status === 'PICKED_UP') return 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+    return 'bg-slate-700/50 text-slate-300 border-slate-600/50'
   }
 
   const getStatusLabel = (status: string) => {
@@ -214,330 +232,144 @@ export default function DriverHistoryPage() {
       'IN_TRANSIT': 'In Transit',
       'PICKED_UP': 'Picked Up',
       'SCHEDULED': 'Scheduled',
+      'CANCELLED': 'Cancelled',
     }
     return labels[status] || status
   }
 
-  // Export to CSV
-  const exportToCSV = () => {
-    const headers = ['Tracking Code', 'Client', 'Pickup', 'Delivery', 'Delivery Date', 'Agreed Rate', 'Status']
-    const rows = filteredLoads.map(load => [
-      load.publicTrackingCode,
-      load.shipper.companyName,
-      `${load.pickupFacility.city}, ${load.pickupFacility.state}`,
-      `${load.dropoffFacility.city}, ${load.dropoffFacility.state}`,
-      load.actualDeliveryTime ? formatDateTime(load.actualDeliveryTime) : 'N/A',
-      load.quoteAmount ? formatCurrency(load.quoteAmount) : '$0.00',
-      load.status,
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `load-history-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  // Print report
-  const printReport = () => {
-    window.print()
-  }
-
   if (isLoading) {
-    return <LoadingSpinner portal="driver" label="Loading load history..." fullScreen />
+    return <LoadingSpinner portal="driver" label="Loading history..." />
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-teal-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Load History</h1>
-            <p className="text-gray-600 print:text-sm">Track your completed loads and agreed rates</p>
-          </div>
-          <div className="flex gap-2 print:hidden mr-6">
-            <button
-              onClick={exportToCSV}
-              className="px-4 py-2 bg-gradient-success text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg text-sm flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export CSV
-            </button>
-            <button
-              onClick={printReport}
-              className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical text-sm flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Print
-            </button>
-          </div>
-        </div>
+    <div className="p-6 md:p-8 print:p-4">
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Load History
+        </h1>
+        <p className="text-slate-400">View your completed and past loads</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 print:grid-cols-4 print:gap-2">
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 print:text-xl">{formatCurrency(totalValue)}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Total Agreed Rate</div>
-          <div className="text-xs text-gray-500 mt-1 print:text-xs">{completedLoads.length} completed loads</div>
-        </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1 print:text-xl">{formatCurrency(thisMonthValue)}</div>
-          <div className="text-sm text-gray-600 print:text-xs">This Month</div>
-          <div className="text-xs text-gray-500 mt-1 print:text-xs">{thisMonth.length} loads</div>
-        </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-green-600 mb-1 print:text-xl">{formatCurrency(thisYearValue)}</div>
-          <div className="text-sm text-gray-600 print:text-xs">This Year</div>
-          <div className="text-xs text-gray-500 mt-1 print:text-xs">{thisYear.length} loads</div>
-        </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-purple-600 mb-1 print:text-xl">{formatCurrency(avgValuePerLoad)}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Avg per Load</div>
-          <div className="text-xs text-gray-500 mt-1 print:text-xs">Based on filtered</div>
-        </div>
-      </div>
-
-      {/* Advanced Filters */}
-      <div className="glass-accent rounded-xl p-6 mb-6 print:hidden border-2 border-teal-200/30 shadow-medical">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Date Range */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
-            />
-          </div>
-          {/* Shipper Filter */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Client</label>
-            <select
-              value={shipperFilter}
-              onChange={(e) => setShipperFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
-            >
-              <option value="all">All Clients</option>
-              {uniqueShippers.map(shipper => (
-                <option key={shipper.id} value={shipper.id}>{shipper.name}</option>
-              ))}
-            </select>
-          </div>
-          {/* Group By */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Group By</label>
-            <select
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value as any)}
-              className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
-            >
-              <option value="none">No Grouping</option>
-              <option value="day">By Day</option>
-              <option value="week">By Week</option>
-              <option value="month">By Month</option>
-              <option value="shipper">By Client</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 items-center">
-          <span className="text-sm font-semibold text-gray-700 mr-2">Quick Filters:</span>
-          <button
-            onClick={() => {
-              const start = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-              const end = new Date().toISOString().split('T')[0]
-              setDateRange({ start, end })
-            }}
-            className="px-4 py-2 text-sm bg-teal-50 hover:bg-teal-100 text-accent-700 hover:text-accent-800 rounded-lg font-medium border border-teal-200 transition-all"
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => {
-              const start = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]
-              const end = new Date().toISOString().split('T')[0]
-              setDateRange({ start, end })
-            }}
-            className="px-4 py-2 text-sm bg-teal-50 hover:bg-teal-100 text-accent-700 hover:text-accent-800 rounded-lg font-medium border border-teal-200 transition-all"
-          >
-            This Year
-          </button>
-          <button
-            onClick={() => {
-              const end = new Date().toISOString().split('T')[0]
-              const start = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
-              setDateRange({ start, end })
-            }}
-            className="px-4 py-2 text-sm bg-teal-50 hover:bg-teal-100 text-accent-700 hover:text-accent-800 rounded-lg font-medium border border-teal-200 transition-all"
-          >
-            Last 30 Days
-          </button>
-          <button
-            onClick={() => {
-              setDateRange({ start: '', end: '' })
-              setShipperFilter('all')
-              setGroupBy('none')
-            }}
-            className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium border border-gray-300 transition-all ml-auto"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-
-      {/* Status Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 print:hidden">
-        {[
-          { key: 'all', label: 'All Completed' },
-          { key: 'completed', label: 'Completed' },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
-              filter === key
-                ? 'bg-gradient-accent text-white shadow-medical'
-                : 'glass-accent text-accent-700 hover:bg-teal-50/60 border-2 border-teal-200/30'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Grouped Summary */}
-      {groupBy !== 'none' && Object.keys(groupedLoads).length > 0 && (
-        <div className="glass-accent rounded-xl p-6 mb-6 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 print:text-lg">Summary by {groupBy === 'shipper' ? 'Client' : groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}</h2>
-          <div className="space-y-4">
-            {Object.entries(groupedLoads).map(([groupKey, groupLoads]) => {
-              const groupTotal = groupLoads
-                .filter(l => l.status === 'DELIVERED')
-                .reduce((sum, load) => sum + (load.quoteAmount || 0), 0)
-              const groupCount = groupLoads.filter(l => l.status === 'DELIVERED').length
-              
-              return (
-                <div key={groupKey} className="border-b border-gray-200 pb-3 last:border-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{groupKey}</h3>
-                      <p className="text-sm text-gray-600">{groupCount} loads</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-gray-900">{formatCurrency(groupTotal)}</div>
-                      <p className="text-xs text-gray-500">Total</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Load History List */}
-      {filteredLoads.length === 0 ? (
+      {loads.length === 0 ? (
         <EmptyState
           portal="driver"
-          title="No load history yet"
-          description="Completed loads will appear here with agreed rate information"
+          title="No load history"
+          description="Your completed loads will appear here"
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="glass-primary p-4 rounded-xl border border-slate-700/50">
+              <p className="text-sm text-slate-400 mb-1">Total Completed</p>
+              <p className="text-2xl font-bold text-white">{completedLoads.length}</p>
+            </div>
+            <div className="glass-primary p-4 rounded-xl border border-slate-700/50">
+              <p className="text-sm text-slate-400 mb-1">Total Value</p>
+              <p className="text-2xl font-bold text-cyan-400">{formatCurrency(totalValue)}</p>
+            </div>
+            <div className="glass-primary p-4 rounded-xl border border-slate-700/50">
+              <p className="text-sm text-slate-400 mb-1">This Month</p>
+              <p className="text-2xl font-bold text-green-400">{formatCurrency(thisMonthValue)}</p>
+            </div>
+            <div className="glass-primary p-4 rounded-xl border border-slate-700/50">
+              <p className="text-sm text-slate-400 mb-1">This Year</p>
+              <p className="text-2xl font-bold text-blue-400">{formatCurrency(thisYearValue)}</p>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="glass-primary p-4 rounded-xl border border-slate-700/50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Group By</label>
+                <select
+                  value={groupBy}
+                  onChange={(e) => setGroupBy(e.target.value as any)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-200"
+                >
+                  <option value="none">No Grouping</option>
+                  <option value="shipper">By Shipper</option>
+                  <option value="day">By Day</option>
+                  <option value="week">By Week</option>
+                  <option value="month">By Month</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Shipper</label>
+                <select
+                  value={shipperFilter}
+                  onChange={(e) => setShipperFilter(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-200"
+                >
+                  <option value="all">All Shippers</option>
+                  {uniqueShippers.map(shipper => (
+                    <option key={shipper.id} value={shipper.id}>{shipper.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Date Range</label>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                    className="flex-1 px-4 py-2 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-200"
+                  />
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                    className="flex-1 px-4 py-2 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-200"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Grouped Loads */}
           {Object.entries(groupedLoads).map(([groupKey, groupLoads]) => (
-            <div key={groupKey}>
-              {groupBy !== 'none' && (
-                <div className="mb-4 print:mb-2">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 print:text-base">
-                    {groupKey}
-                    <span className="ml-2 text-sm font-normal text-gray-600">
-                      ({groupLoads.filter(l => l.status === 'DELIVERED').length} loads, {formatCurrency(groupLoads.filter(l => l.status === 'DELIVERED').reduce((sum, load) => sum + (load.quoteAmount || 0), 0))})
-                    </span>
-                  </h3>
-                </div>
-              )}
-              {groupLoads.map((load) => (
-                <div key={load.id} className="glass-accent rounded-xl p-6 border-2 border-teal-200/30 shadow-medical">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Link
-                          href={`/driver/loads/${load.id}`}
-                          className="font-bold text-gray-900 text-lg hover:text-slate-600 transition-colors"
-                        >
-                          {load.publicTrackingCode}
-                        </Link>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                            getStatusColor(load.status)
-                          }`}
-                        >
-                          {getStatusLabel(load.status)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Client: <span className="font-medium">{load.shipper.companyName}</span>
-                      </p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Route: {load.pickupFacility.city}, {load.pickupFacility.state} → {load.dropoffFacility.city}, {load.dropoffFacility.state}
-                      </p>
-                      {load.actualDeliveryTime && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Delivered: {formatDateTime(load.actualDeliveryTime)}
+            <div key={groupKey} className="glass-primary rounded-xl border border-slate-700/50 overflow-hidden">
+              <div className="p-4 bg-slate-800/50 border-b border-slate-700/50">
+                <h2 className="text-xl font-bold text-white">{groupKey}</h2>
+                <p className="text-sm text-slate-400">{groupLoads.length} load{groupLoads.length !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="divide-y divide-slate-700/50">
+                {groupLoads.map(load => (
+                  <Link
+                    key={load.id}
+                    href={`/driver/loads/${load.id}`}
+                    className="block p-4 hover:bg-slate-800/30 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-mono font-bold text-cyan-400">{load.publicTrackingCode}</span>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold border ${getStatusColor(load.status)}`}>
+                            {getStatusLabel(load.status)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-300">
+                          {load.pickupFacility.city}, {load.pickupFacility.state} → {load.dropoffFacility.city}, {load.dropoffFacility.state}
                         </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {load.shipper.companyName} • {load.actualDeliveryTime ? formatDateTime(load.actualDeliveryTime) : formatDate(load.createdAt)}
+                        </p>
+                      </div>
+                      {load.quoteAmount && (
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-white">{formatCurrency(load.quoteAmount)}</p>
+                        </div>
                       )}
                     </div>
-                    <div className="text-right ml-4">
-                      {load.quoteAmount ? (
-                        <>
-                          <div className="text-2xl font-bold text-gray-900 mb-1">
-                            {formatCurrency(load.quoteAmount)}
-                          </div>
-                          <p className="text-xs text-gray-500">Agreed Rate</p>
-                        </>
-                      ) : (
-                        <div className="text-sm text-gray-400">No rate set</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* Print Footer */}
-      <div className="hidden print:block mt-8 pt-4 border-t border-gray-300">
-        <p className="text-xs text-gray-600">
-          Generated on {new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })} | 
-          Driver: {driver?.firstName} {driver?.lastName} ({driver?.email})
-        </p>
-      </div>
     </div>
   )
 }
-

@@ -5,10 +5,7 @@ import { useAuth } from './useAuth'
 import { getAdmin, setAdmin, removeAdmin } from '@/lib/storage'
 
 export function useAdminAuth() {
-  const { user, isLoading, isAuthenticated } = useAuth({
-    userType: 'admin',
-    redirectTo: '/admin/login',
-  })
+  const { user, isLoading, isAuthenticated } = useAuth()
 
   return {
     admin: user,
