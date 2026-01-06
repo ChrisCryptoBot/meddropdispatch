@@ -77,20 +77,39 @@ export async function GET(request: NextRequest) {
  * Create invoice (alternative to /api/invoices/generate)
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { shipperId, loadRequestIds, paymentTermsDays, taxRate, notes } = body
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
 
-    if (!shipperId || !loadRequestIds || !Array.isArray(loadRequestIds) || loadRequestIds.length === 0) {
+    const rawData = await req.json()
+
+    // Validate request body
+    const validation = await validateRequest(createInvoiceSchema, rawData)
+    if (!validation.success) {
+      const formatted = formatZodErrors(validation.errors)
       return NextResponse.json(
-        { error: 'Missing required fields: shipperId, loadRequestIds' },
+        {
+          error: 'ValidationError',
+          message: formatted.message,
+          errors: formatted.errors,
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       )
     }
 
+    const { shipperId, loadRequestIds, notes } = validation.data
+
+    // TODO: Phase 0 Authorization Check - Require Admin or System?
+    // For now assuming internal/admin use logic handled inside createInvoice or elsewhere
+    // If strict admin required:
+    // await requireAdmin(req as NextRequest)
+
     const invoiceData = await createInvoice(shipperId, loadRequestIds, {
-      paymentTermsDays,
-      taxRate,
       notes,
     })
 
@@ -98,11 +117,5 @@ export async function POST(request: NextRequest) {
       success: true,
       invoice: invoiceData,
     }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating invoice:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create invoice' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }

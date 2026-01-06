@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError } from '@/lib/errors'
 import { acceptQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
+import { verifyShipperOwnsLoad } from '@/lib/authorization'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { sendDriverLoadStatusEmail } from '@/lib/email'
@@ -23,6 +24,10 @@ export async function POST(
     }
 
     const { id } = await params
+
+    // AUTHORIZATION: Verify shipper owns the load
+    await verifyShipperOwnsLoad(request, id)
+
     const rawData = await req.json()
 
     // Validate request body (empty for accept-quote, but validate structure)

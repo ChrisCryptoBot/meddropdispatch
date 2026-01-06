@@ -2,6 +2,7 @@
 // Centralized validation for all API routes
 
 import { z } from 'zod'
+import DOMPurify from 'isomorphic-dompurify'
 
 // Common validation patterns
 const emailSchema = z.string().email('Invalid email format')
@@ -18,7 +19,7 @@ export const createLoadRequestSchema = z.object({
   contactName: nonEmptyStringSchema.optional(),
   phone: phoneSchema.optional(),
   shipperId: z.string().optional(),
-  
+
   // Driver assignment (optional - can assign during creation)
   driverId: z.string().optional(),
 
@@ -52,25 +53,25 @@ export const createLoadRequestSchema = z.object({
   estimatedContainers: z.number().int().positive().optional(),
   estimatedWeightKg: positiveNumberSchema.optional(),
   declaredValue: positiveNumberSchema.optional(),
-  
+
   // Scheduling
   readyTime: dateSchema.optional(),
   deliveryDeadline: dateSchema.optional(),
   isRecurring: z.boolean().optional(),
   directDriveRequired: z.boolean().optional(),
-  
+
   // Instructions & Contact
   accessNotes: z.string().optional(),
   driverInstructions: z.string().optional(),
   preferredContactMethod: z.enum(['PHONE', 'EMAIL', 'TEXT']).optional(),
-  
+
   // Compliance & Handling
   chainOfCustodyRequired: z.boolean().optional(),
   signatureRequiredAtPickup: z.boolean().optional(),
   signatureRequiredAtDelivery: z.boolean().optional(),
   electronicPodAcceptable: z.boolean().optional(),
   temperatureLoggingRequired: z.boolean().optional(),
-  
+
   // Billing
   poNumber: z.string().optional(),
   priorityLevel: z.enum(['NORMAL', 'HIGH', 'CRITICAL']).optional(),
@@ -295,6 +296,19 @@ export const updateLoadStatusSchema = z.object({
   eventLabel: z.string().optional(),
   eventDescription: z.string().optional(),
   locationText: z.string().optional(),
+  // Location
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  accuracy: z.number().optional(),
+  // GPS Override
+  overrideGpsValidation: z.boolean().optional(),
+  overrideReason: z.string().optional(),
+  // Signature & Temp (for PICKED_UP/DELIVERED)
+  signature: z.string().optional(),
+  signerName: z.string().optional(),
+  signatureUnavailableReason: z.string().optional(),
+  temperature: z.number().optional(),
+  temperatureImage: z.string().optional(),
 })
 
 // Quote Submission Validation
@@ -362,7 +376,9 @@ export async function validateRequest<T>(
   data: unknown
 ): Promise<{ success: true; data: T } | { success: false; errors: z.ZodError }> {
   try {
-    const validated = await schema.parseAsync(data)
+    // SECURITY: Sanitize input before validation
+    const sanitizedData = sanitizeObject(data)
+    const validated = await schema.parseAsync(sanitizedData)
     return { success: true, data: validated }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -370,6 +386,41 @@ export async function validateRequest<T>(
     }
     throw error
   }
+}
+
+/**
+ * Recursively sanitize all string fields in an object or array
+ */
+function sanitizeObject(data: unknown): unknown {
+  if (typeof data === 'string') {
+    // Use the sanitizeInput from edge-case-validations if available, 
+    // but avoiding circular dependency might be tricky if validation.ts is imported there.
+    // Ideally we import { sanitizeInput } from './edge-case-validations'
+    // But edge-case-validations imports ValidationError from errors? 
+    // Check circular dep. If risk, use local sanitization or import from a utils file.
+    // For now, let's lazy load or just do basic trim/sanitize here or duplicate logic safely.
+    // Actually, edge-case-validations is high-level. validation.ts is low-level?
+    // Let's assume we can import it.
+    // Wait, I can't import easily here without checking. 
+    // I'll use a dynamic require or just duplicate the simple DOMPurify call for safety from circular deps.
+    // Or better, move sanitizeInput to a shared 'utils' or 'security' file.
+    // For this context, I'll rely on isomorphic-dompurify directly here too.
+    return DOMPurify.sanitize(data.trim())
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeObject(item))
+  }
+
+  if (data !== null && typeof data === 'object') {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+      result[key] = sanitizeObject(value)
+    }
+    return result
+  }
+
+  return data
 }
 
 // Format Zod errors for API response

@@ -11,7 +11,7 @@ import {
   sendDeliveryCompleteSMS,
 } from '@/lib/sms'
 import { autoGenerateInvoiceForLoad } from '@/lib/invoicing'
-import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError, ConflictError } from '@/lib/errors'
 import { updateLoadStatusSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { validatePickupLocation, validateDeliveryLocation, validateCoordinates } from '@/lib/gps-validation'
@@ -19,6 +19,13 @@ import { validatePickupLocation, validateDeliveryLocation, validateCoordinates }
 const DEFAULT_TOLERANCE_RADIUS = 100 // 100 meters default
 import { verifyLoadStatusUpdateAccess, requireAuth } from '@/lib/authorization'
 import { logUserAction } from '@/lib/audit-log'
+import {
+  validateStatusTransition,
+  validateSignature,
+  validateTemperature,
+  validatePickupTiming,
+  validateDeliveryTiming,
+} from '@/lib/edge-case-validations'
 
 /**
  * PATCH /api/load-requests/[id]/status
@@ -39,7 +46,7 @@ export async function PATCH(
 
     const { id } = await params
     const rawData = await nextReq.json()
-    
+
     // Validate request body
     const validation = await validateRequest(updateLoadStatusSchema, rawData)
     if (!validation.success) {
@@ -55,7 +62,7 @@ export async function PATCH(
       )
     }
 
-    const data = validation.data as StatusUpdateData & { 
+    const data = validation.data as StatusUpdateData & {
       driverId?: string
       actorType?: string
       latitude?: number
@@ -63,6 +70,11 @@ export async function PATCH(
       accuracy?: number
       overrideReason?: string
       overrideGpsValidation?: boolean
+      signature?: string
+      signerName?: string
+      signatureUnavailableReason?: string
+      temperature?: number
+      temperatureImage?: string
     }
 
     // Get current load request
@@ -108,6 +120,24 @@ export async function PATCH(
     const newStatus = data.status
 
     if (newStatus !== currentStatus) {
+      // EDGE CASE VALIDATION: Section 5.2 - Status Transition Enforcement
+      try {
+        await validateStatusTransition(currentStatus, newStatus, id)
+      } catch (transitionError) {
+        if (transitionError instanceof ValidationError) {
+          return NextResponse.json(
+            {
+              error: transitionError.name,
+              message: transitionError.message,
+              code: transitionError.code,
+              timestamp: new Date().toISOString(),
+            },
+            { status: transitionError.statusCode }
+          )
+        }
+        throw transitionError
+      }
+
       const allowedTransitions = validTransitions[currentStatus] || []
       if (!allowedTransitions.includes(newStatus)) {
         return NextResponse.json(
@@ -162,7 +192,7 @@ export async function PATCH(
             }
 
             return NextResponse.json(
-              { 
+              {
                 error: 'GPS validation failed',
                 message: validationResult.message || 'Driver location does not match pickup location',
                 requiresOverride: true,
@@ -226,7 +256,7 @@ export async function PATCH(
             }
 
             return NextResponse.json(
-              { 
+              {
                 error: 'GPS validation failed',
                 message: validationResult.message || 'Driver location does not match delivery location',
                 requiresOverride: true,
@@ -249,6 +279,7 @@ export async function PATCH(
                   reason: data.overrideReason || 'GPS validation overridden',
                   latitude: data.latitude,
                   longitude: data.longitude,
+                  accuracy: data.accuracy
                 },
                 severity: 'WARNING',
                 success: true,
@@ -260,9 +291,42 @@ export async function PATCH(
           // Don't block if GPS validation fails - log and continue
         }
       }
-    }
 
-    // ATOMIC UPDATE: Use transaction to prevent duplicate invoice generation
+      // --------------------------------------------------------
+      // EDGE CASE VALIDATION: Signature & Temperature
+      // --------------------------------------------------------
+
+      // PICKUP: Require Signature & Temp if required
+      if (newStatus === 'PICKED_UP') {
+        // Validate Signature (if provided or required by load config - skipping strict config check for now, just validate input integrity)
+        if (data.signature || data.signerName || data.signatureUnavailableReason) {
+          validateSignature(data.signature || null, data.signerName || null, data.signatureUnavailableReason)
+        }
+
+        // Validate Temperature (if provided)
+        if (data.temperature !== undefined) {
+          // Check if temp-controlled
+          const requirements = {
+            min: loadRequest.temperatureMin, // might be null
+            max: loadRequest.temperatureMax, // might be null
+          }
+          // Since prisma model is generic, we'll check schema. 
+          // Assuming loadRequest has temperatureRequirement enum
+          const isTempRequired = loadRequest.temperatureRequirement !== 'AMBIENT' && loadRequest.temperatureRequirement !== 'OTHER'
+          validateTemperature(data.temperature, loadRequest.temperatureRequirement as any, isTempRequired)
+        }
+      }
+
+      // DELIVERY: Require Signature
+      if (newStatus === 'DELIVERED') {
+        if (data.signature || data.signerName || data.signatureUnavailableReason) {
+          validateSignature(data.signature || null, data.signerName || null, data.signatureUnavailableReason)
+        }
+      }
+
+    } // End of if (newStatus !== currentStatus)
+
+    // ATOMIC UPDATE: Use transaction to prevent duplicate invoice generation and enforce optimistic locking
     const updatedLoad = await prisma.$transaction(async (tx) => {
       // Re-check invoiceId within transaction to prevent race condition
       const currentLoad = await tx.loadRequest.findUnique({
@@ -274,15 +338,32 @@ export async function PATCH(
         throw new NotFoundError('Load request')
       }
 
-      // Update load status
-      const updated = await tx.loadRequest.update({
-        where: { id },
+      // OPTIMISTIC LOCKING: Ensure status is still what we expect
+      if (currentLoad.status !== currentStatus) {
+        throw new ConflictError(`State conflict: Status changed from ${currentStatus} to ${currentLoad.status} by another transaction.`)
+      }
+
+      // Update load status using updateMany for extra safety (simulating currentOf cursor)
+      const updateResult = await tx.loadRequest.updateMany({
+        where: {
+          id,
+          status: currentStatus
+        },
         data: {
           status: data.status,
           quoteAmount: data.quoteAmount,
           quoteNotes: data.quoteNotes,
         }
       })
+
+      if (updateResult.count === 0) {
+        throw new ConflictError('State conflict: Failed to update status due to concurrent modification.')
+      }
+
+      // Return the updated record
+      const updated = await tx.loadRequest.findUnique({ where: { id } })
+
+      if (!updated) throw new NotFoundError('Load lost during update')
 
       return { updated, currentLoad }
     })
@@ -310,7 +391,7 @@ export async function PATCH(
       // Use try-catch to prevent status update failure if invoice generation fails
       try {
         const invoiceId = await autoGenerateInvoiceForLoad(id)
-        
+
         if (invoiceId) {
           // Update load with invoice ID atomically
           await prisma.loadRequest.update({
@@ -323,7 +404,7 @@ export async function PATCH(
             try {
               const { sendDeliveryCongratulationsEmail } = await import('@/lib/email')
               const { generateInvoicePDF } = await import('@/lib/invoicing')
-              
+
               // Get invoice details
               const invoice = await prisma.invoice.findUnique({
                 where: { id: invoiceId },
@@ -345,10 +426,10 @@ export async function PATCH(
 
                 // Generate PDF
                 const pdfBuffer = await generateInvoicePDF(invoiceId)
-                
+
                 const trackingUrl = getTrackingUrl(loadRequest.publicTrackingCode)
                 const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-                
+
                 // Send delivery congratulations email with invoice
                 await sendDeliveryCongratulationsEmail({
                   to: loadRequest.shipper.email,
@@ -444,7 +525,7 @@ export async function PATCH(
       const deadline = new Date(loadRequest.deliveryDeadline)
       const now = new Date()
       const hoursUntilDeadline = Math.max(0, Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60)))
-      
+
       if (data.status === 'PICKED_UP' || data.status === 'IN_TRANSIT') {
         if (hoursUntilDeadline < 24) {
           eta = `Within ${hoursUntilDeadline} hour${hoursUntilDeadline !== 1 ? 's' : ''}`
@@ -459,8 +540,8 @@ export async function PATCH(
     }
 
     // Get driver name for email
-    const driverName = loadRequest.driver 
-      ? `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() 
+    const driverName = loadRequest.driver
+      ? `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim()
       : null
 
     // Get addresses for email

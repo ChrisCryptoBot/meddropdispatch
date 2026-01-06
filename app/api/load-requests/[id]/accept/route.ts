@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendDriverAcceptedNotification, sendLoadScheduledNotification } from '@/lib/email'
 import { getTrackingUrl } from '@/lib/utils'
-import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError, ConflictError } from '@/lib/errors'
 import { acceptLoadSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { requireDriver, verifyDriverAccess } from '@/lib/authorization'
+import { validateDriverEligibility, validateDriverAssignmentAtomic } from '@/lib/edge-case-validations'
 
 /**
  * POST /api/load-requests/[id]/accept
@@ -27,7 +28,7 @@ export async function POST(
 
     const { id } = await params
     const rawData = await nextReq.json()
-    
+
     // Validate request body
     const validation = await validateRequest(acceptLoadSchema, rawData)
     if (!validation.success) {
@@ -82,6 +83,29 @@ export async function POST(
       throw new ValidationError(`Cannot accept load with status: ${loadRequest.status}. Load must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED.`)
     }
 
+    // EDGE CASE VALIDATION: Section 3.1 - Driver Eligibility
+    try {
+      await validateDriverEligibility(driverId, {
+        temperatureRequirement: loadRequest.temperatureRequirement || undefined,
+        specimenCategory: loadRequest.specimenCategory || undefined,
+        readyTime: loadRequest.readyTime || undefined,
+        deliveryDeadline: loadRequest.deliveryDeadline || undefined,
+      })
+    } catch (eligibilityError) {
+      if (eligibilityError instanceof ValidationError || eligibilityError instanceof ConflictError) {
+        return NextResponse.json(
+          {
+            error: eligibilityError.name,
+            message: eligibilityError.message,
+            code: eligibilityError.code,
+            timestamp: new Date().toISOString(),
+          },
+          { status: eligibilityError.statusCode }
+        )
+      }
+      throw eligibilityError
+    }
+
     // ATOMIC UPDATE: Use updateMany with WHERE clause to prevent race condition
     // Only update if driverId is null or matches current driver (allows re-acceptance by same driver)
     const updateResult = await prisma.loadRequest.updateMany({
@@ -115,20 +139,22 @@ export async function POST(
         where: { id },
         select: { driverId: true, status: true },
       })
-      
+
       if (!currentLoad) {
         throw new NotFoundError('Load request')
       }
 
       if (currentLoad.driverId && currentLoad.driverId !== driverId) {
-        throw new ValidationError('This load has already been accepted by another driver')
+        logger.warn('Race condition detected: Load accepted by another driver', { loadId: id, currentDriverId: currentLoad.driverId, attemptingDriverId: driverId })
+        throw new ConflictError('This load has already been accepted by another driver')
       }
 
       if (!acceptableStatuses.includes(currentLoad.status)) {
-        throw new ValidationError(`Cannot accept load with status: ${currentLoad.status}. Load must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED.`)
+        logger.warn('Race condition detected: Status changed during acceptance', { loadId: id, status: currentLoad.status })
+        throw new ConflictError(`Cannot accept load with status: ${currentLoad.status}. Load must be NEW, REQUESTED, QUOTED, or QUOTE_ACCEPTED.`)
       }
 
-      throw new ValidationError('Failed to accept load. Please try again.')
+      throw new ConflictError('Failed to accept load. Please try again.')
     }
 
     // Fetch the updated load with all relations

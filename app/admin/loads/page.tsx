@@ -8,6 +8,7 @@ import type { LoadStatus } from '@/lib/types'
 
 export default function AdminLoadsPage() {
   const [loads, setLoads] = useState<any[]>([])
+  const [stats, setStats] = useState({ total: 0, active: 0, completed: 0, new: 0 })
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function AdminLoadsPage() {
       if (response.ok) {
         const data = await response.json()
         setLoads(data.loads || [])
+        setStats(data.stats || { total: 0, active: 0, completed: 0, new: 0 })
       }
     } catch (error) {
       console.error('Error fetching loads:', error)
@@ -29,10 +31,6 @@ export default function AdminLoadsPage() {
     }
   }
 
-  // Group loads by status
-  const activeStatuses = ['NEW', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED', 'PICKED_UP', 'IN_TRANSIT']
-  const activeLoads = loads.filter((load) => activeStatuses.includes(load.status))
-  const completedLoads = loads.filter((load) => load.status === 'DELIVERED')
   const filteredLoads = loads // For now, no filtering
 
   if (isLoading) {
@@ -73,7 +71,7 @@ export default function AdminLoadsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Active Loads</p>
-              <p className="text-3xl font-bold text-primary-700">{activeLoads.length}</p>
+              <p className="text-3xl font-bold text-primary-700">{stats.active}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +85,7 @@ export default function AdminLoadsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Completed</p>
-              <p className="text-3xl font-bold text-green-700">{completedLoads.length}</p>
+              <p className="text-3xl font-bold text-green-700">{stats.completed}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,9 +99,7 @@ export default function AdminLoadsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">New Requests</p>
-              <p className="text-3xl font-bold text-blue-700">
-                {loads.filter((l) => l.status === 'NEW').length}
-              </p>
+              <p className="text-3xl font-bold text-blue-700">{stats.new}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +113,7 @@ export default function AdminLoadsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Loads</p>
-              <p className="text-3xl font-bold text-gray-700">{loads.length}</p>
+              <p className="text-3xl font-bold text-gray-700">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

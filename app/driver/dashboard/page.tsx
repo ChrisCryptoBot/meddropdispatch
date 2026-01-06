@@ -137,7 +137,7 @@ export default function DriverDashboardPage() {
   const handleDeleteLoad = async (loadId: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!confirm('Are you sure you want to delete this load? This will permanently delete the load and all associated documents. This action cannot be undone.')) {
       return
     }
@@ -154,7 +154,7 @@ export default function DriverDashboardPage() {
 
       // Remove from local state
       setAllLoads(prev => prev.filter(load => load.id !== loadId))
-      
+
       // Show success message (you may need to import toast utility)
       alert('Load deleted successfully')
     } catch (error) {
@@ -178,7 +178,7 @@ export default function DriverDashboardPage() {
   const handleAcceptLoad = async (loadId: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     if (!driver) return
 
     // Check if driver has vehicles
@@ -209,7 +209,7 @@ export default function DriverDashboardPage() {
       const response = await fetch(`/api/load-requests/${pendingLoadId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           driverId: driver.id,
           vehicleId: selectedVehicleId,
         }),
@@ -217,7 +217,7 @@ export default function DriverDashboardPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to accept load')
+        throw new Error(error.message || error.error || 'Failed to accept load')
       }
 
       // Refresh loads
@@ -251,7 +251,7 @@ export default function DriverDashboardPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to deny load')
+        throw new Error(error.message || error.error || 'Failed to deny load')
       }
 
       // Refresh loads and close modal
@@ -294,7 +294,7 @@ export default function DriverDashboardPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to submit quote')
+        throw new Error(error.message || error.error || 'Failed to submit quote')
       }
 
       // Refresh loads and close modal
@@ -491,21 +491,19 @@ export default function DriverDashboardPage() {
       <div className="flex gap-2 mb-6 border-b border-teal-200/30">
         <button
           onClick={() => setActiveTab('all')}
-          className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-            activeTab === 'all'
+          className={`px-6 py-3 font-semibold transition-all border-b-2 ${activeTab === 'all'
               ? 'border-teal-600 text-teal-900'
               : 'border-transparent text-gray-600 hover:text-teal-700'
-          }`}
+            }`}
         >
           All Loads ({allLoads.length})
         </button>
         <button
           onClick={() => setActiveTab('my')}
-          className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-            activeTab === 'my'
+          className={`px-6 py-3 font-semibold transition-all border-b-2 ${activeTab === 'my'
               ? 'border-teal-600 text-teal-900'
               : 'border-transparent text-gray-600 hover:text-teal-700'
-          }`}
+            }`}
         >
           My Loads ({myLoads.length})
         </button>
@@ -547,7 +545,7 @@ export default function DriverDashboardPage() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-                className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
             >
               <option value="all">All Statuses</option>
               <option value="new">New/Requested</option>
@@ -566,7 +564,7 @@ export default function DriverDashboardPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -641,294 +639,295 @@ export default function DriverDashboardPage() {
         ) : (
           <div className="space-y-4">
             {filteredLoads.map((load) => {
-              const canAccept = !load.driver?.id && 
-                                load.status === 'REQUESTED' &&
-                                activeTab === 'all'
+              const canAccept = !load.driver?.id &&
+                load.status === 'REQUESTED' &&
+                activeTab === 'all'
               const isMyLoad = load.driver?.id === driver?.id
 
               return (
-              <div key={load.id} className="glass-accent p-5 rounded-2xl border-2 border-teal-200/30 hover:shadow-medical transition-all hover:border-teal-300/50">
-                {/* Checkbox for Smart Route */}
-                <div className="flex items-start gap-3 mb-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedLoads.has(load.id)}
-                    onChange={(e) => {
-                      e.stopPropagation()
-                      const newSelected = new Set(selectedLoads)
-                      if (e.target.checked) {
-                        newSelected.add(load.id)
-                      } else {
-                        newSelected.delete(load.id)
-                      }
-                      setSelectedLoads(newSelected)
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                  />
-                  <Link
-                    href={`/driver/loads/${load.id}`}
-                    className="flex-1 block hover:bg-white/60 transition-base"
-                  >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <p className="font-mono font-bold text-primary-700 text-lg">
-                        {load.publicTrackingCode}
-                      </p>
-                      {load.driver?.id === driver.id && (
-                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                          My Load
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600">{(load.serviceType || 'N/A').replace(/_/g, ' ')}</p>
-                  </div>
-                  <div className="text-right">
-                    {load.quoteAmount && (
-                      <p className="text-lg font-bold text-gray-900 mb-1">
-                        ${load.quoteAmount.toLocaleString()}
-                      </p>
-                    )}
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
-                      {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS]}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Route */}
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{load.pickupFacility.name}</p>
-                      <p className="text-sm text-gray-600 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
-                      {load.readyTime && (
-                        <p className="text-xs text-gray-500 mt-1">Ready: {formatDateTime(load.readyTime)}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pl-4">
-                    <div className="w-0.5 h-6 bg-gray-300"></div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{load.dropoffFacility.name}</p>
-                      <p className="text-sm text-gray-600 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
-                      {load.deliveryDeadline && (
-                        <p className="text-xs text-gray-500 mt-1">Deadline: {formatDateTime(load.deliveryDeadline)}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cargo Info */}
-                <div className="pt-3 border-t border-gray-200">
-                  <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                      {load.estimatedContainers || 'N/A'} containers
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
-                      </svg>
-                      {load.temperatureRequirement}
-                    </span>
-                    {load.driver && load.driver.id !== driver.id && (
-                      <span className="text-gray-500">
-                        Driver: {load.driver.firstName} {load.driver.lastName}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Enhanced Compliance Data for My Loads Tab */}
-                  {isMyLoad && (
-                    <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                      {/* Signatures */}
-                      <div className="flex items-center gap-3 text-xs">
-                        <span className="text-gray-500">Signatures:</span>
-                        {load.pickupSignature ? (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                            Pickup ✓
+                <div key={load.id} className="glass-accent p-5 rounded-2xl border-2 border-teal-200/30 hover:shadow-medical transition-all hover:border-teal-300/50">
+                  {/* Checkbox for Smart Route */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedLoads.has(load.id)}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        const newSelected = new Set(selectedLoads)
+                        if (e.target.checked) {
+                          newSelected.add(load.id)
+                        } else {
+                          newSelected.delete(load.id)
+                        }
+                        setSelectedLoads(newSelected)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                    />
+                    <Link
+                      href={`/driver/loads/${load.id}`}
+                      className="flex-1 block hover:bg-white/60 transition-base"
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <p className="font-mono font-bold text-primary-700 text-lg">
+                              {load.publicTrackingCode}
+                            </p>
+                            {load.driver?.id === driver.id && (
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                My Load
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{(load.serviceType || 'N/A').replace(/_/g, ' ')}</p>
+                        </div>
+                        <div className="text-right">
+                          {load.quoteAmount && (
+                            <p className="text-lg font-bold text-gray-900 mb-1">
+                              ${load.quoteAmount.toLocaleString()}
+                            </p>
+                          )}
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS]}`}>
+                            {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS]}
                           </span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Pickup</span>
-                        )}
-                        {load.deliverySignature ? (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
-                            Delivery ✓
+                        </div>
+                      </div>
+
+                      {/* Route */}
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{load.pickupFacility.name}</p>
+                            <p className="text-sm text-gray-600 truncate">{load.pickupFacility.city}, {load.pickupFacility.state}</p>
+                            {load.readyTime && (
+                              <p className="text-xs text-gray-500 mt-1">Ready: {formatDateTime(load.readyTime)}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pl-4">
+                          <div className="w-0.5 h-6 bg-gray-300"></div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8" />
+                            </svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{load.dropoffFacility.name}</p>
+                            <p className="text-sm text-gray-600 truncate">{load.dropoffFacility.city}, {load.dropoffFacility.state}</p>
+                            {load.deliveryDeadline && (
+                              <p className="text-xs text-gray-500 mt-1">Deadline: {formatDateTime(load.deliveryDeadline)}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cargo Info */}
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            {load.estimatedContainers || 'N/A'} containers
                           </span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Delivery</span>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
+                            </svg>
+                            {load.temperatureRequirement}
+                          </span>
+                          {load.driver && load.driver.id !== driver.id && (
+                            <span className="text-gray-500">
+                              Driver: {load.driver.firstName} {load.driver.lastName}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Enhanced Compliance Data for My Loads Tab */}
+                        {isMyLoad && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                            {/* Signatures */}
+                            <div className="flex items-center gap-3 text-xs">
+                              <span className="text-gray-500">Signatures:</span>
+                              {load.pickupSignature ? (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                  Pickup ✓
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Pickup</span>
+                              )}
+                              {load.deliverySignature ? (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                  Delivery ✓
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">No Delivery</span>
+                              )}
+                            </div>
+
+                            {/* Temperatures */}
+                            {(load.pickupTemperature !== null && load.pickupTemperature !== undefined) ||
+                              (load.deliveryTemperature !== null && load.deliveryTemperature !== undefined) ? (
+                              <div className="flex items-center gap-3 text-xs">
+                                <span className="text-gray-500">Temps:</span>
+                                {load.pickupTemperature !== null && load.pickupTemperature !== undefined && (
+                                  <span className="text-gray-700">
+                                    Pickup: <span className="font-medium">{load.pickupTemperature}°C</span>
+                                  </span>
+                                )}
+                                {load.deliveryTemperature !== null && load.deliveryTemperature !== undefined && (
+                                  <span className="text-gray-700">
+                                    Delivery: <span className="font-medium">{load.deliveryTemperature}°C</span>
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
+
+                            {/* Documents & Events Count */}
+                            {(load.documents && load.documents.length > 0) || (load.trackingEvents && load.trackingEvents.length > 0) ? (
+                              <div className="flex items-center gap-3 text-xs">
+                                {load.documents && load.documents.length > 0 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      router.push(`/driver/loads/${load.id}#documents`)
+                                    }}
+                                    className="text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
+                                  </button>
+                                )}
+                                {load.trackingEvents && load.trackingEvents.length > 0 && (
+                                  <span className="text-gray-500">
+                                    {load.trackingEvents.length} tracking event{load.trackingEvents.length !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
+
+                            {/* Timestamps */}
+                            {(load.actualPickupTime || load.actualDeliveryTime) && (
+                              <div className="text-xs text-gray-500">
+                                {load.actualPickupTime && `Picked up: ${formatDateTime(load.actualPickupTime)}`}
+                                {load.actualPickupTime && load.actualDeliveryTime && ' • '}
+                                {load.actualDeliveryTime && `Delivered: ${formatDateTime(load.actualDeliveryTime)}`}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                      
-                      {/* Temperatures */}
-                      {(load.pickupTemperature !== null && load.pickupTemperature !== undefined) || 
-                       (load.deliveryTemperature !== null && load.deliveryTemperature !== undefined) ? (
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className="text-gray-500">Temps:</span>
-                          {load.pickupTemperature !== null && load.pickupTemperature !== undefined && (
-                            <span className="text-gray-700">
-                              Pickup: <span className="font-medium">{load.pickupTemperature}°C</span>
-                            </span>
-                          )}
-                          {load.deliveryTemperature !== null && load.deliveryTemperature !== undefined && (
-                            <span className="text-gray-700">
-                              Delivery: <span className="font-medium">{load.deliveryTemperature}°C</span>
-                            </span>
-                          )}
-                        </div>
-                      ) : null}
-                      
-                      {/* Documents & Events Count */}
-                      {(load.documents && load.documents.length > 0) || (load.trackingEvents && load.trackingEvents.length > 0) ? (
-                        <div className="flex items-center gap-3 text-xs">
-                          {load.documents && load.documents.length > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                router.push(`/driver/loads/${load.id}#documents`)
-                              }}
-                              className="text-teal-600 hover:text-teal-800 font-medium flex items-center gap-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
-                            </button>
-                          )}
-                          {load.trackingEvents && load.trackingEvents.length > 0 && (
-                            <span className="text-gray-500">
-                              {load.trackingEvents.length} tracking event{load.trackingEvents.length !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </div>
-                      ) : null}
-                      
-                      {/* Timestamps */}
-                      {(load.actualPickupTime || load.actualDeliveryTime) && (
-                        <div className="text-xs text-gray-500">
-                          {load.actualPickupTime && `Picked up: ${formatDateTime(load.actualPickupTime)}`}
-                          {load.actualPickupTime && load.actualDeliveryTime && ' • '}
-                          {load.actualDeliveryTime && `Delivered: ${formatDateTime(load.actualDeliveryTime)}`}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      const urls = getAllRouteUrls(
-                        {
-                          addressLine1: load.pickupFacility.addressLine1,
-                          city: load.pickupFacility.city,
-                          state: load.pickupFacility.state,
-                          postalCode: '',
-                          name: load.pickupFacility.name,
-                        },
-                        {
-                          addressLine1: load.dropoffFacility.addressLine1,
-                          city: load.dropoffFacility.city,
-                          state: load.dropoffFacility.state,
-                          postalCode: '',
-                          name: load.dropoffFacility.name,
-                        }
-                      )
-                      window.open(urls.google, '_blank', 'noopener,noreferrer')
-                    }}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium transition-colors flex items-center gap-1"
-                    title="Open route in Google Maps"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                    Maps
-                  </button>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">View Details</span>
-                    <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-                  </Link>
-                </div>
-
-                {/* Rate Calculator & Actions */}
-                <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
-                  {/* Rate Calculator - Always visible for drivers */}
-                  <div className="p-3 bg-teal-50 rounded-lg border border-teal-200/30">
-                    <RateCalculator
-                      loadId={load.id}
-                      pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
-                      dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
-                      serviceType={load.serviceType}
-                      showDeadhead={true}
-                      className="text-sm"
-                    />
+                      {/* Actions */}
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const urls = getAllRouteUrls(
+                              {
+                                addressLine1: load.pickupFacility.addressLine1,
+                                city: load.pickupFacility.city,
+                                state: load.pickupFacility.state,
+                                postalCode: '',
+                                name: load.pickupFacility.name,
+                              },
+                              {
+                                addressLine1: load.dropoffFacility.addressLine1,
+                                city: load.dropoffFacility.city,
+                                state: load.dropoffFacility.state,
+                                postalCode: '',
+                                name: load.dropoffFacility.name,
+                              }
+                            )
+                            window.open(urls.google, '_blank', 'noopener,noreferrer')
+                          }}
+                          className="px-3 py-1.5 text-xs rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium transition-colors flex items-center gap-1"
+                          title="Open route in Google Maps"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                          </svg>
+                          Maps
+                        </button>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500">View Details</span>
+                          <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </Link>
                   </div>
 
-                  {/* Action Buttons */}
-                  {canAccept && (
-                    <div className="space-y-2">
-                      <button
-                        onClick={(e) => handleAcceptLoad(load.id, e)}
-                        className="w-full px-4 py-3 rounded-lg bg-gradient-success text-white font-semibold hover:shadow-lg transition-all shadow-lg"
-                      >
-                        Accept Load
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setDenyLoadId(load.id)
-                          setShowDenyModal(true)
-                        }}
-                        className="w-full px-4 py-3 rounded-lg bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 transition-all"
-                      >
-                        Deny Load
-                      </button>
+                  {/* Rate Calculator & Actions */}
+                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                    {/* Rate Calculator - Always visible for drivers */}
+                    <div className="p-3 bg-teal-50 rounded-lg border border-teal-200/30">
+                      <RateCalculator
+                        loadId={load.id}
+                        pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                        dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                        serviceType={load.serviceType}
+                        showDeadhead={true}
+                        className="text-sm"
+                      />
                     </div>
-                  )}
 
-                  {/* Delete Button - For scheduled, completed, cancelled, or delivered loads */}
-                  {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
-                    <button
-                      onClick={(e) => handleDeleteLoad(load.id, e)}
-                      className="w-full px-4 py-3 rounded-lg bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition-all flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete Load
-                    </button>
-                  )}
+                    {/* Action Buttons */}
+                    {canAccept && (
+                      <div className="space-y-2">
+                        <button
+                          onClick={(e) => handleAcceptLoad(load.id, e)}
+                          className="w-full px-4 py-3 rounded-lg bg-gradient-success text-white font-semibold hover:shadow-lg transition-all shadow-lg"
+                        >
+                          Accept Load
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setDenyLoadId(load.id)
+                            setShowDenyModal(true)
+                          }}
+                          className="w-full px-4 py-3 rounded-lg bg-teal-100 text-teal-700 font-semibold hover:bg-teal-200 transition-all"
+                        >
+                          Deny Load
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Delete Button - For scheduled, completed, cancelled, or delivered loads */}
+                    {(load.status === 'SCHEDULED' || load.status === 'CANCELLED' || load.status === 'DELIVERED') && (
+                      <button
+                        onClick={(e) => handleDeleteLoad(load.id, e)}
+                        className="w-full px-4 py-3 rounded-lg bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition-all flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Load
+                      </button>
+                    )}
+                  </div>
+
                 </div>
-                
-              </div>
-            )})}
+              )
+            })}
           </div>
         )}
 
@@ -938,7 +937,7 @@ export default function DriverDashboardPage() {
             <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Deny Load</h3>
               <p className="text-sm text-gray-600 mb-4">Why are you declining this load?</p>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -958,7 +957,7 @@ export default function DriverDashboardPage() {
                     <option value="OTHER">Other Reason</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Additional Notes (Optional)
@@ -1003,7 +1002,7 @@ export default function DriverDashboardPage() {
             <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Submit Quote</h3>
               <p className="text-sm text-gray-600 mb-4">Provide your quote amount and any notes for the shipper.</p>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1023,7 +1022,7 @@ export default function DriverDashboardPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Notes (Optional)
@@ -1127,7 +1126,7 @@ export default function DriverDashboardPage() {
                       <button
                         onClick={() => {
                           // Copy route to clipboard
-                          const routeText = smartRoute.optimizedRoute?.map((stop: any, idx: number) => 
+                          const routeText = smartRoute.optimizedRoute?.map((stop: any, idx: number) =>
                             `${idx + 1}. ${stop.type === 'pickup' ? 'Pickup' : 'Delivery'} - ${stop.facilityName}\n   ${stop.address}\n   ${stop.loadCode || ''}`
                           ).join('\n\n') || ''
                           navigator.clipboard.writeText(routeText)
@@ -1149,11 +1148,10 @@ export default function DriverDashboardPage() {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                stop.type === 'pickup' 
-                                  ? 'bg-green-100 text-green-800' 
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${stop.type === 'pickup'
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-blue-100 text-blue-800'
-                              }`}>
+                                }`}>
                                 {stop.type === 'pickup' ? '📍 PICKUP' : '🎯 DELIVERY'}
                               </span>
                               {stop.loadCode && (
@@ -1207,16 +1205,15 @@ export default function DriverDashboardPage() {
             <div className="glass-accent max-w-md w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Select Vehicle</h3>
               <p className="text-sm text-gray-600 mb-4">Choose which vehicle you'll use for this load.</p>
-              
+
               <div className="space-y-3 mb-6">
                 {vehicles.filter(v => v.isActive).map((vehicle) => (
                   <label
                     key={vehicle.id}
-                    className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedVehicleId === vehicle.id
+                    className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedVehicleId === vehicle.id
                         ? 'border-teal-600 bg-teal-50'
                         : 'border-teal-200 hover:border-teal-300 bg-white/80'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -1284,16 +1281,14 @@ export default function DriverDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setEnableLocationTracking(!enableLocationTracking)}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
-                        enableLocationTracking ? 'bg-teal-600' : 'bg-gray-200'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${enableLocationTracking ? 'bg-teal-600' : 'bg-gray-200'
+                        }`}
                       role="switch"
                       aria-checked={enableLocationTracking}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          enableLocationTracking ? 'translate-x-5' : 'translate-x-0'
-                        }`}
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${enableLocationTracking ? 'translate-x-5' : 'translate-x-0'
+                          }`}
                       />
                     </button>
                   </div>

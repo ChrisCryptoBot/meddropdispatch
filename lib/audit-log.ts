@@ -70,6 +70,39 @@ export interface AuditLogData {
 }
 
 /**
+ * Mask sensitive data in objects to prevent PII leaks in logs
+ */
+export function maskSensitiveData(data: any): any {
+  if (!data) return data
+
+  if (Array.isArray(data)) {
+    return data.map(item => maskSensitiveData(item))
+  }
+
+  if (typeof data === 'object') {
+    const masked: any = { ...data }
+    const sensitiveKeys = [
+      'password', 'token', 'secret', 'key', 'ssn', 'socialSecurity',
+      'creditCard', 'cc', 'routing', 'accountNumber', 'cvv', 'cvc',
+      'dob', 'birthDate', 'driverLicense', 'licenseNumber'
+    ]
+
+    for (const key of Object.keys(masked)) {
+      // Partial match for sensitive keys (case insensitive)
+      const lowerKey = key.toLowerCase()
+      if (sensitiveKeys.some(s => lowerKey.includes(s))) {
+        masked[key] = '[REDACTED]'
+      } else if (typeof masked[key] === 'object') {
+        masked[key] = maskSensitiveData(masked[key])
+      }
+    }
+    return masked
+  }
+
+  return data
+}
+
+/**
  * Create an audit log entry
  */
 export async function createAuditLog(data: AuditLogData): Promise<void> {
@@ -84,8 +117,8 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         userEmail: data.userEmail,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
-        changes: data.changes ? JSON.stringify(data.changes) : null,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        changes: data.changes ? JSON.stringify(maskSensitiveData(data.changes)) : null,
+        metadata: data.metadata ? JSON.stringify(maskSensitiveData(data.metadata)) : null,
         severity: data.severity || 'INFO',
         success: data.success !== false,
         errorMessage: data.errorMessage,

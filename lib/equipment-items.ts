@@ -126,3 +126,7 @@ export function getItemById(id: string): EquipmentItem | undefined {
   return EQUIPMENT_ITEMS.find(item => item.id === id)
 }
 
+
+
+
+

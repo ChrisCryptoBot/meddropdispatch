@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling, NotFoundError, ValidationError, AuthorizationError } from '@/lib/errors'
 import { submitQuoteSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { validateQuoteAmount } from '@/lib/edge-case-validations'
 
 /**
  * POST /api/load-requests/[id]/submit-quote
@@ -22,7 +23,7 @@ export async function POST(
 
     const { id } = await params
     const rawData = await req.json()
-    
+
     // Validate request body
     const validation = await validateRequest(submitQuoteSchema, rawData)
     if (!validation.success) {
@@ -39,6 +40,9 @@ export async function POST(
     }
 
     const { driverId, quoteAmount, notes } = validation.data
+
+    // EDGE CASE VALIDATION: Validate quote amount (min/max/negative)
+    validateQuoteAmount(quoteAmount, 'ROUTINE') // Service type not available in form, defaulting to check amount only
 
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
@@ -111,7 +115,7 @@ export async function POST(
     // Send email notification to shipper about quote submission
     const { sendDriverQuoteNotification } = await import('@/lib/email')
     const trackingUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/track/${loadRequest.publicTrackingCode}`
-    
+
     await sendDriverQuoteNotification({
       to: loadRequest.shipper.email,
       shipperName: loadRequest.shipper.companyName,

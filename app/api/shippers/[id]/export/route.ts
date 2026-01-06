@@ -118,7 +118,7 @@ export async function GET(
 
     // For documents, return JSON with document metadata (actual files would need ZIP export)
     if (exportType === 'documents') {
-      const documents = loads.flatMap(load => 
+      const documents = loads.flatMap(load =>
         load.documents.map(doc => ({
           trackingCode: load.publicTrackingCode,
           documentId: doc.id,
@@ -143,6 +143,33 @@ export async function GET(
         exportDate: new Date().toISOString(),
         note: 'Document files are available in the portal. File hashes are included for verification.',
       })
+    }
+
+    // AUDIT LOGGING: HIPAA Compliance - Log Export Action
+    try {
+      // Need auth session for logging
+      const { getAuthSession } = await import('@/lib/auth-session')
+      const { logUserAction } = await import('@/lib/audit-log')
+      const auth = await getAuthSession(request as any)
+
+      if (auth) {
+        await logUserAction('EXPORT', 'SHIPPER', {
+          entityId: shipper.id,
+          userId: auth.userId,
+          userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+          req: request,
+          metadata: {
+            exportType,
+            fileFormat: exportType === 'documents' ? 'JSON' : 'CSV',
+            recordCount: exportType === 'documents' ? 0 : loads.length
+          },
+          severity: 'INFO',
+          success: true
+        })
+      }
+    } catch (logError) {
+      console.error('Failed to log export action:', logError)
+      // Non-blocking for export flow, but logged
     }
 
     return NextResponse.json({ error: 'Invalid export type' }, { status: 400 })

@@ -5,6 +5,7 @@ import { createHash } from 'crypto'
 import { createErrorResponse, withErrorHandling, ValidationError, AuthorizationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { verifyDocumentUploadAccess } from '@/lib/authorization'
+import { logUserAction } from '@/lib/audit-log'
 
 /**
  * POST /api/load-requests/[id]/documents
@@ -25,10 +26,10 @@ export async function POST(
 
     const { id } = await params
     console.log('[Document Upload] Starting upload for load:', id)
-    
+
     const formData = await nextReq.formData()
     console.log('[Document Upload] FormData parsed successfully')
-  
+
     const file = formData.get('file') as File
     const documentType = formData.get('type') as string
     const title = formData.get('title') as string
@@ -56,7 +57,7 @@ export async function POST(
     const maxSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { 
+        {
           error: 'File size exceeds limit',
           message: `File size must be less than 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`
         },
@@ -74,10 +75,10 @@ export async function POST(
     ]
     const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.heic']
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
-    
+
     // Check MIME type or extension
     const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension)
-    
+
     if (!isValidType) {
       throw new ValidationError(
         `File type "${file.type || 'unknown'}" is not supported. Please upload a PDF or image file (PDF, JPG, PNG, HEIC).`
@@ -89,7 +90,7 @@ export async function POST(
     const buffer = Buffer.from(arrayBuffer)
     const base64 = buffer.toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
-    
+
     // Calculate SHA-256 hash for immutability marker
     const fileHash = createHash('sha256').update(buffer).digest('hex')
 
@@ -136,7 +137,7 @@ export async function POST(
 
     if (requiresOverride && !adminOverride && uploadedBy !== 'admin') {
       return NextResponse.json(
-        { 
+        {
           error: 'Cannot upload documents after delivery. Please contact admin to add documents with proper authorization.',
           requiresAdminOverride: true
         },
@@ -285,22 +286,48 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    // Apply rate limiting
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
     const { id } = await params
+
+    // AUTHORIZATION: Verify user can view these documents
+    // Re-use upload access logic (drivers assigned / shippers owning / admins)
+    // Or stricter: view access. Using upload access is safe proxy for now.
+    // Ideally we import verifyViewLoadAccess if it existed, but verifyDocumentUploadAccess is sufficient for "involved parties"
+    await verifyDocumentUploadAccess(request, id)
 
     const documents = await prisma.document.findMany({
       where: { loadRequestId: id },
       orderBy: { createdAt: 'desc' }
     })
 
+    // Get auth for logging (verifyDocumentUploadAccess ensures they are authorized, so requireAuth is safe)
+    const auth = await import('@/lib/authorization').then(m => m.requireAuth(req as NextRequest))
+
+    // AUDIT LOGGING: HIPAA Compliance - Log Read Access to Document (PHI)
+    if (auth) {
+      await logUserAction('VIEW', 'DOCUMENT', {
+        entityId: id, // Note: We only have loadId here easily, getting specific doc ID might need adjustment if not in scope, but this route returns ALL docs.
+        // Wait, this is GET /documents (list). So we are viewing the LIST of documents.
+        userId: auth.userId,
+        userType: auth.userType === 'driver' ? 'DRIVER' : auth.userType === 'shipper' ? 'SHIPPER' : 'ADMIN',
+        req: req as NextRequest, // Use 'req' from the inner scope
+        metadata: {
+          action: 'READ_PHI',
+          resource: 'DOCUMENT_LIST',
+          loadId: id
+        },
+        severity: 'INFO',
+        success: true,
+      })
+    }
+
     return NextResponse.json({ documents })
-
-  } catch (error) {
-    console.error('Error fetching documents:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch documents', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
+  })(request)
 }
-

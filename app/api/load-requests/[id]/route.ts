@@ -4,6 +4,9 @@ import { createErrorResponse, withErrorHandling, NotFoundError } from '@/lib/err
 import { updateLoadRequestSchema, validateRequest, formatZodErrors } from '@/lib/validation'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { logUserAction } from '@/lib/audit-log'
+import { getAuthSession } from '@/lib/auth-session'
+import { validateStatusTransition, validateSignature, validateTemperature } from '@/lib/edge-case-validations'
 
 /**
  * GET /api/load-requests/[id]
@@ -23,57 +26,57 @@ export async function GET(
     }
 
     const { id } = await params
-    
+
     // Validate ID format
     if (!id || typeof id !== 'string' || id.trim() === '') {
       logger.warn('Invalid load request ID', { loadId: id })
       throw new NotFoundError('Load request')
     }
-    
+
     // Log the request for debugging
     logger.info('Fetching load request', { loadId: id })
 
     try {
       const loadRequest = await prisma.loadRequest.findUnique({
-      where: { id },
-      include: {
-        shipper: true,
-        pickupFacility: true,
-        dropoffFacility: true,
-        driver: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            email: true,
-            vehicleType: true,
-            profilePicture: true,
-            yearsOfExperience: true,
-            specialties: true,
-            bio: true,
+        where: { id },
+        include: {
+          shipper: true,
+          pickupFacility: true,
+          dropoffFacility: true,
+          driver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              email: true,
+              vehicleType: true,
+              profilePicture: true,
+              yearsOfExperience: true,
+              specialties: true,
+              bio: true,
+            }
+          },
+          vehicle: {
+            select: {
+              id: true,
+              vehicleType: true,
+              vehicleMake: true,
+              vehicleModel: true,
+              vehicleYear: true,
+              vehiclePlate: true,
+              hasRefrigeration: true,
+              nickname: true,
+            }
+          },
+          trackingEvents: {
+            orderBy: { createdAt: 'desc' }
+          },
+          documents: {
+            orderBy: { createdAt: 'desc' }
           }
-        },
-        vehicle: {
-          select: {
-            id: true,
-            vehicleType: true,
-            vehicleMake: true,
-            vehicleModel: true,
-            vehicleYear: true,
-            vehiclePlate: true,
-            hasRefrigeration: true,
-            nickname: true,
-          }
-        },
-        trackingEvents: {
-          orderBy: { createdAt: 'desc' }
-        },
-        documents: {
-          orderBy: { createdAt: 'desc' }
         }
-      }
-    })
+      })
 
       if (!loadRequest) {
         logger.warn('Load request not found', { loadId: id })
@@ -98,29 +101,49 @@ export async function GET(
             if (value === null || value === undefined) {
               return value
             }
-            // Skip functions
-            if (typeof value === 'function') {
-              return undefined
-            }
             return value
           })
         )
-      } catch (serializationError) {
-        logger.error('Error serializing load request', 
-          serializationError instanceof Error ? serializationError : undefined,
-          { loadId: id }
-        )
-        // Fallback: try to return a simplified version
-        throw new Error(`Failed to serialize load request: ${serializationError instanceof Error ? serializationError.message : 'Unknown error'}`)
+      } catch (e) {
+        // Fix logger call and type safety
+        logger.error('Failed to serialize load request', { error: e instanceof Error ? e.message : 'Unknown error' })
+        serializedLoadRequest = loadRequest // Fallback
+      }
+
+      // AUDIT LOGGING: HIPAA Compliance - Log Read Access to PHI
+      // We await this to ensure the log is written before returning data (Fail-Safe)
+      // Check for auth session first (public tracking might not have session)
+      const auth = await getAuthSession(nextReq)
+      if (auth) {
+        // Map userType to AuditLog expected format (uppercase)
+        const userTypeMap: Record<string, 'DRIVER' | 'SHIPPER' | 'ADMIN'> = {
+          'driver': 'DRIVER',
+          'shipper': 'SHIPPER',
+          'admin': 'ADMIN'
+        }
+
+        await logUserAction('VIEW', 'LOAD_REQUEST', {
+          entityId: id,
+          userId: auth.userId,
+          userType: userTypeMap[auth.userType] || 'SYSTEM', // Fallback to SYSTEM if unknown
+          req: nextReq,
+          metadata: {
+            action: 'READ_PHI',
+            resource: 'LOAD_DETAILS',
+            trackingCode: loadRequest.publicTrackingCode
+          },
+          severity: 'INFO',
+          success: true,
+        })
       }
 
       logger.info('Load request fetched successfully', { loadId: id, trackingCode: loadRequest.publicTrackingCode })
       return NextResponse.json(serializedLoadRequest)
     } catch (error) {
-      logger.error('Error fetching load request', 
+      logger.error('Error fetching load request',
         error instanceof Error ? error : undefined,
-        { 
-          loadId: id, 
+        {
+          loadId: id,
           stack: error instanceof Error ? error.stack : undefined
         }
       )
@@ -148,7 +171,7 @@ export async function PATCH(
 
     const { id } = await params
     const rawData = await nextReq.json()
-    
+
     // Validate request body (updateLoadRequestSchema is flexible for partial updates)
     const validation = await validateRequest(updateLoadRequestSchema.partial(), rawData)
     if (!validation.success) {
@@ -210,7 +233,7 @@ export async function PATCH(
     // RESTRICTION: Cannot edit certain fields if load is PICKED_UP or later
     const restrictedStatuses = ['PICKED_UP', 'IN_TRANSIT', 'DELIVERED']
     const isRestricted = restrictedStatuses.includes(currentLoad.status)
-    
+
     if (isRestricted) {
       // Fields that cannot be edited once load is PICKED_UP or later
       const restrictedFields = [
@@ -228,9 +251,9 @@ export async function PATCH(
         'estimatedWeightKg',
         'declaredValue',
       ]
-      
+
       const attemptedRestrictedFields = restrictedFields.filter(field => data[field as keyof typeof data] !== undefined)
-      
+
       if (attemptedRestrictedFields.length > 0) {
         return NextResponse.json(
           {
@@ -267,12 +290,43 @@ export async function PATCH(
       if (data[field as keyof typeof data] !== undefined) {
         const oldValue = currentLoad[field as keyof typeof currentLoad]
         const newValue = data[field as keyof typeof data]
-        
+
         // Only log if value actually changed
         if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
           changes[field] = { from: oldValue, to: newValue }
         }
       }
+    }
+
+    // --------------------------------------------------------
+    // EDGE CASE VALIDATION: Status, Signature, Temperature
+    // --------------------------------------------------------
+
+    // 1. Status Transition Validation
+    if (data.status && data.status !== currentLoad.status) {
+      await validateStatusTransition(currentLoad.status, data.status, id)
+    }
+
+    // 2. Signature Validation
+    if (data.pickupSignature || data.pickupSignerName) {
+      validateSignature(data.pickupSignature || null, data.pickupSignerName || null, rawData.pickupSignatureUnavailableReason || undefined)
+    }
+    if (data.deliverySignature || data.deliverySignerName) {
+      validateSignature(data.deliverySignature || null, data.deliverySignerName || null, rawData.deliverySignatureUnavailableReason || undefined)
+    }
+
+    // 3. Temperature Validation
+    if (data.pickupTemperature !== undefined) {
+      const isTempRequired = currentLoad.temperatureRequirement !== 'AMBIENT' && currentLoad.temperatureRequirement !== 'OTHER'
+      // Cast to number if needed (zod schema might allow string/number union, forcing number here)
+      const temp = typeof data.pickupTemperature === 'string' ? parseFloat(data.pickupTemperature) : data.pickupTemperature
+      validateTemperature(temp, currentLoad.temperatureRequirement as any, isTempRequired)
+    }
+
+    if (data.deliveryTemperature !== undefined) {
+      const isTempRequired = currentLoad.temperatureRequirement !== 'AMBIENT' && currentLoad.temperatureRequirement !== 'OTHER'
+      const temp = typeof data.deliveryTemperature === 'string' ? parseFloat(data.deliveryTemperature) : data.deliveryTemperature
+      validateTemperature(temp, currentLoad.temperatureRequirement as any, isTempRequired)
     }
 
     // TEMPERATURE EXCEPTION HANDLING
@@ -283,13 +337,13 @@ export async function PATCH(
       const temp = typeof data.pickupTemperature === 'number' ? data.pickupTemperature : parseFloat(String(data.pickupTemperature))
       const min = currentLoad.temperatureMin!
       const max = currentLoad.temperatureMax!
-      
+
       if (temp < min || temp > max) {
         updateData.pickupTempException = true
       } else {
         updateData.pickupTempException = false
       }
-      
+
       // Set temperature timestamp if recording temperature
       if (data.pickupTemperature !== null && (rawData.pickupTempRecordedAt === undefined)) {
         updateData.pickupTempRecordedAt = new Date()
@@ -301,13 +355,13 @@ export async function PATCH(
       const temp = typeof data.deliveryTemperature === 'number' ? data.deliveryTemperature : parseFloat(String(data.deliveryTemperature))
       const min = currentLoad.temperatureMin!
       const max = currentLoad.temperatureMax!
-      
+
       if (temp < min || temp > max) {
         updateData.deliveryTempException = true
       } else {
         updateData.deliveryTempException = false
       }
-      
+
       // Set temperature timestamp if recording temperature
       if (data.deliveryTemperature !== null && (rawData.deliveryTempRecordedAt === undefined)) {
         updateData.deliveryTempRecordedAt = new Date()
@@ -321,11 +375,11 @@ export async function PATCH(
     if (rawData.deliveryAttested === true) {
       updateData.deliveryAttestedAt = new Date()
     }
-    
+
     // Check for late delivery when actualDeliveryTime is set
     if (data.actualDeliveryTime) {
       const deliveryTime = new Date(data.actualDeliveryTime)
-      
+
       if (currentLoad.deliveryDeadline && deliveryTime > currentLoad.deliveryDeadline) {
         updateData.lateDeliveryFlag = true
         // Note: lateDeliveryReasonNotes should be provided separately or admin can add later
@@ -433,10 +487,49 @@ export async function DELETE(
       throw new NotFoundError('Load request')
     }
 
-    // Allow deletion of any load by shipper or driver (for cleanup)
-    // No status restrictions - shippers and drivers can delete their loads at any time
-    // This is a permanent deletion, so use with caution
+    // SAFEGUARD: Soft Delete Implementation (Data Integrity)
+    // Instead of permanently deleting, we mark as CANCELLED to preserve audit trail, GPS data, and documents.
 
+    // Check if already cancelled/completed
+    if (loadRequest.status === 'CANCELLED') {
+      // If already cancelled, allow hard delete ONLY if query param ?force=true is present (Admin only implicitly via UI)
+      const url = new URL(req.url)
+      const forceDelete = url.searchParams.get('force') === 'true'
+
+      if (!forceDelete) {
+        return NextResponse.json({
+          success: true,
+          message: 'Load is already cancelled',
+          loadRequest,
+        })
+      }
+
+      // Hard delete logic (proceed to existing logic only if force=true)
+    } else {
+      // Perform SOFT DELETE (Cancel)
+      const cancelledLoad = await prisma.loadRequest.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelledBy: 'API_USER', // In a real app, get this from auth context
+          cancellationReason: 'SOFT_DELETE_REQUESTED',
+        }
+      })
+
+      logger.info('Load request soft-deleted (cancelled)', {
+        loadId: id,
+        trackingCode: cancelledLoad.publicTrackingCode,
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Load cancelled successfully (Soft Delete)',
+        loadRequest: cancelledLoad,
+      })
+    }
+
+    // HARD DELETE (Only reachable if force=true AND status was already CANCELLED)
     // Delete the load (Prisma will cascade delete related records via onDelete: Cascade)
     // Manually delete records that might not have cascade set up
     await prisma.$transaction(async (tx) => {

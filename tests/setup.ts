@@ -7,11 +7,9 @@ import { beforeAll, afterAll } from 'vitest'
 
 // Mock environment variables for tests
 // Use Object.defineProperty to set read-only NODE_ENV
-Object.defineProperty(process.env, 'NODE_ENV', {
-  value: 'test',
-  writable: true,
-  configurable: true,
-})
+// NODE_ENV is usually set by the test runner (Vitest)
+// We set other env vars here
+process.env.NODE_ENV = 'test'
 process.env.DATABASE_URL = 'file:./test.db'
 process.env.NEXTAUTH_SECRET = 'test-secret'
 process.env.NEXTAUTH_URL = 'http://localhost:3000'

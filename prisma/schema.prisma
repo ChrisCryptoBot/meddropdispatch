@@ -390,6 +390,7 @@ model TrackingEvent {
 
   @@index([loadRequestId])
   @@index([createdAt])
+  @@index([code])
   @@index([actorId])
 }
 
