@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminFromStorage } from '@/lib/auth-admin'
 import { showToast, showApiError } from '@/lib/toast'
+import { formatDateTime } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 interface BrokerageShipper {
   id: string
@@ -130,21 +132,13 @@ export default function BrokerageShippersPage() {
     }
   }
 
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
-
   if (isLoading) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center min-h-[400px]">
+      <div className="px-6 md:px-8 pb-6 md:pb-8">
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading brokerage shippers...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading brokerage shippers...</p>
           </div>
         </div>
       </div>
@@ -152,108 +146,130 @@ export default function BrokerageShippersPage() {
   }
 
   return (
-    <div className="p-8 print:p-4">
-      {/* Title Container */}
-      <div className="sticky top-0 z-30 bg-gradient-medical-bg backdrop-blur-sm pt-[73px] pb-4 mb-8 print:mb-4 print:static print:pt-8 print:top-0 border-b border-blue-200/30 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+    <div className="px-6 md:px-8 pb-6 md:pb-8">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-0 z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 flex items-center justify-between border-b border-slate-700/50">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
             <Link
               href="/admin/shippers"
-              className="text-blue-600 hover:text-blue-800 mb-2 inline-flex items-center gap-2 text-sm font-medium"
+              className="text-slate-400 hover:text-cyan-400 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to All Shippers
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">Brokerage Package Shippers</h1>
-            <p className="text-gray-600 print:text-sm">Manage dispatcher assignments for Premium tier clients</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-tight">
+              Brokerage Shippers
+            </h1>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-teal-600">{shippers.length}</div>
-            <div className="text-sm text-gray-600">Premium Clients</div>
-          </div>
+          <p className="text-slate-400 ml-8">Manage dispatcher assignments for Premium tier clients</p>
+        </div>
+        <div className="text-right">
+          <div className="text-3xl font-bold text-cyan-400 font-data">{shippers.length}</div>
+          <div className="text-sm text-slate-400">Premium Clients</div>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
-          <p className="text-urgent-700 text-sm font-medium">{error}</p>
+        <div className="mb-6 p-4 bg-red-500/20 border-2 border-red-500/30 rounded-xl">
+          <p className="text-red-400 text-sm font-medium">{error}</p>
         </div>
       )}
 
       {shippers.length === 0 ? (
-        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
-          <div className="w-16 h-16 bg-gradient-accent rounded-xl flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No Brokerage Shippers</h3>
-          <p className="text-gray-600">No shippers have signed up for the Premium Brokerage Package yet.</p>
+        <div className="glass-primary rounded-xl border border-slate-700/50 shadow-lg">
+          <EmptyState
+            portal="admin"
+            title="No Brokerage Shippers"
+            description="No shippers have signed up for the Premium Brokerage Package yet."
+            icon={
+              <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            }
+          />
         </div>
       ) : (
-        <div className="glass-primary rounded-2xl border-2 border-blue-200/30 shadow-glass overflow-hidden">
+        <div className="glass-primary rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-blue-50/60 border-b border-blue-200/30">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stats</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Assigned Dispatcher</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Stats
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Assigned Dispatcher
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Joined
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-blue-200/30">
+              <tbody className="divide-y divide-slate-700/50">
                 {shippers.map((shipper) => (
-                  <tr key={shipper.id} className="hover:bg-blue-50/40 transition-colors">
+                  <tr key={shipper.id} className="hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-semibold text-gray-900">{shipper.companyName}</div>
-                      <div className="text-sm text-gray-500">{shipper.email}</div>
+                      <div className="font-semibold text-white">{shipper.companyName}</div>
+                      <div className="text-sm text-slate-400">{shipper.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{shipper.contactName}</div>
-                      <div className="text-xs text-gray-500">{shipper.phone}</div>
+                      <div className="text-sm text-white">{shipper.contactName}</div>
+                      <div className="text-xs text-slate-400">{shipper.phone}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        <span className="font-medium">{shipper.loadCount}</span> loads
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        <span className="font-medium">{shipper.facilityCount}</span> facilities
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <div className="text-sm text-slate-300">
+                            <span className="font-bold text-white font-data">{shipper.loadCount}</span> loads
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-300">
+                            <span className="font-bold text-white font-data">{shipper.facilityCount}</span> facilities
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {shipper.dispatcher ? (
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{shipper.dispatcher.name}</div>
-                          <div className="text-xs text-gray-500">{shipper.dispatcher.email}</div>
+                          <div className="text-sm font-medium text-white">{shipper.dispatcher.name}</div>
+                          <div className="text-xs text-slate-400">{shipper.dispatcher.email}</div>
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold mt-1 ${
                             shipper.dispatcher.role === 'ADMIN'
-                              ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                              : 'bg-teal-100 text-teal-700 border border-teal-200'
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                           }`}>
                             {shipper.dispatcher.role}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 italic">Unassigned</span>
+                        <span className="text-sm text-slate-400 italic">Unassigned</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {formatDate(shipper.createdAt)}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                      {formatDateTime(shipper.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
                         onClick={() => handleAssignDispatcher(shipper)}
                         disabled={assigningShipperId === shipper.id}
-                        className="inline-flex items-center px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {assigningShipperId === shipper.id ? (
                           <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
@@ -261,7 +277,7 @@ export default function BrokerageShippersPage() {
                           </>
                         ) : (
                           <>
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             {shipper.dispatcher ? 'Reassign' : 'Assign'}
@@ -277,23 +293,27 @@ export default function BrokerageShippersPage() {
         </div>
       )}
 
-      {/* Assign Dispatcher Modal */}
+      {/* Assign Dispatcher Modal - Dark Theme */}
       {showAssignModal && selectedShipper && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="glass-primary p-8 rounded-3xl max-w-md w-full border-2 border-blue-200/30 shadow-glass">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Assign Dispatcher</h2>
-            <p className="text-gray-600 mb-6">
-              Assign a dedicated dispatcher to <strong>{selectedShipper.companyName}</strong>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => {
+          setShowAssignModal(false)
+          setSelectedShipper(null)
+          setSelectedDispatcherId('')
+        }}>
+          <div className="glass-primary p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-white mb-4">Assign Dispatcher</h2>
+            <p className="text-slate-300 mb-6">
+              Assign a dedicated dispatcher to <strong className="text-white">{selectedShipper.companyName}</strong>
             </p>
             
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Select Dispatcher
               </label>
               <select
                 value={selectedDispatcherId}
                 onChange={(e) => setSelectedDispatcherId(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white/80"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
               >
                 <option value="">Unassign (No dispatcher)</option>
                 {dispatchers.map((dispatcher) => (
@@ -303,7 +323,7 @@ export default function BrokerageShippersPage() {
                 ))}
               </select>
               {dispatchers.length === 0 && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-slate-400 mt-2">
                   No dispatchers available. Create admin/dispatcher users first.
                 </p>
               )}
@@ -316,14 +336,14 @@ export default function BrokerageShippersPage() {
                   setSelectedShipper(null)
                   setSelectedDispatcherId('')
                 }}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="flex-1 px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 border border-slate-600/50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveAssignment}
                 disabled={assigningShipperId === selectedShipper.id}
-                className="flex-1 px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {assigningShipperId === selectedShipper.id ? 'Saving...' : 'Save Assignment'}
               </button>
@@ -334,13 +354,3 @@ export default function BrokerageShippersPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-

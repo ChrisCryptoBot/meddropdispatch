@@ -82,6 +82,38 @@ export async function POST(
       throw eligibilityError
     }
 
+    // LIABILITY SHIELD: Check if driver has at least one compliant vehicle
+    // (Vehicle-specific validation happens at accept time, but we check availability here)
+    const { getNonCompliantVehicles } = await import('@/lib/vehicle-compliance')
+    const driverVehicles = await prisma.vehicle.findMany({
+      where: {
+        driverId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        vehiclePlate: true,
+        isActive: true,
+        registrationExpiryDate: true,
+      },
+    })
+
+    if (driverVehicles.length === 0) {
+      throw new ValidationError('Driver has no active vehicles. Add a vehicle before assigning loads.')
+    }
+
+    // Check if driver has at least one compliant vehicle
+    const { isVehicleCompliant } = await import('@/lib/vehicle-compliance')
+    const hasCompliantVehicle = driverVehicles.some(v => isVehicleCompliant(v))
+    
+    if (!hasCompliantVehicle) {
+      const nonCompliant = await getNonCompliantVehicles([driverId])
+      const vehicleList = nonCompliant.map(v => `${v.vehiclePlate} (${v.compliance.status})`).join(', ')
+      throw new ValidationError(
+        `Driver has no compliant vehicles. All vehicles are expired or missing registration: ${vehicleList}. Update vehicle registration before assigning loads.`
+      )
+    }
+
     // Status gating - prevent assignment in mid-transit or terminal states
     const acceptableStatuses = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED']
     const terminalStatuses = ['DELIVERED', 'DENIED', 'CANCELLED', 'COMPLETED']

@@ -142,7 +142,7 @@ export default function AuditLogsPage() {
               placeholder="Search by user, action, entity..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             />
           </div>
           <div>
@@ -150,7 +150,7 @@ export default function AuditLogsPage() {
             <select
               value={filter.action}
               onChange={(e) => setFilter({ ...filter, action: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Actions</option>
               <option value="LOGIN">Login</option>
@@ -166,7 +166,7 @@ export default function AuditLogsPage() {
             <select
               value={filter.entityType}
               onChange={(e) => setFilter({ ...filter, entityType: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Types</option>
               <option value="LOAD_REQUEST">Load Request</option>
@@ -181,7 +181,7 @@ export default function AuditLogsPage() {
             <select
               value={filter.severity}
               onChange={(e) => setFilter({ ...filter, severity: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Severities</option>
               <option value="CRITICAL">Critical</option>
@@ -195,7 +195,7 @@ export default function AuditLogsPage() {
             <select
               value={filter.success}
               onChange={(e) => setFilter({ ...filter, success: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All</option>
               <option value="true">Success</option>

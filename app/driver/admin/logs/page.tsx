@@ -125,7 +125,7 @@ export default function SystemLogsPage() {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Levels</option>
               <option value="ERROR">Errors Only</option>

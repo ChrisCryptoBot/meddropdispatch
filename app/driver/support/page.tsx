@@ -37,58 +37,58 @@ export default function DriverSupportPage() {
   }, [])
 
   return (
-    <div className="p-6 md:p-8 print:p-4">
-      {/* Header Section - Gold Standard - Sticky */}
-      <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+    <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
           Support
         </h1>
         <p className="text-slate-400">Get help and contact our support team</p>
       </div>
 
       {isLoading ? (
-        <div className="glass p-12 rounded-2xl text-center">
+        <div className="glass-primary p-12 rounded-2xl text-center border border-slate-700/50 shadow-lg">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-slate-300">Loading...</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="glass p-6 rounded-2xl">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Support</h2>
+          <div className="glass-primary p-6 rounded-2xl border border-slate-700/50 shadow-lg">
+            <h2 className="text-xl font-bold text-white mb-4">Contact Support</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Email</label>
-                <a href="mailto:meddrop.dispatch@outlook.com" className="text-lg text-accent-600 hover:text-accent-700 font-semibold block">
+                <label className="text-sm font-medium text-slate-300">Email</label>
+                <a href="mailto:meddrop.dispatch@outlook.com" className="text-lg text-cyan-400 hover:text-cyan-300 font-semibold block transition-colors">
                   meddrop.dispatch@outlook.com
                 </a>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Phone</label>
-                <a href="tel:+19039140386" className="text-lg text-accent-600 hover:text-accent-700 font-semibold block">
+                <label className="text-sm font-medium text-slate-300">Phone</label>
+                <a href="tel:+19039140386" className="text-lg text-cyan-400 hover:text-cyan-300 font-semibold block transition-colors">
                   (903) 914-0386
                 </a>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Hours</label>
-                <p className="text-lg text-gray-900">24/7 Support Available</p>
+                <label className="text-sm font-medium text-slate-300">Hours</label>
+                <p className="text-lg text-white font-semibold">24/7 Support Available</p>
               </div>
             </div>
           </div>
 
-          <div className="glass p-6 rounded-2xl">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Help Resources</h2>
+          <div className="glass-primary p-6 rounded-2xl border border-slate-700/50 shadow-lg">
+            <h2 className="text-xl font-bold text-white mb-4">Help Resources</h2>
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Getting Started Guide</h3>
-                <p className="text-sm text-gray-600">Learn how to use the driver portal and manage your loads</p>
+                <h3 className="font-semibold text-white mb-2">Getting Started Guide</h3>
+                <p className="text-sm text-slate-300">Learn how to use the driver portal and manage your loads</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">FAQs</h3>
-                <p className="text-sm text-gray-600">Common questions and answers about the platform</p>
+                <h3 className="font-semibold text-white mb-2">FAQs</h3>
+                <p className="text-sm text-slate-300">Common questions and answers about the platform</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Documentation</h3>
-                <p className="text-sm text-gray-600">Complete documentation and training materials</p>
+                <h3 className="font-semibold text-white mb-2">Documentation</h3>
+                <p className="text-sm text-slate-300">Complete documentation and training materials</p>
               </div>
             </div>
           </div>

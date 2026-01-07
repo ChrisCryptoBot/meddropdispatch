@@ -3,6 +3,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { determinePayee } from '@/lib/fleet'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -83,7 +84,7 @@ export async function createInvoice(
     throw new Error('Shipper not found')
   }
 
-  // Get load requests
+  // Get load requests with driver info
   const loadRequests = await prismaClient.loadRequest.findMany({
     where: {
       id: { in: loadRequestIds },
@@ -91,10 +92,44 @@ export async function createInvoice(
       status: { in: ['DELIVERED', 'COMPLETED'] },
       quoteAmount: { not: null },
     },
+    include: {
+      driver: {
+        select: {
+          id: true,
+          fleetRole: true,
+          fleetId: true,
+        },
+      },
+    },
   })
 
   if (loadRequests.length === 0) {
     throw new Error('No billable load requests found')
+  }
+
+  // Determine payee based on driver who completed the loads
+  // For now, use the first load's driver (all loads should have same driver for single invoice)
+  // TODO: Handle multi-driver invoices if needed
+  const primaryDriver = loadRequests[0]?.driver
+  let payeeType: 'DRIVER' | 'FLEET' | null = null
+  let payeeDriverId: string | null = null
+  let payeeFleetId: string | null = null
+
+  if (primaryDriver) {
+    try {
+      const payee = determinePayee(primaryDriver)
+      payeeType = payee.type
+      if (payee.type === 'DRIVER') {
+        payeeDriverId = payee.id
+      } else {
+        payeeFleetId = payee.id
+      }
+    } catch (error) {
+      // If driver has invalid fleet state, default to driver payment
+      console.warn('Error determining payee, defaulting to driver:', error)
+      payeeType = 'DRIVER'
+      payeeDriverId = primaryDriver.id
+    }
   }
 
   // Calculate subtotal
@@ -127,6 +162,9 @@ export async function createInvoice(
       total,
       status: 'DRAFT',
       notes: options?.notes || null,
+      payeeType,
+      payeeDriverId,
+      payeeFleetId,
       loadRequests: {
         connect: loadRequestIds.map((id) => ({ id })),
       },

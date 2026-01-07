@@ -145,10 +145,10 @@ export default function AdminCreateLoadPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 md:px-8 pb-6 md:pb-8">
       <div className="max-w-5xl mx-auto">
         {/* Header - Gold Standard Sticky */}
-        <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+        <div className="sticky top-0 z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/admin/loads"
@@ -200,7 +200,7 @@ export default function AdminCreateLoadPage() {
                     value={selectedShipperId}
                     onChange={(e) => setSelectedShipperId(e.target.value)}
                     required={!showNewShipperForm}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   >
                     <option value="">Select a shipper...</option>
                     {shippers.map((shipper) => (
@@ -246,7 +246,7 @@ export default function AdminCreateLoadPage() {
                       id="newCompanyName"
                       name="newCompanyName"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
@@ -257,7 +257,7 @@ export default function AdminCreateLoadPage() {
                       id="newClientType"
                       name="newClientType"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     >
                       <option value="">Select type...</option>
                       <option value="INDEPENDENT_PHARMACY">Independent Pharmacy</option>
@@ -279,7 +279,7 @@ export default function AdminCreateLoadPage() {
                       id="newContactName"
                       name="newContactName"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
@@ -291,7 +291,7 @@ export default function AdminCreateLoadPage() {
                       id="newPhone"
                       name="newPhone"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
@@ -303,7 +303,7 @@ export default function AdminCreateLoadPage() {
                       id="newEmail"
                       name="newEmail"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -323,7 +323,7 @@ export default function AdminCreateLoadPage() {
                   id="serviceType"
                   name="serviceType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="STAT">STAT (Urgent)</option>
                   <option value="SAME_DAY">Same Day</option>
@@ -341,7 +341,7 @@ export default function AdminCreateLoadPage() {
                   id="commodityDescription"
                   name="commodityDescription"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Blood samples, Lab specimens"
                 />
               </div>
@@ -353,7 +353,7 @@ export default function AdminCreateLoadPage() {
                   id="specimenCategory"
                   name="specimenCategory"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="UN3373">UN3373 Category B</option>
                   <option value="NON_SPECIMEN">Non-Specimen Medical</option>
@@ -369,7 +369,7 @@ export default function AdminCreateLoadPage() {
                   id="temperatureRequirement"
                   name="temperatureRequirement"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="AMBIENT">Ambient</option>
                   <option value="REFRIGERATED">Refrigerated (2-8°C)</option>
@@ -385,7 +385,7 @@ export default function AdminCreateLoadPage() {
                   id="preferredContactMethod"
                   name="preferredContactMethod"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -407,7 +407,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupFacilityName"
                   name="pickupFacilityName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -418,7 +418,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupFacilityType"
                   name="pickupFacilityType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   defaultValue="OTHER"
                 >
                   <option value="CLINIC">Clinic</option>
@@ -440,7 +440,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupAddressLine1"
                   name="pickupAddressLine1"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div className="md:col-span-2">
@@ -451,7 +451,7 @@ export default function AdminCreateLoadPage() {
                   type="text"
                   id="pickupAddressLine2"
                   name="pickupAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -463,7 +463,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupCity"
                   name="pickupCity"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -489,7 +489,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupPostalCode"
                   name="pickupPostalCode"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -501,7 +501,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupContactName"
                   name="pickupContactName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -513,7 +513,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupContactPhone"
                   name="pickupContactPhone"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -525,7 +525,7 @@ export default function AdminCreateLoadPage() {
                   id="readyTime"
                   name="readyTime"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -536,7 +536,7 @@ export default function AdminCreateLoadPage() {
                   id="pickupAccessNotes"
                   name="pickupAccessNotes"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Building access codes, parking instructions, etc."
                 />
               </div>
@@ -556,7 +556,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffFacilityName"
                   name="dropoffFacilityName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -567,7 +567,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffFacilityType"
                   name="dropoffFacilityType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   defaultValue="OTHER"
                 >
                   <option value="CLINIC">Clinic</option>
@@ -589,7 +589,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffAddressLine1"
                   name="dropoffAddressLine1"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div className="md:col-span-2">
@@ -600,7 +600,7 @@ export default function AdminCreateLoadPage() {
                   type="text"
                   id="dropoffAddressLine2"
                   name="dropoffAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -612,7 +612,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffCity"
                   name="dropoffCity"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -638,7 +638,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffPostalCode"
                   name="dropoffPostalCode"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -650,7 +650,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffContactName"
                   name="dropoffContactName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -662,7 +662,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffContactPhone"
                   name="dropoffContactPhone"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -674,7 +674,7 @@ export default function AdminCreateLoadPage() {
                   id="deliveryDeadline"
                   name="deliveryDeadline"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -685,7 +685,7 @@ export default function AdminCreateLoadPage() {
                   id="dropoffAccessNotes"
                   name="dropoffAccessNotes"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Building access codes, parking instructions, etc."
                 />
               </div>
@@ -705,7 +705,7 @@ export default function AdminCreateLoadPage() {
                   id="estimatedContainers"
                   name="estimatedContainers"
                   min="1"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -718,7 +718,7 @@ export default function AdminCreateLoadPage() {
                   name="estimatedWeightKg"
                   min="0"
                   step="0.1"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
@@ -731,7 +731,7 @@ export default function AdminCreateLoadPage() {
                   name="declaredValue"
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
             </div>

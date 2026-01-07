@@ -65,6 +65,18 @@ export async function POST(
       throw new ValidationError('Vehicle not found or does not belong to driver')
     }
 
+    // LIABILITY SHIELD: Validate vehicle compliance (Hard Stop)
+    const { validateVehicleCompliance } = await import('@/lib/vehicle-compliance')
+    try {
+      await validateVehicleCompliance(vehicleId)
+    } catch (complianceError) {
+      throw new ValidationError(
+        complianceError instanceof Error
+          ? complianceError.message
+          : 'Vehicle compliance check failed. Cannot accept load with non-compliant vehicle.'
+      )
+    }
+
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },

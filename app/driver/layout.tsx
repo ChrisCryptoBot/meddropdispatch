@@ -260,8 +260,8 @@ export default function DriverLayout({
         </svg>
       ),
     },
-    // Business tab - only shown for owner-operators (isAdmin drivers)
-    ...(driver?.isAdmin ? [{
+    // Business tab - shown for owner-operators (isAdmin drivers) or fleet members
+    ...((driver?.isAdmin || (driver?.fleetRole && driver.fleetRole !== 'INDEPENDENT')) ? [{
       name: 'Business',
       href: '/driver/business',
       icon: (
@@ -348,6 +348,10 @@ export default function DriverLayout({
       ),
     },
   ]
+
+  // Show Business tab for isAdmin drivers OR fleet members (OWNER/ADMIN/DRIVER)
+  const hasBusinessAccess = driver?.isAdmin || 
+    (driver?.fleetRole && driver.fleetRole !== 'INDEPENDENT')
 
   // Combine navigation items - admin items appear after driver items when admin mode is enabled
   const allNavigation = adminModeEnabled && driver?.isAdmin 
@@ -686,7 +690,7 @@ export default function DriverLayout({
             })}
             
             {/* Admin Navigation Separator */}
-            {adminModeEnabled && driver?.isAdmin && (
+            {((adminModeEnabled && driver?.isAdmin) || hasBusinessAccess) && (
               <>
                 <div className="my-4 border-t border-slate-700/50"></div>
                 <div className="px-4 py-2">

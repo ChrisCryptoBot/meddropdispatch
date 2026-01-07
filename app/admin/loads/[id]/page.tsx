@@ -292,9 +292,9 @@ export default function AdminLoadDetailPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="px-6 md:px-8 pb-6 md:pb-8">
       {/* Header - Gold Standard Sticky */}
-      <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+      <div className="sticky top-0 z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
         <Link href="/admin/loads" className="text-cyan-400 hover:text-cyan-300 font-medium mb-4 inline-block">
           ← Back to Loads
         </Link>
@@ -546,7 +546,7 @@ export default function AdminLoadDetailPage() {
                 <select
                   value={selectedDriver}
                   onChange={(e) => setSelectedDriver(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select driver...</option>
                   {drivers.map((driver) => (
@@ -577,7 +577,7 @@ export default function AdminLoadDetailPage() {
                   step="0.01"
                   value={quoteAmount}
                   onChange={(e) => setQuoteAmount(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="0.00"
                   required
                 />
@@ -588,7 +588,7 @@ export default function AdminLoadDetailPage() {
                   value={quoteNotes}
                   onChange={(e) => setQuoteNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="Internal notes about pricing..."
                 />
               </div>
@@ -678,7 +678,7 @@ export default function AdminLoadDetailPage() {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as LoadStatus)}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   required
                 >
                   <option value="">Select status...</option>
@@ -696,7 +696,7 @@ export default function AdminLoadDetailPage() {
                   type="text"
                   value={eventLabel}
                   onChange={(e) => setEventLabel(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="Auto-generated if empty"
                 />
               </div>
@@ -706,7 +706,7 @@ export default function AdminLoadDetailPage() {
                   type="text"
                   value={locationText}
                   onChange={(e) => setLocationText(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="City, State"
                 />
               </div>
@@ -716,7 +716,7 @@ export default function AdminLoadDetailPage() {
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="Additional details..."
                 />
               </div>

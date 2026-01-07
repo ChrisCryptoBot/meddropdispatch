@@ -318,14 +318,11 @@ export async function POST(request: NextRequest) {
     // Send SMS to admin (if configured) - NON-BLOCKING: SMS failures should not prevent webhook processing
     const adminPhone = process.env.ADMIN_PHONE_NUMBER
     if (adminPhone) {
-      sendNewQuoteRequestSMS({
+      sendNewQuoteRequestSMS(
         adminPhone,
         trackingCode,
-        shipperName: shipper.companyName,
-        route: parsedEmail.pickupAddress && parsedEmail.dropoffAddress
-          ? `${parsedEmail.pickupAddress.split(',')[0]} → ${parsedEmail.dropoffAddress.split(',')[0]}`
-          : 'Route TBD',
-      }).catch((error) => {
+        shipper.companyName
+      ).catch((error) => {
         console.error('[SMS] Failed to send new quote request SMS (non-blocking):', error)
       })
     }

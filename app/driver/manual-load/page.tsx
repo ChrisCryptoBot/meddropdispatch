@@ -409,9 +409,10 @@ function DriverManualLoadPageContent() {
   }
 
   return (
-    <div className="p-8 print:p-4">
+    <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+        {/* Header - Gold Standard Sticky */}
+        <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
           <div className="flex items-center gap-4">
             <Link
               href="/driver/dashboard"
@@ -422,7 +423,7 @@ function DriverManualLoadPageContent() {
               </svg>
             </Link>
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">Record Manual Load</h1>
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">Record Manual Load</h1>
               <p className="text-slate-400">
                 Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
               </p>
@@ -584,7 +585,7 @@ function DriverManualLoadPageContent() {
                       id="newShipperClientType"
                       value={newShipperData.clientType}
                       onChange={(e) => setNewShipperData({ ...newShipperData, clientType: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                     >
                       <option value="OTHER">Other</option>
                       <option value="CLINIC">Clinic</option>
@@ -1259,7 +1260,7 @@ function DriverManualLoadPageContent() {
                       value={uploadType}
                       onChange={(e) => setUploadType(e.target.value)}
                       required
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                     >
                       <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
                       <option value="PROOF_OF_DELIVERY">Proof of Delivery</option>

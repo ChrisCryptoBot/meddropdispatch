@@ -139,11 +139,12 @@ export default function ShipperNotificationsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
+    <div className="px-6 md:px-8 pb-6 md:pb-8">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Notifications</h1>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight print:text-2xl">Notifications</h1>
             {unreadCount > 0 ? (
               <p className="text-slate-400 text-sm md:text-base print:text-sm">
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
@@ -153,11 +154,11 @@ export default function ShipperNotificationsPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Group by:</label>
+            <label className="text-sm text-slate-300">Group by:</label>
             <select
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-              className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="px-3 py-1.5 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 text-sm outline-none"
             >
               <option value="none">None</option>
               <option value="type">Type</option>

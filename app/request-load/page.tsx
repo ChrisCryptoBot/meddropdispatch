@@ -311,7 +311,7 @@ export default function RequestLoadPage() {
                   id="clientType"
                   name="clientType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select type...</option>
                   <option value="INDEPENDENT_PHARMACY">Independent Pharmacy</option>
@@ -375,7 +375,7 @@ export default function RequestLoadPage() {
                   id="preferredContactMethod"
                   name="preferredContactMethod"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -450,7 +450,7 @@ export default function RequestLoadPage() {
                   id="serviceType"
                   name="serviceType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select service...</option>
                   <option value="STAT">STAT (Immediate)</option>
@@ -469,7 +469,7 @@ export default function RequestLoadPage() {
                   id="specimenCategory"
                   name="specimenCategory"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select category...</option>
                   <option value="UN3373_CATEGORY_B">UN3373 - Biological Substance (Category B)</option>
@@ -501,7 +501,7 @@ export default function RequestLoadPage() {
                   id="temperatureRequirement"
                   name="temperatureRequirement"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select requirement...</option>
                   <option value="AMBIENT">Ambient (Room Temperature)</option>

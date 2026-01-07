@@ -304,7 +304,7 @@ export default function ShipperSignupPage() {
                   value={formData.clientType}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none transition-all bg-slate-700/50 text-white"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all bg-slate-800/50 text-slate-200"
                 >
                   <option value="CLINIC">Clinic</option>
                   <option value="HOSPITAL">Hospital</option>

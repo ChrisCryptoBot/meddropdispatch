@@ -602,35 +602,31 @@ export async function PATCH(
       // Driver assigned - fire and forget
       if (data.status === 'SCHEDULED' && loadRequest.driver) {
         const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
-        sendDriverAssignedSMS({
+        sendDriverAssignedSMS(
           shipperPhone,
-          trackingCode: loadRequest.publicTrackingCode,
-          driverName,
-        }).catch((error) => {
+          loadRequest.publicTrackingCode,
+          driverName
+        ).catch((error) => {
           console.error('[SMS] Failed to send driver assigned SMS (non-blocking):', error)
         })
       }
 
       // Driver en route - fire and forget
       if (data.status === 'EN_ROUTE' && loadRequest.driver) {
-        const driverName = `${loadRequest.driver.firstName || ''} ${loadRequest.driver.lastName || ''}`.trim() || 'Driver'
-        sendDriverEnRouteSMS({
+        sendDriverEnRouteSMS(
           shipperPhone,
-          trackingCode: loadRequest.publicTrackingCode,
-          driverName,
-        }).catch((error) => {
+          loadRequest.publicTrackingCode
+        ).catch((error) => {
           console.error('[SMS] Failed to send driver en route SMS (non-blocking):', error)
         })
       }
 
       // Delivery complete - fire and forget
       if (data.status === 'DELIVERED') {
-        const deliveryTime = new Date().toLocaleString()
-        sendDeliveryCompleteSMS({
+        sendDeliveryCompleteSMS(
           shipperPhone,
-          trackingCode: loadRequest.publicTrackingCode,
-          deliveryTime,
-        }).catch((error) => {
+          loadRequest.publicTrackingCode
+        ).catch((error) => {
           console.error('[SMS] Failed to send delivery complete SMS (non-blocking):', error)
         })
       }

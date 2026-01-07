@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { buildLoadVisibilityWhere } from '@/lib/fleet-visibility'
 
 /**
  * GET /api/drivers/[id]/my-loads
  * Get all loads assigned to/accepted by a specific driver (including completed)
  * Shows driver's complete load history with documentation
+ * Fleet Protocol: OWNER/ADMIN see all fleet loads, DRIVER sees only own loads
  */
 export async function GET(
   request: NextRequest,
@@ -19,10 +21,13 @@ export async function GET(
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100 per page
     const skip = (page - 1) * limit
 
-    // Build where clause
-    const where: any = {
-      driverId: driverId, // Only loads assigned to this driver
+    // Build where clause with fleet visibility scoping
+    const baseWhere: any = {}
+    if (status && status !== 'all') {
+      baseWhere.status = status
     }
+    
+    const where = await buildLoadVisibilityWhere(driverId, baseWhere)
 
     // Filter by status if provided
     if (status && status !== 'all') {

@@ -1211,7 +1211,7 @@ export default function ShipperLoadDetailPage() {
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   required
                 >
                   <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
@@ -1229,7 +1229,7 @@ export default function ShipperLoadDetailPage() {
                   type="text"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   placeholder="e.g., Proof of Delivery - ABC Clinic"
                   required
                 />
@@ -1267,7 +1267,7 @@ export default function ShipperLoadDetailPage() {
                     }
                     setUploadFile(file)
                   }}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
@@ -1368,7 +1368,7 @@ export default function ShipperLoadDetailPage() {
                 <select
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 rounded-lg"
                   required
                 >
                   <option value="CLIENT_CANCELLED">Client Cancelled</option>
@@ -1388,7 +1388,7 @@ export default function ShipperLoadDetailPage() {
                 <select
                   value={cancelBillingRule}
                   onChange={(e) => setCancelBillingRule(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 rounded-lg"
                   required
                 >
                   <option value="NOT_BILLABLE">Not Billable</option>
@@ -1406,7 +1406,7 @@ export default function ShipperLoadDetailPage() {
                   value={cancelNotes}
                   onChange={(e) => setCancelNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 rounded-lg"
                   placeholder="Provide any additional details about the cancellation..."
                 />
               </div>

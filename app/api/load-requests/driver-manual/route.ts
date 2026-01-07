@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateTrackingCode } from '@/lib/tracking'
-import { createErrorResponse, withErrorHandling } from '@/lib/errors'
+import { createErrorResponse, withErrorHandling, ValidationError } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
@@ -203,6 +203,20 @@ export async function POST(request: NextRequest) {
           defaultAccessNotes: null,
         },
       })
+    }
+
+    // LIABILITY SHIELD: Validate vehicle compliance if vehicleId is provided (Hard Stop)
+    if (loadData.vehicleId) {
+      const { validateVehicleCompliance } = await import('@/lib/vehicle-compliance')
+      try {
+        await validateVehicleCompliance(loadData.vehicleId)
+      } catch (complianceError) {
+        throw new ValidationError(
+          complianceError instanceof Error
+            ? complianceError.message
+            : 'Vehicle compliance check failed. Cannot create load with non-compliant vehicle.'
+        )
+      }
     }
 
     // Create load request

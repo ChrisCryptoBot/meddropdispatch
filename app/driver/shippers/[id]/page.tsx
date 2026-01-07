@@ -354,8 +354,9 @@ export default function ShipperProfilePage() {
   }
 
   return (
-    <div className="p-8 print:p-4">
-      <div className="mb-6">
+    <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
         <div className="flex items-center gap-4">
           <Link
             href="/driver/shippers"
@@ -366,7 +367,7 @@ export default function ShipperProfilePage() {
             </svg>
           </Link>
           <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">{shipper.companyName}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">{shipper.companyName}</h1>
             <p className="text-slate-400">
               {shipper.clientType.replace(/_/g, ' ')} • {shipper.isActive ? (
                 <span className="text-green-400 font-semibold">Active</span>
@@ -555,7 +556,7 @@ export default function ShipperProfilePage() {
                     <select
                       value={formData.paymentTerms}
                       onChange={(e) => setFormData({ ...formData, paymentTerms: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                     >
                       <option value="NET_7">Net 7</option>
                       <option value="NET_14">Net 14</option>

@@ -24,6 +24,65 @@
     font-family: var(--font-mono), ui-monospace, monospace;
     @apply tabular-nums;
   }
+
+  /* Dark theme select styling - Gold Standard */
+  select {
+    color-scheme: dark;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+  }
+
+  /* Add extra right padding for chevron - preserve existing left padding */
+  select[class*="px-4"] {
+    padding-left: 1rem;
+    padding-right: 2.5rem;
+  }
+
+  select[class*="px-3"] {
+    padding-left: 0.75rem;
+    padding-right: 2.25rem;
+  }
+
+  select[class*="px-2"] {
+    padding-left: 0.5rem;
+    padding-right: 2rem;
+  }
+
+  /* Fallback for selects without px- classes */
+  select:not([class*="px-"]) {
+    padding-right: 2.5rem;
+  }
+
+  select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2306b6d4' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  }
+
+  /* Style option elements for dark theme - Maximum browser compatibility */
+  option {
+    background-color: rgb(30 41 59) !important;
+    color: rgb(226 232 240) !important;
+  }
+
+  /* Selected option styling */
+  option:checked,
+  option:focus {
+    background-color: rgb(51 65 85) !important;
+    color: rgb(255 255 255) !important;
+  }
+
+  /* Hover state for options (limited browser support) */
+  option:hover {
+    background-color: rgb(51 65 85) !important;
+  }
+
+  /* Ensure all selects with dark theme classes use dark color scheme */
+  select[class*="bg-slate"],
+  select[class*="border-slate"] {
+    color-scheme: dark;
+  }
 }
 
 @layer utilities {

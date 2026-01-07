@@ -46,10 +46,14 @@ export async function GET(
 
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    // Get completed loads
+    // Get visibility scope (fleet-aware)
+    const { getDriverVisibilityScope } = await import('@/lib/fleet-visibility')
+    const visibleDriverIds = await getDriverVisibilityScope(id)
+
+    // Get completed loads (for visible drivers - fleet-aware)
     const completedLoads = await prisma.loadRequest.findMany({
       where: {
-        driverId: id,
+        driverId: { in: visibleDriverIds },
         status: {
           in: ['DELIVERED', 'COMPLETED']
         }
@@ -61,6 +65,7 @@ export async function GET(
         actualDeliveryTime: true,
         shipperPaymentStatus: true,
         shipperPaidAt: true,
+        driverId: true,
       }
     })
 
