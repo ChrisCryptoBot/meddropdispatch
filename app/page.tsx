@@ -56,9 +56,9 @@ export default function HomePage() {
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight pb-4">
                 Medical Courier Operations,
-                <span className="block text-4xl sm:text-5xl lg:text-6xl bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mt-2">
+                <span className="block text-4xl sm:text-5xl lg:text-6xl bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mt-2 pb-3 leading-normal">
                   Simplified
                 </span>
               </h1>
@@ -143,7 +143,7 @@ export default function HomePage() {
                 { value: 'Temp', label: 'Monitoring' },
               ].map((feature) => (
                 <div key={feature.value} className="text-center">
-                  <div className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+                  <div className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pb-3 leading-normal">
                     {feature.value}
                   </div>
                   <div className="text-base font-medium text-slate-300">{feature.label}</div>

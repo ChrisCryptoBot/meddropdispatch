@@ -145,37 +145,39 @@ export default function AdminCreateLoadPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-6 md:p-8">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
+        {/* Header - Gold Standard Sticky */}
+        <div className="sticky top-[85px] z-[55] mb-6 pb-2">
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/admin/loads"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-slate-400 hover:text-cyan-400 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900">Create Load Request</h1>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-tight">
+              Create Load Request
+            </h1>
           </div>
-          <p className="text-lg text-gray-600 ml-10">
+          <p className="text-slate-400 ml-10">
             Document a load request received via phone call or other method
           </p>
         </div>
 
         {error && (
-          <div className="glass-primary p-4 rounded-lg border-l-4 border-red-500 mb-6 bg-red-50/50 border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-4 rounded-lg border-l-4 border-red-500/50 mb-6 bg-red-500/20 border border-red-500/30 shadow-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-600 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-5 w-5 text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-3 flex-1">
-                <h3 className="text-sm font-semibold text-red-800 mb-1">Error</h3>
-                <p className="text-sm text-red-700">{error}</p>
+                <h3 className="text-sm font-semibold text-red-400 mb-1">Error</h3>
+                <p className="text-sm text-red-300">{error}</p>
               </div>
             </div>
           </div>
@@ -183,13 +185,13 @@ export default function AdminCreateLoadPage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Shipper Selection */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Shipper Information</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Shipper Information</h3>
             
             {!showNewShipperForm ? (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="shipperId" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="shipperId" className="block text-sm font-semibold text-slate-300 mb-2">
                     Select Existing Shipper *
                   </label>
                   <select
@@ -198,7 +200,7 @@ export default function AdminCreateLoadPage() {
                     value={selectedShipperId}
                     onChange={(e) => setSelectedShipperId(e.target.value)}
                     required={!showNewShipperForm}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   >
                     <option value="">Select a shipper...</option>
                     {shippers.map((shipper) => (
@@ -211,7 +213,7 @@ export default function AdminCreateLoadPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewShipperForm(true)}
-                  className="text-primary-600 hover:text-primary-800 font-medium text-sm flex items-center gap-2"
+                  className="text-cyan-400 hover:text-cyan-300 font-medium text-sm flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -222,21 +224,21 @@ export default function AdminCreateLoadPage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800">New Shipper Details</h4>
+                  <h4 className="text-lg font-semibold text-white">New Shipper Details</h4>
                   <button
                     type="button"
                     onClick={() => {
                       setShowNewShipperForm(false)
                       setSelectedShipperId('')
                     }}
-                    className="text-gray-600 hover:text-gray-900 text-sm"
+                    className="text-slate-400 hover:text-white text-sm"
                   >
                     Use Existing Shipper Instead
                   </button>
                 </div>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
-                    <label htmlFor="newCompanyName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newCompanyName" className="block text-sm font-semibold text-slate-300 mb-2">
                       Company Name *
                     </label>
                     <input
@@ -244,18 +246,18 @@ export default function AdminCreateLoadPage() {
                       id="newCompanyName"
                       name="newCompanyName"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="newClientType" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newClientType" className="block text-sm font-semibold text-slate-300 mb-2">
                       Client Type *
                     </label>
                     <select
                       id="newClientType"
                       name="newClientType"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     >
                       <option value="">Select type...</option>
                       <option value="INDEPENDENT_PHARMACY">Independent Pharmacy</option>
@@ -269,7 +271,7 @@ export default function AdminCreateLoadPage() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="newContactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newContactName" className="block text-sm font-semibold text-slate-300 mb-2">
                       Contact Name *
                     </label>
                     <input
@@ -277,11 +279,11 @@ export default function AdminCreateLoadPage() {
                       id="newContactName"
                       name="newContactName"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="newPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newPhone" className="block text-sm font-semibold text-slate-300 mb-2">
                       Phone Number *
                     </label>
                     <input
@@ -289,11 +291,11 @@ export default function AdminCreateLoadPage() {
                       id="newPhone"
                       name="newPhone"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label htmlFor="newEmail" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newEmail" className="block text-sm font-semibold text-slate-300 mb-2">
                       Email Address *
                     </label>
                     <input
@@ -301,7 +303,7 @@ export default function AdminCreateLoadPage() {
                       id="newEmail"
                       name="newEmail"
                       required={showNewShipperForm}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -310,18 +312,18 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Service Details */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Service Details</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Service Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="serviceType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="serviceType" className="block text-sm font-semibold text-slate-300 mb-2">
                   Service Type *
                 </label>
                 <select
                   id="serviceType"
                   name="serviceType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="STAT">STAT (Urgent)</option>
                   <option value="SAME_DAY">Same Day</option>
@@ -331,7 +333,7 @@ export default function AdminCreateLoadPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="commodityDescription" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="commodityDescription" className="block text-sm font-semibold text-slate-300 mb-2">
                   Commodity Description *
                 </label>
                 <input
@@ -339,19 +341,19 @@ export default function AdminCreateLoadPage() {
                   id="commodityDescription"
                   name="commodityDescription"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Blood samples, Lab specimens"
                 />
               </div>
               <div>
-                <label htmlFor="specimenCategory" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="specimenCategory" className="block text-sm font-semibold text-slate-300 mb-2">
                   Specimen Category *
                 </label>
                 <select
                   id="specimenCategory"
                   name="specimenCategory"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="UN3373">UN3373 Category B</option>
                   <option value="NON_SPECIMEN">Non-Specimen Medical</option>
@@ -360,14 +362,14 @@ export default function AdminCreateLoadPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-slate-300 mb-2">
                   Temperature Requirement *
                 </label>
                 <select
                   id="temperatureRequirement"
                   name="temperatureRequirement"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="AMBIENT">Ambient</option>
                   <option value="REFRIGERATED">Refrigerated (2-8°C)</option>
@@ -376,14 +378,14 @@ export default function AdminCreateLoadPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="preferredContactMethod" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="preferredContactMethod" className="block text-sm font-semibold text-slate-300 mb-2">
                   Preferred Contact Method *
                 </label>
                 <select
                   id="preferredContactMethod"
                   name="preferredContactMethod"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 >
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -393,11 +395,11 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Pickup Details */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Pickup Details</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Pickup Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label htmlFor="pickupFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupFacilityName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Facility Name *
                 </label>
                 <input
@@ -405,18 +407,18 @@ export default function AdminCreateLoadPage() {
                   id="pickupFacilityName"
                   name="pickupFacilityName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupFacilityType" className="block text-sm font-semibold text-slate-300 mb-2">
                   Facility Type *
                 </label>
                 <select
                   id="pickupFacilityType"
                   name="pickupFacilityType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   defaultValue="OTHER"
                 >
                   <option value="CLINIC">Clinic</option>
@@ -430,7 +432,7 @@ export default function AdminCreateLoadPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-slate-300 mb-2">
                   Address Line 1 *
                 </label>
                 <input
@@ -438,22 +440,22 @@ export default function AdminCreateLoadPage() {
                   id="pickupAddressLine1"
                   name="pickupAddressLine1"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="pickupAddressLine2" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupAddressLine2" className="block text-sm font-semibold text-slate-300 mb-2">
                   Address Line 2
                 </label>
                 <input
                   type="text"
                   id="pickupAddressLine2"
                   name="pickupAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupCity" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupCity" className="block text-sm font-semibold text-slate-300 mb-2">
                   City *
                 </label>
                 <input
@@ -461,11 +463,11 @@ export default function AdminCreateLoadPage() {
                   id="pickupCity"
                   name="pickupCity"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupState" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupState" className="block text-sm font-semibold text-slate-300 mb-2">
                   State *
                 </label>
                 <input
@@ -474,12 +476,12 @@ export default function AdminCreateLoadPage() {
                   name="pickupState"
                   required
                   maxLength={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 uppercase"
                   placeholder="TX"
                 />
               </div>
               <div>
-                <label htmlFor="pickupPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupPostalCode" className="block text-sm font-semibold text-slate-300 mb-2">
                   ZIP Code *
                 </label>
                 <input
@@ -487,11 +489,11 @@ export default function AdminCreateLoadPage() {
                   id="pickupPostalCode"
                   name="pickupPostalCode"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupContactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupContactName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Name *
                 </label>
                 <input
@@ -499,11 +501,11 @@ export default function AdminCreateLoadPage() {
                   id="pickupContactName"
                   name="pickupContactName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupContactPhone" className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Phone *
                 </label>
                 <input
@@ -511,11 +513,11 @@ export default function AdminCreateLoadPage() {
                   id="pickupContactPhone"
                   name="pickupContactPhone"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="readyTime" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="readyTime" className="block text-sm font-semibold text-slate-300 mb-2">
                   Ready Time *
                 </label>
                 <input
@@ -523,18 +525,18 @@ export default function AdminCreateLoadPage() {
                   id="readyTime"
                   name="readyTime"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="pickupAccessNotes" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="pickupAccessNotes" className="block text-sm font-semibold text-slate-300 mb-2">
                   Access Notes
                 </label>
                 <textarea
                   id="pickupAccessNotes"
                   name="pickupAccessNotes"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Building access codes, parking instructions, etc."
                 />
               </div>
@@ -542,11 +544,11 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Delivery Details */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Delivery Details</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Delivery Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label htmlFor="dropoffFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffFacilityName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Facility Name *
                 </label>
                 <input
@@ -554,18 +556,18 @@ export default function AdminCreateLoadPage() {
                   id="dropoffFacilityName"
                   name="dropoffFacilityName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffFacilityType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffFacilityType" className="block text-sm font-semibold text-slate-300 mb-2">
                   Facility Type *
                 </label>
                 <select
                   id="dropoffFacilityType"
                   name="dropoffFacilityType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   defaultValue="OTHER"
                 >
                   <option value="CLINIC">Clinic</option>
@@ -579,7 +581,7 @@ export default function AdminCreateLoadPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="dropoffAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffAddressLine1" className="block text-sm font-semibold text-slate-300 mb-2">
                   Address Line 1 *
                 </label>
                 <input
@@ -587,22 +589,22 @@ export default function AdminCreateLoadPage() {
                   id="dropoffAddressLine1"
                   name="dropoffAddressLine1"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="dropoffAddressLine2" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffAddressLine2" className="block text-sm font-semibold text-slate-300 mb-2">
                   Address Line 2
                 </label>
                 <input
                   type="text"
                   id="dropoffAddressLine2"
                   name="dropoffAddressLine2"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffCity" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffCity" className="block text-sm font-semibold text-slate-300 mb-2">
                   City *
                 </label>
                 <input
@@ -610,11 +612,11 @@ export default function AdminCreateLoadPage() {
                   id="dropoffCity"
                   name="dropoffCity"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffState" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffState" className="block text-sm font-semibold text-slate-300 mb-2">
                   State *
                 </label>
                 <input
@@ -623,12 +625,12 @@ export default function AdminCreateLoadPage() {
                   name="dropoffState"
                   required
                   maxLength={2}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 uppercase"
                   placeholder="TX"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffPostalCode" className="block text-sm font-semibold text-slate-300 mb-2">
                   ZIP Code *
                 </label>
                 <input
@@ -636,11 +638,11 @@ export default function AdminCreateLoadPage() {
                   id="dropoffPostalCode"
                   name="dropoffPostalCode"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffContactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffContactName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Name *
                 </label>
                 <input
@@ -648,11 +650,11 @@ export default function AdminCreateLoadPage() {
                   id="dropoffContactName"
                   name="dropoffContactName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffContactPhone" className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Phone *
                 </label>
                 <input
@@ -660,11 +662,11 @@ export default function AdminCreateLoadPage() {
                   id="dropoffContactPhone"
                   name="dropoffContactPhone"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="deliveryDeadline" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="deliveryDeadline" className="block text-sm font-semibold text-slate-300 mb-2">
                   Delivery Deadline *
                 </label>
                 <input
@@ -672,18 +674,18 @@ export default function AdminCreateLoadPage() {
                   id="deliveryDeadline"
                   name="deliveryDeadline"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="dropoffAccessNotes" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="dropoffAccessNotes" className="block text-sm font-semibold text-slate-300 mb-2">
                   Access Notes
                 </label>
                 <textarea
                   id="dropoffAccessNotes"
                   name="dropoffAccessNotes"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Building access codes, parking instructions, etc."
                 />
               </div>
@@ -691,11 +693,11 @@ export default function AdminCreateLoadPage() {
           </div>
 
           {/* Optional Details */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Additional Details (Optional)</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Additional Details (Optional)</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="estimatedContainers" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="estimatedContainers" className="block text-sm font-semibold text-slate-300 mb-2">
                   Estimated Containers
                 </label>
                 <input
@@ -703,11 +705,11 @@ export default function AdminCreateLoadPage() {
                   id="estimatedContainers"
                   name="estimatedContainers"
                   min="1"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="estimatedWeightKg" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="estimatedWeightKg" className="block text-sm font-semibold text-slate-300 mb-2">
                   Estimated Weight (kg)
                 </label>
                 <input
@@ -716,11 +718,11 @@ export default function AdminCreateLoadPage() {
                   name="estimatedWeightKg"
                   min="0"
                   step="0.1"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label htmlFor="declaredValue" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="declaredValue" className="block text-sm font-semibold text-slate-300 mb-2">
                   Declared Value ($)
                 </label>
                 <input
@@ -729,7 +731,7 @@ export default function AdminCreateLoadPage() {
                   name="declaredValue"
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -739,14 +741,14 @@ export default function AdminCreateLoadPage() {
           <div className="flex items-center justify-between pt-6">
             <Link
               href="/admin/loads"
-              className="px-6 py-3 text-gray-700 hover:text-gray-900 font-semibold transition-colors"
+              className="px-6 py-3 text-slate-300 hover:text-white font-semibold transition-colors"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg font-semibold hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSubmitting ? (
                 <>

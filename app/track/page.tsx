@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 export default function TrackPage() {
   const router = useRouter()
@@ -22,17 +21,7 @@ export default function TrackPage() {
       <header className="glass-primary sticky top-0 z-50 border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+            <Link href="/" className="flex items-center">
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-600 bg-clip-text text-transparent">MED DROP</h1>
                 <p className="text-xs text-slate-400">Medical Courier Services</p>

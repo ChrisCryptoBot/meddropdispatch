@@ -211,9 +211,12 @@ export default function AdminInvoicesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2 font-heading">Invoice Management</h1>
+    <div className="p-6 md:p-8">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
+          Invoice Management
+        </h1>
         <p className="text-slate-400">View and manage all invoices</p>
       </div>
 

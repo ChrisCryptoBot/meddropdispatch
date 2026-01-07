@@ -34,9 +34,12 @@ export default function AdminLoginPage() {
         throw new Error('Invalid response from server')
       }
 
+      // Store admin user in localStorage for client-side auth check
+      localStorage.setItem('admin', JSON.stringify(data.user))
+
       // Authentication cookie is set by backend (httpOnly)
-      // Redirect to admin loads page (auth will be verified via cookie in layout)
-      window.location.href = '/admin/loads'
+      // Redirect to admin dashboard
+      window.location.href = '/admin'
     } catch (err) {
       console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')

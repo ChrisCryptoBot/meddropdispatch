@@ -292,25 +292,27 @@ export default function AdminLoadDetailPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <Link href="/admin/loads" className="text-primary-600 hover:text-primary-700 font-medium mb-4 inline-block">
+    <div className="p-6 md:p-8">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+        <Link href="/admin/loads" className="text-cyan-400 hover:text-cyan-300 font-medium mb-4 inline-block">
           ← Back to Loads
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">{load.publicTrackingCode}</h1>
-            <p className="text-gray-600">Manage load request and tracking</p>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight font-data">
+              {load.publicTrackingCode}
+            </h1>
+            <p className="text-slate-400">Manage load request and tracking</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`px-4 py-2 rounded-lg font-semibold ${LOAD_STATUS_COLORS[load.status as LoadStatus] || 'bg-gray-100 text-gray-800'}`}>
+            <span className={`px-4 py-2 rounded-lg font-semibold ${LOAD_STATUS_COLORS[load.status as LoadStatus] || 'bg-slate-700/50 text-slate-300 border border-slate-600/50'}`}>
               {LOAD_STATUS_LABELS[load.status as LoadStatus] || load.status}
             </span>
             <Link
               href={`/track/${load.publicTrackingCode}`}
               target="_blank"
-              className="px-4 py-2 rounded-lg bg-white/60 hover:bg-white/80 border border-gray-300 font-medium transition-base"
+              className="px-4 py-2 rounded-lg bg-slate-700/50 hover:bg-slate-700/70 border border-slate-600/50 text-slate-300 font-medium transition-base"
             >
               View Public Page ↗
             </Link>
@@ -323,68 +325,68 @@ export default function AdminLoadDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           {/* Shipper & Facility Info */}
           <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipper & Locations</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Shipper & Locations</h2>
 
             {/* Shipper */}
-            <div className="mb-6 pb-6 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-700 mb-3">Shipper Information</h3>
+            <div className="mb-6 pb-6 border-b border-slate-700/50">
+              <h3 className="font-semibold text-slate-300 mb-3">Shipper Information</h3>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-600">Company</p>
-                  <p className="font-semibold text-gray-800">{load.shipper.companyName}</p>
+                  <p className="text-slate-400">Company</p>
+                  <p className="font-semibold text-white">{load.shipper.companyName}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Type</p>
-                  <p className="font-semibold text-gray-800">{load.shipper.clientType.replace(/_/g, ' ')}</p>
+                  <p className="text-slate-400">Type</p>
+                  <p className="font-semibold text-white">{load.shipper.clientType.replace(/_/g, ' ')}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Contact</p>
-                  <p className="font-semibold text-gray-800">{load.shipper.contactName}</p>
+                  <p className="text-slate-400">Contact</p>
+                  <p className="font-semibold text-white">{load.shipper.contactName}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Phone</p>
-                  <p className="font-semibold text-gray-800">{load.shipper.phone}</p>
+                  <p className="text-slate-400">Phone</p>
+                  <p className="font-semibold text-white">{load.shipper.phone}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Email</p>
-                  <p className="font-semibold text-gray-800">{load.shipper.email}</p>
+                  <p className="text-slate-400">Email</p>
+                  <p className="font-semibold text-white">{load.shipper.email}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Preferred Contact</p>
-                  <p className="font-semibold text-gray-800">{load.preferredContactMethod}</p>
+                  <p className="text-slate-400">Preferred Contact</p>
+                  <p className="font-semibold text-white">{load.preferredContactMethod}</p>
                 </div>
               </div>
             </div>
 
             {/* Pickup */}
-            <div className="mb-6 pb-6 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 pb-6 border-b border-slate-700/50">
+              <h3 className="font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z" />
                 </svg>
                 Pickup Location
               </h3>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="md:col-span-2">
-                  <p className="font-semibold text-gray-800">{load.pickupFacility.name}</p>
-                  <p className="text-gray-600">{load.pickupFacility.addressLine1}</p>
-                  {load.pickupFacility.addressLine2 && <p className="text-gray-600">{load.pickupFacility.addressLine2}</p>}
-                  <p className="text-gray-600">
+                  <p className="font-semibold text-white">{load.pickupFacility.name}</p>
+                  <p className="text-slate-400">{load.pickupFacility.addressLine1}</p>
+                  {load.pickupFacility.addressLine2 && <p className="text-slate-400">{load.pickupFacility.addressLine2}</p>}
+                  <p className="text-slate-400">
                     {load.pickupFacility.city}, {load.pickupFacility.state} {load.pickupFacility.postalCode}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Contact</p>
-                  <p className="font-semibold text-gray-800">{load.pickupFacility.contactName}</p>
+                  <p className="text-slate-400">Contact</p>
+                  <p className="font-semibold text-white">{load.pickupFacility.contactName}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Phone</p>
-                  <p className="font-semibold text-gray-800">{load.pickupFacility.contactPhone}</p>
+                  <p className="text-slate-400">Phone</p>
+                  <p className="font-semibold text-white">{load.pickupFacility.contactPhone}</p>
                 </div>
                 {load.readyTime && (
                   <div className="md:col-span-2">
-                    <p className="text-gray-600">Ready Time</p>
-                    <p className="font-semibold text-gray-800">{formatDateTime(load.readyTime)}</p>
+                    <p className="text-slate-400">Ready Time</p>
+                    <p className="font-semibold text-white">{formatDateTime(load.readyTime)}</p>
                   </div>
                 )}
               </div>
@@ -392,33 +394,33 @@ export default function AdminLoadDetailPage() {
 
             {/* Dropoff */}
             <div>
-              <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h3 className="font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z" />
                 </svg>
                 Delivery Location
               </h3>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="md:col-span-2">
-                  <p className="font-semibold text-gray-800">{load.dropoffFacility.name}</p>
-                  <p className="text-gray-600">{load.dropoffFacility.addressLine1}</p>
-                  {load.dropoffFacility.addressLine2 && <p className="text-gray-600">{load.dropoffFacility.addressLine2}</p>}
-                  <p className="text-gray-600">
+                  <p className="font-semibold text-white">{load.dropoffFacility.name}</p>
+                  <p className="text-slate-400">{load.dropoffFacility.addressLine1}</p>
+                  {load.dropoffFacility.addressLine2 && <p className="text-slate-400">{load.dropoffFacility.addressLine2}</p>}
+                  <p className="text-slate-400">
                     {load.dropoffFacility.city}, {load.dropoffFacility.state} {load.dropoffFacility.postalCode}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Contact</p>
-                  <p className="font-semibold text-gray-800">{load.dropoffFacility.contactName}</p>
+                  <p className="text-slate-400">Contact</p>
+                  <p className="font-semibold text-white">{load.dropoffFacility.contactName}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Phone</p>
-                  <p className="font-semibold text-gray-800">{load.dropoffFacility.contactPhone}</p>
+                  <p className="text-slate-400">Phone</p>
+                  <p className="font-semibold text-white">{load.dropoffFacility.contactPhone}</p>
                 </div>
                 {load.deliveryDeadline && (
                   <div className="md:col-span-2">
-                    <p className="text-gray-600">Delivery Deadline</p>
-                    <p className="font-semibold text-gray-800">{formatDateTime(load.deliveryDeadline)}</p>
+                    <p className="text-slate-400">Delivery Deadline</p>
+                    <p className="font-semibold text-white">{formatDateTime(load.deliveryDeadline)}</p>
                   </div>
                 )}
               </div>
@@ -427,46 +429,46 @@ export default function AdminLoadDetailPage() {
 
           {/* Load Details */}
           <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipment Details</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Shipment Details</h2>
             <div className="grid md:grid-cols-2 gap-6 text-sm">
               <div>
-                <p className="text-gray-600 mb-1">Service Type</p>
-                <p className="font-semibold text-gray-800">{load.serviceType.replace(/_/g, ' ')}</p>
+                <p className="text-slate-400 mb-1">Service Type</p>
+                <p className="font-semibold text-white">{load.serviceType.replace(/_/g, ' ')}</p>
               </div>
               <div>
-                <p className="text-gray-600 mb-1">Specimen Category</p>
-                <p className="font-semibold text-gray-800">{load.specimenCategory.replace(/_/g, ' ')}</p>
+                <p className="text-slate-400 mb-1">Specimen Category</p>
+                <p className="font-semibold text-white">{load.specimenCategory.replace(/_/g, ' ')}</p>
               </div>
               <div>
-                <p className="text-gray-600 mb-1">Temperature Requirement</p>
-                <p className="font-semibold text-gray-800">{load.temperatureRequirement}</p>
+                <p className="text-slate-400 mb-1">Temperature Requirement</p>
+                <p className="font-semibold text-white">{load.temperatureRequirement}</p>
               </div>
               {load.estimatedContainers && (
                 <div>
-                  <p className="text-gray-600 mb-1">Estimated Containers</p>
-                  <p className="font-semibold text-gray-800">{load.estimatedContainers}</p>
+                  <p className="text-slate-400 mb-1">Estimated Containers</p>
+                  <p className="font-semibold text-white">{load.estimatedContainers}</p>
                 </div>
               )}
               {load.estimatedWeightKg && (
                 <div>
-                  <p className="text-gray-600 mb-1">Estimated Weight</p>
-                  <p className="font-semibold text-gray-800">{(load.estimatedWeightKg / 0.453592).toFixed(1)} lb</p>
+                  <p className="text-slate-400 mb-1">Estimated Weight</p>
+                  <p className="font-semibold text-white">{(load.estimatedWeightKg / 0.453592).toFixed(1)} lb</p>
                 </div>
               )}
               {load.declaredValue && (
                 <div>
-                  <p className="text-gray-600 mb-1">Declared Value</p>
-                  <p className="font-semibold text-gray-800">${load.declaredValue.toFixed(2)}</p>
+                  <p className="text-slate-400 mb-1">Declared Value</p>
+                  <p className="font-semibold text-white">${load.declaredValue.toFixed(2)}</p>
                 </div>
               )}
               <div className="md:col-span-2">
-                <p className="text-gray-600 mb-1">Commodity Description</p>
-                <p className="font-semibold text-gray-800">{load.commodityDescription}</p>
+                <p className="text-slate-400 mb-1">Commodity Description</p>
+                <p className="font-semibold text-white">{load.commodityDescription}</p>
               </div>
               {load.accessNotes && (
                 <div className="md:col-span-2">
-                  <p className="text-gray-600 mb-1">Additional Instructions</p>
-                  <p className="font-semibold text-gray-800">{load.accessNotes}</p>
+                  <p className="text-slate-400 mb-1">Additional Instructions</p>
+                  <p className="font-semibold text-white">{load.accessNotes}</p>
                 </div>
               )}
             </div>
@@ -474,7 +476,7 @@ export default function AdminLoadDetailPage() {
 
           {/* Tracking Events */}
           <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Tracking Events</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Tracking Events</h2>
             {load.trackingEvents.length === 0 ? (
               <div className="text-center py-8">
                 <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,19 +489,19 @@ export default function AdminLoadDetailPage() {
             ) : (
               <div className="space-y-4">
                 {load.trackingEvents.map((event: any) => (
-                  <div key={event.id} className="flex items-start gap-4 p-4 bg-white/40 rounded-xl border border-gray-200">
-                    <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div key={event.id} className="flex items-start gap-4 p-4 bg-white/40 rounded-xl border border-slate-700/50">
+                    <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-cyan-500/30">
+                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-4 mb-1">
-                        <p className="font-semibold text-gray-800">{event.label}</p>
-                        <span className="text-sm text-gray-500 whitespace-nowrap">{formatDateTime(event.createdAt)}</span>
+                        <p className="font-semibold text-white">{event.label}</p>
+                        <span className="text-sm text-slate-500 whitespace-nowrap">{formatDateTime(event.createdAt)}</span>
                       </div>
                       {event.locationText && (
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <p className="text-sm text-slate-400 flex items-center gap-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -507,7 +509,7 @@ export default function AdminLoadDetailPage() {
                           {event.locationText}
                         </p>
                       )}
-                      {event.description && <p className="text-sm text-gray-600 mt-1">{event.description}</p>}
+                      {event.description && <p className="text-sm text-slate-400 mt-1">{event.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -520,31 +522,31 @@ export default function AdminLoadDetailPage() {
         <div className="space-y-8">
           {/* Driver Assignment */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Driver Assignment</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Driver Assignment</h3>
             {load.driver ? (
-              <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
-                <p className="text-sm text-gray-600 mb-1">Assigned Driver</p>
-                <p className="font-bold text-gray-900">{load.driver.firstName} {load.driver.lastName}</p>
-                <p className="text-sm text-gray-600">{load.driver.vehicleType} • {load.driver.vehiclePlate}</p>
-                <p className="text-sm text-gray-600">{load.driver.phone}</p>
+              <div className="mb-4 p-4 bg-green-500/20 rounded-xl border border-green-500/30">
+                <p className="text-sm text-slate-400 mb-1">Assigned Driver</p>
+                <p className="font-bold text-white">{load.driver.firstName} {load.driver.lastName}</p>
+                <p className="text-sm text-slate-400">{load.driver.vehicleType} • {load.driver.vehiclePlate}</p>
+                <p className="text-sm text-slate-400">{load.driver.phone}</p>
                 {load.assignedAt && (
-                  <p className="text-xs text-gray-500 mt-2">Assigned: {formatDateTime(load.assignedAt)}</p>
+                  <p className="text-xs text-slate-500 mt-2">Assigned: {formatDateTime(load.assignedAt)}</p>
                 )}
               </div>
             ) : (
-              <div className="mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                <p className="text-sm text-yellow-800 font-medium">No driver assigned</p>
+              <div className="mb-4 p-4 bg-yellow-500/20 rounded-xl border border-yellow-500/30">
+                <p className="text-sm text-yellow-400 font-medium">No driver assigned</p>
               </div>
             )}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   {load.driver ? 'Reassign to Driver' : 'Assign Driver'}
                 </label>
                 <select
                   value={selectedDriver}
                   onChange={(e) => setSelectedDriver(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                 >
                   <option value="">Select driver...</option>
                   {drivers.map((driver) => (
@@ -566,27 +568,27 @@ export default function AdminLoadDetailPage() {
 
           {/* Quote Management */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Quote & Pricing</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Quote & Pricing</h3>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Quote Amount (USD)</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Quote Amount (USD)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={quoteAmount}
                   onChange={(e) => setQuoteAmount(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   placeholder="0.00"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Quote Notes</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Quote Notes</label>
                 <textarea
                   value={quoteNotes}
                   onChange={(e) => setQuoteNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   placeholder="Internal notes about pricing..."
                 />
               </div>
@@ -603,17 +605,17 @@ export default function AdminLoadDetailPage() {
           {/* Invoice Generation */}
           {load.status === 'DELIVERED' && (
             <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice</h3>
+              <h3 className="text-xl font-bold text-white mb-4">Invoice</h3>
               {load.invoiceId ? (
                 <div className="space-y-4">
-                  <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                    <p className="text-sm text-green-800 font-medium mb-2">
+                  <div className="p-4 bg-green-500/20 rounded-xl border border-green-500/30">
+                    <p className="text-sm text-green-400 font-medium mb-2">
                       This load has been invoiced
                     </p>
                     {invoice && (
-                      <div className="space-y-1 text-sm text-gray-700">
-                        <p>Invoice #: <span className="font-mono font-bold">{invoice.invoiceNumber}</span></p>
-                        <p>Amount: <span className="font-bold">${invoice.total.toFixed(2)}</span></p>
+                      <div className="space-y-1 text-sm text-slate-300">
+                        <p>Invoice #: <span className="font-mono font-bold font-data">{invoice.invoiceNumber}</span></p>
+                        <p>Amount: <span className="font-bold font-data">${invoice.total.toFixed(2)}</span></p>
                         <p>Status: <span className="font-semibold">{invoice.status}</span></p>
                       </div>
                     )}
@@ -623,13 +625,13 @@ export default function AdminLoadDetailPage() {
                       href={`/api/invoices/${load.invoiceId}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold hover:from-slate-700 hover:to-slate-800 transition-all text-center"
+                      className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all text-center shadow-lg shadow-cyan-500/30"
                     >
                       View Invoice PDF
                     </a>
                     <a
                       href="/admin/invoices"
-                      className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
+                      className="px-4 py-2 rounded-lg bg-slate-700/50 text-slate-300 font-semibold hover:bg-slate-700/70 border border-slate-600/50 transition-colors"
                     >
                       Manage Invoices
                     </a>
@@ -638,18 +640,18 @@ export default function AdminLoadDetailPage() {
               ) : (
                 <div className="space-y-4">
                   {!load.quoteAmount ? (
-                    <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                      <p className="text-sm text-yellow-800">
+                    <div className="p-4 bg-yellow-500/20 rounded-xl border border-yellow-500/30">
+                      <p className="text-sm text-yellow-400">
                         Please set a quote amount before generating an invoice
                       </p>
                     </div>
                   ) : (
                     <>
-                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                      <div className="p-4 bg-blue-500/20 rounded-xl border border-blue-500/30">
                         <p className="text-sm text-blue-800 font-medium mb-2">
                           Ready to generate invoice
                         </p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-slate-300">
                           Amount: <span className="font-bold">${load.quoteAmount.toFixed(2)}</span>
                         </p>
                       </div>
@@ -669,14 +671,14 @@ export default function AdminLoadDetailPage() {
 
           {/* Status Update */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Update Status</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Update Status</h3>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">New Status</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">New Status</label>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as LoadStatus)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   required
                 >
                   <option value="">Select status...</option>
@@ -689,32 +691,32 @@ export default function AdminLoadDetailPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Event Label</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Event Label</label>
                 <input
                   type="text"
                   value={eventLabel}
                   onChange={(e) => setEventLabel(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   placeholder="Auto-generated if empty"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Location</label>
                 <input
                   type="text"
                   value={locationText}
                   onChange={(e) => setLocationText(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   placeholder="City, State"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Description</label>
                 <textarea
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60"
                   placeholder="Additional details..."
                 />
               </div>
@@ -730,7 +732,7 @@ export default function AdminLoadDetailPage() {
 
           {/* Notes */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Notes</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Notes</h3>
             <LoadNotes
               loadRequestId={load.id}
               currentUserId={adminUser?.id || 'admin'}
@@ -741,7 +743,7 @@ export default function AdminLoadDetailPage() {
 
           {/* Documents */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Documents</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Documents</h3>
             {load.documents.length === 0 ? (
               <div className="text-center py-8">
                 <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -755,11 +757,11 @@ export default function AdminLoadDetailPage() {
                 {load.documents.map((doc: any) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between p-3 bg-white/40 rounded-lg hover:bg-white/60 border border-gray-200 transition-base"
+                    className="flex items-center justify-between p-3 bg-white/40 rounded-lg hover:bg-white/60 border border-slate-700/50 transition-base"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{doc.title}</p>
-                      <p className="text-xs text-gray-500">{doc.type.replace(/_/g, ' ')}</p>
+                      <p className="text-sm font-semibold text-white truncate">{doc.title}</p>
+                      <p className="text-xs text-slate-500">{doc.type.replace(/_/g, ' ')}</p>
                     </div>
                     <DocumentViewButton 
                       url={doc.url}
@@ -782,11 +784,11 @@ export default function AdminLoadDetailPage() {
           {/* GPS Tracking Map */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800">GPS Tracking</h3>
+              <h3 className="text-xl font-bold text-white">GPS Tracking</h3>
               {load.gpsTrackingEnabled && (
                 <button
                   onClick={() => setShowFullScreenMap(true)}
-                  className="px-3 py-1 text-sm rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium transition-colors"
+                  className="px-3 py-1 text-sm rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-medium transition-colors"
                 >
                   Full Screen
                 </button>

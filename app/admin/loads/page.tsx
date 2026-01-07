@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import type { LoadStatus } from '@/lib/types'
+import { EmptyStates } from '@/components/ui/EmptyState'
 
 export default function AdminLoadsPage() {
   const [loads, setLoads] = useState<any[]>([])
@@ -47,11 +48,13 @@ export default function AdminLoadsPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-6 md:p-8">
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[85px] z-[55] mb-6 pb-2 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2 font-heading">Load Requests</h1>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
+            Load Requests
+          </h1>
           <p className="text-slate-400">Manage and track all courier requests</p>
         </div>
         <Link
@@ -61,37 +64,37 @@ export default function AdminLoadsPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Create Load (Phone Request)
+          Create Load
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+      {/* Stats - Gold Standard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
           <div className="text-center">
-            <p className="text-sm text-slate-400 mb-1">Active Loads</p>
-            <p className="text-3xl font-bold text-white font-data">{stats.active}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{stats.active}</p>
+            <p className="text-sm text-slate-400 font-medium">Active Loads</p>
           </div>
         </div>
 
-        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-green-500/50 transition-all">
           <div className="text-center">
-            <p className="text-sm text-slate-400 mb-1">Completed</p>
-            <p className="text-3xl font-bold text-white font-data">{stats.completed}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{stats.completed}</p>
+            <p className="text-sm text-slate-400 font-medium">Completed</p>
           </div>
         </div>
 
-        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-amber-500/50 transition-all">
           <div className="text-center">
-            <p className="text-sm text-slate-400 mb-1">New Requests</p>
-            <p className="text-3xl font-bold text-white font-data">{stats.new}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{stats.new}</p>
+            <p className="text-sm text-slate-400 font-medium">New Requests</p>
           </div>
         </div>
 
-        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
           <div className="text-center">
-            <p className="text-sm text-slate-400 mb-1">Total Loads</p>
-            <p className="text-3xl font-bold text-white font-data">{stats.total}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{stats.total}</p>
+            <p className="text-sm text-slate-400 font-medium">Total Loads</p>
           </div>
         </div>
       </div>
@@ -132,13 +135,14 @@ export default function AdminLoadsPage() {
               {filteredLoads.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <svg className="w-16 h-16 mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                      </svg>
-                      <h3 className="text-xl font-bold text-white mb-2">No load requests yet</h3>
-                      <p className="text-sm text-slate-400">New requests will appear here</p>
-                    </div>
+                    <EmptyStates.NoLoads
+                      title="No Load Requests"
+                      description="New load requests will appear here when they are created."
+                      action={{
+                        label: "Create Load",
+                        href: "/admin/loads/create"
+                      }}
+                    />
                   </td>
                 </tr>
               ) : (

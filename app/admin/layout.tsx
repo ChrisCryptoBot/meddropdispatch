@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import NotificationBell from '@/components/features/NotificationBell'
 import MobileBottomNav from '@/components/features/MobileBottomNav'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -17,12 +15,14 @@ export default function AdminLayout({
   const router = useRouter()
   const [admin, setAdmin] = useState<any>(null)
   const [isChecking, setIsChecking] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const authCheckedRef = useRef(false)
 
   useEffect(() => {
     // Don't check auth on login page
     if (pathname === '/admin/login') {
       setIsChecking(false)
+      authCheckedRef.current = false
       return
     }
 
@@ -31,34 +31,85 @@ export default function AdminLayout({
       return
     }
 
-    // Check if admin is logged in
-    try {
-      const adminData = localStorage.getItem('admin')
-      if (adminData) {
-        setAdmin(JSON.parse(adminData))
-        setIsChecking(false)
-      } else {
-        // Only redirect if we're not already on login page
-        if (pathname !== '/admin/login') {
-          router.push('/admin/login')
+    // Skip if we've already checked auth and have an admin (unless navigating to a new protected route)
+    if (authCheckedRef.current && admin) {
+      setIsChecking(false)
+      return
+    }
+
+    // Check authentication via API (httpOnly cookies) - fallback to localStorage
+    const checkAuth = async () => {
+      try {
+        // First try API check
+        const response = await fetch('/api/auth/check', {
+          credentials: 'include'
+        })
+        const data = await response.json()
+
+        if (data.authenticated && data.user && data.user.userType === 'admin') {
+          setAdmin(data.user)
+          setIsChecking(false)
+          authCheckedRef.current = true
+        } else {
+          // Fallback to localStorage
+          const adminData = localStorage.getItem('admin')
+          if (adminData) {
+            setAdmin(JSON.parse(adminData))
+            setIsChecking(false)
+            authCheckedRef.current = true
+          } else {
+            setAdmin(null)
+            setIsChecking(false)
+            authCheckedRef.current = false
+            if (pathname !== '/admin/login') {
+              router.push('/admin/login')
+            }
+          }
+        }
+      } catch (error) {
+        // Fallback to localStorage on error
+        try {
+          const adminData = localStorage.getItem('admin')
+          if (adminData) {
+            setAdmin(JSON.parse(adminData))
+            setIsChecking(false)
+            authCheckedRef.current = true
+          } else {
+            setAdmin(null)
+            setIsChecking(false)
+            authCheckedRef.current = false
+            if (pathname !== '/admin/login') {
+              router.push('/admin/login')
+            }
+          }
+        } catch (localError) {
+          console.error('Error checking admin auth:', localError)
+          setAdmin(null)
+          setIsChecking(false)
+          authCheckedRef.current = false
+          if (pathname !== '/admin/login') {
+            router.push('/admin/login')
+          }
         }
       }
-    } catch (error) {
-      console.error('Error checking admin auth:', error)
-      setIsChecking(false)
-      if (pathname !== '/admin/login') {
-        router.push('/admin/login')
-      }
     }
-  }, [pathname, router])
+
+    checkAuth()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  // Close dropdown when route changes
+  useEffect(() => {
+    setProfileDropdownOpen(false)
+  }, [pathname])
 
   // Show loading while checking auth
   if (isChecking && pathname !== '/admin/login') {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       </div>
     )
@@ -136,183 +187,102 @@ export default function AdminLayout({
   ]
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <header className="md:hidden glass-primary sticky top-0 z-50 border-b border-blue-200/30">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-700 hover:bg-white/40 transition-base"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={32}
-                  height={32}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      {/* Header - Gold Standard */}
+      <header className="bg-slate-900/95 backdrop-blur-xl fixed top-0 left-0 right-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[85px]">
+        <div className="w-full py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4 pl-4 md:pl-4">
               <div>
-                <h1 className="text-lg font-bold text-gradient">MED DROP</h1>
-                <p className="text-xs text-gray-600">Admin</p>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">MED DROP</h1>
+                <p className="text-sm font-semibold text-slate-400">Medical Courier Services</p>
               </div>
             </div>
+            <nav className="flex items-center space-x-3 pr-4">
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className={`px-5 py-3 rounded-lg text-base font-medium transition-base flex items-center gap-2 ${
+                    pathname?.startsWith('/admin/settings')
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {admin?.name || 'Admin'}
+                  <svg className={`w-5 h-5 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {profileDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[45] md:left-64" onClick={() => setProfileDropdownOpen(false)}></div>
+                    <div className="absolute right-0 mt-2 w-56 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-[60] border border-slate-700/50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-slate-700/50">
+                        <p className="text-sm font-semibold text-white">{admin?.name || 'Admin User'}</p>
+                        <p className="text-xs text-slate-400">{admin?.email || ''}</p>
+                        <p className="text-xs text-slate-500 mt-1">{admin?.role || 'Administrator'}</p>
+                      </div>
+                      <Link
+                        href="/admin"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="block px-4 py-3 text-sm transition-base font-medium text-slate-300 hover:bg-slate-700/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          Dashboard
+                        </div>
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/auth/logout', { method: 'POST' })
+                          } catch (error) {
+                            console.error('Error during logout:', error)
+                          }
+                          localStorage.removeItem('admin')
+                          setAdmin(null)
+                          setProfileDropdownOpen(false)
+                          router.push('/admin/login')
+                        }}
+                        className="w-full block px-4 py-3 text-sm text-slate-300 hover:bg-red-900/20 hover:text-red-300 transition-base border-t border-slate-700/50 text-left font-medium"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Logout
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </nav>
           </div>
-          <NotificationBell />
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <aside className="fixed inset-y-0 left-0 w-64 glass-primary border-r border-blue-200/30 z-50 md:hidden overflow-y-auto">
-            <div className="flex flex-col h-full">
-              {/* Logo */}
-              <div className="p-6 border-b border-white/30">
-                <div className="flex items-center justify-between">
-                  <Link href="/admin" className="flex items-center space-x-3" onClick={() => setMobileMenuOpen(false)}>
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      <Image
-                        src="/logo-icon.png"
-                        alt="MED DROP Logo"
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                        priority
-                      />
-                    </div>
-                    <div>
-                      <h1 className="text-xl font-bold text-gradient">MED DROP</h1>
-                      <p className="text-xs text-gray-600">Admin Portal</p>
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 rounded-lg text-gray-700 hover:bg-white/40 transition-base"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Navigation */}
-              <nav className="flex-1 p-4 space-y-2">
-                {navigation.map((item) => {
-                  const isActive = pathname.startsWith(item.href)
-
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
-                        isActive
-                          ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-white/40'
-                      }`}
-                    >
-                      {item.icon}
-                      <span className="font-medium">{item.name}</span>
-                    </Link>
-                  )
-                })}
-              </nav>
-
-              {/* User Info / Logout */}
-              <div className="p-4 border-t border-white/30">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">AD</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{admin?.name || 'Admin User'}</p>
-                    <p className="text-xs text-gray-500">{admin?.role || 'Administrator'}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={async () => {
-                    try {
-                      // Call logout API to clear httpOnly cookie
-                      await fetch('/api/auth/logout', { method: 'POST' })
-                    } catch (error) {
-                      console.error('Error during logout:', error)
-                    }
-                    setAdmin(null)
-                    router.push('/admin/login')
-                  }}
-                  className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Logout
-                </button>
-                <Link
-                  href="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  Back to Site
-                </Link>
-              </div>
-            </div>
-          </aside>
-        </>
-      )}
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-64 glass-primary border-r border-blue-200/30 flex-shrink-0">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-white/30">
-            <Link href="/admin" className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-xs text-gray-600">Admin Portal</p>
-              </div>
-            </Link>
-          </div>
-
+      {/* Sidebar - Fixed full height - Hidden on mobile - Gold Standard */}
+      <aside className="hidden md:block fixed left-0 top-[85px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 85px)' }}>
+        <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 pt-8 space-y-2">
             {navigation.map((item) => {
-              const isActive = pathname.startsWith(item.href)
+              const isActive = pathname === item.href || (item.href !== '/admin' && pathname?.startsWith(item.href))
 
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-base relative ${
                     isActive
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-white/40'
+                      ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-700/50'
                   }`}
                 >
                   {item.icon}
@@ -322,38 +292,11 @@ export default function AdminLayout({
             })}
           </nav>
 
-          {/* User Info / Logout */}
-          <div className="p-4 border-t border-white/30">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">AD</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{admin?.name || 'Admin User'}</p>
-                <p className="text-xs text-gray-500">{admin?.role || 'Administrator'}</p>
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  // Call logout API to clear httpOnly cookie
-                  await fetch('/api/auth/logout', { method: 'POST' })
-                } catch (error) {
-                  console.error('Error during logout:', error)
-                }
-                setAdmin(null)
-                router.push('/admin/login')
-              }}
-              className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
+          {/* Footer */}
+          <div className="p-4 border-t border-slate-700/50">
             <Link
               href="/"
-              className="mt-2 w-full px-4 py-2 rounded-lg text-sm text-gray-700 hover:bg-white/40 transition-base font-medium flex items-center justify-center gap-2"
+              className="w-full px-4 py-2 rounded-lg text-sm transition-base font-medium flex items-center justify-center gap-2 text-slate-300 hover:bg-slate-700/50"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -364,20 +307,8 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
-        {/* Desktop Top Bar with Notification Bell */}
-        <div className="hidden md:flex sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4 items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {pathname === '/admin' ? 'Dashboard' : 
-             pathname.startsWith('/admin/loads') ? 'Load Requests' :
-             pathname.startsWith('/admin/shippers') ? 'Shippers' :
-             pathname.startsWith('/admin/analytics') ? 'Analytics' :
-             pathname.startsWith('/admin/compliance') ? 'Compliance' :
-             'Admin Portal'}
-          </h2>
-          <NotificationBell />
-        </div>
+      {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile - Gold Standard */}
+      <main className="flex-1 overflow-y-auto pt-[85px] md:pl-64">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

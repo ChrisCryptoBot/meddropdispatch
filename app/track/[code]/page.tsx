@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { prisma } from '@/lib/prisma'
 import { formatDateTime, formatDate } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
@@ -80,17 +79,7 @@ export default async function TrackingDetailPage({
       <header className="glass sticky top-0 z-50 border-b border-white/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+            <Link href="/" className="flex items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gradient">MED DROP</h1>
                 <p className="text-xs text-gray-600">Medical Courier Services</p>

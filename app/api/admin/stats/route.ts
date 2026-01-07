@@ -2,7 +2,7 @@
 // GET: Get comprehensive statistics for admin dashboard
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { createErrorResponse, withErrorHandling } from '@/lib/errors'
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 

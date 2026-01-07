@@ -248,7 +248,7 @@ export default function ShipperAutocomplete({
       {showSuggestions && shippers.length > 0 && !justSelectedRef.current && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+          className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700/50 rounded-lg shadow-lg max-h-60 overflow-auto"
           onMouseDown={(e) => {
             e.preventDefault()
           }}
@@ -269,19 +269,19 @@ export default function ShipperAutocomplete({
               onFocus={(e) => {
                 e.stopPropagation()
               }}
-              className={`w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors ${
-                index === selectedIndex ? 'bg-gray-100' : ''
+              className={`w-full text-left px-4 py-2 hover:bg-slate-700/50 focus:bg-slate-700/50 focus:outline-none transition-colors ${
+                index === selectedIndex ? 'bg-slate-700/50' : ''
               }`}
             >
               <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-white truncate">
                     {shipper.companyName}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-slate-400 truncate">
                     {shipper.email} • {shipper.contactName}
                   </p>
                 </div>
@@ -293,7 +293,7 @@ export default function ShipperAutocomplete({
       
       {isLoading && inputValue.length >= 2 && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500"></div>
         </div>
       )}
     </div>

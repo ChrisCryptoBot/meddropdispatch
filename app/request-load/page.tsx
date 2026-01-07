@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import ShipperAutocomplete from '@/components/features/ShipperAutocomplete'
 import LocationForm, { LocationData } from '@/components/features/LocationForm'
@@ -211,28 +210,18 @@ export default function RequestLoadPage() {
   return (
     <div className="min-h-screen pb-12">
       {/* Header */}
-      <header className="glass sticky top-0 z-50 border-b border-white/30">
+      <header className="glass-primary sticky top-0 z-50 border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <Image
-                  src="/logo-icon.png"
-                  alt="MED DROP Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              </div>
+            <Link href="/" className="flex items-center">
               <div>
-                <h1 className="text-2xl font-bold text-gradient">MED DROP</h1>
-                <p className="text-xs text-gray-600">Medical Courier Services</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">MED DROP</h1>
+                <p className="text-xs text-slate-400">Medical Courier Services</p>
               </div>
             </Link>
             <Link
               href="/track"
-              className="text-gray-700 hover:text-primary-600 transition-base font-medium"
+              className="text-slate-300 hover:text-cyan-400 transition-colors font-medium"
             >
               Track Shipment
             </Link>
@@ -242,17 +231,17 @@ export default function RequestLoadPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h2 className="text-4xl font-bold text-gray-900 mb-3">Request a Pickup</h2>
-          <p className="text-lg text-gray-600">
+          <h2 className="text-4xl font-bold text-white mb-3">Request a Pickup</h2>
+          <p className="text-lg text-slate-400">
             Fill out the form below to request medical courier service. We'll review and provide a quote shortly.
           </p>
         </div>
 
         {error && (
-          <div className="glass p-4 rounded-lg border-l-4 border-red-500 mb-6">
-            <p className="text-red-700 font-medium mb-2">{error}</p>
+          <div className="glass-primary p-4 rounded-lg border-l-4 border-red-500/50 mb-6 bg-red-500/10">
+            <p className="text-red-400 font-medium mb-2">{error}</p>
             {Object.keys(fieldErrors).length > 0 && (
-              <ul className="list-disc list-inside space-y-1 text-sm text-red-600">
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-300">
                 {Object.entries(fieldErrors).map(([field, message]) => (
                   <li key={field}>
                     <strong className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</strong> {message}
@@ -265,11 +254,11 @@ export default function RequestLoadPage() {
 
         <form id="loadRequestForm" onSubmit={handleSubmit} className="space-y-8">
           {/* Shipper Information */}
-          <div className="glass p-8 rounded-2xl">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Company Information</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50">
+            <h3 className="text-2xl font-bold text-white mb-6">Company Information</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="companyName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Company Name *
                 </label>
                 <ShipperAutocomplete
@@ -301,11 +290,11 @@ export default function RequestLoadPage() {
                     }
                   }}
                   placeholder="Type company name to search or enter new..."
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   required
                 />
                 {selectedShipper && (
-                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -315,14 +304,14 @@ export default function RequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="clientType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="clientType" className="block text-sm font-semibold text-slate-300 mb-2">
                   Facility Type *
                 </label>
                 <select
                   id="clientType"
                   name="clientType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select type...</option>
                   <option value="INDEPENDENT_PHARMACY">Independent Pharmacy</option>
@@ -337,7 +326,7 @@ export default function RequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="contactName" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="contactName" className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Name *
                 </label>
                 <input
@@ -345,13 +334,13 @@ export default function RequestLoadPage() {
                   id="contactName"
                   name="contactName"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="John Smith"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-semibold text-slate-300 mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -359,13 +348,13 @@ export default function RequestLoadPage() {
                   id="phone"
                   name="phone"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="(555) 123-4567"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-semibold text-slate-300 mb-2">
                   Email Address *
                 </label>
                 <input
@@ -373,20 +362,20 @@ export default function RequestLoadPage() {
                   id="email"
                   name="email"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="contact@example.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="preferredContactMethod" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="preferredContactMethod" className="block text-sm font-semibold text-slate-300 mb-2">
                   Preferred Contact Method *
                 </label>
                 <select
                   id="preferredContactMethod"
                   name="preferredContactMethod"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 >
                   <option value="EMAIL">Email</option>
                   <option value="PHONE">Phone</option>
@@ -396,13 +385,13 @@ export default function RequestLoadPage() {
           </div>
 
           {/* Pickup Information */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">Pickup Locations</h3>
+              <h3 className="text-2xl font-bold text-white">Pickup Locations</h3>
               <button
                 type="button"
                 onClick={addPickupLocation}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:shadow-xl hover:shadow-cyan-500/50 transition-all text-sm font-semibold shadow-lg shadow-cyan-500/30"
               >
                 + Add Pickup Location
               </button>
@@ -423,13 +412,13 @@ export default function RequestLoadPage() {
           </div>
 
           {/* Dropoff Information */}
-          <div className="glass p-8 rounded-2xl">
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">Delivery Locations</h3>
+              <h3 className="text-2xl font-bold text-white">Delivery Locations</h3>
               <button
                 type="button"
                 onClick={addDropoffLocation}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:shadow-xl hover:shadow-cyan-500/50 transition-all text-sm font-semibold shadow-lg shadow-cyan-500/30"
               >
                 + Add Delivery Location
               </button>
@@ -450,18 +439,18 @@ export default function RequestLoadPage() {
           </div>
 
           {/* Load Details */}
-          <div className="glass p-8 rounded-2xl">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Shipment Details</h3>
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50">
+            <h3 className="text-2xl font-bold text-white mb-6">Shipment Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="serviceType" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="serviceType" className="block text-sm font-semibold text-slate-300 mb-2">
                   Service Type *
                 </label>
                 <select
                   id="serviceType"
                   name="serviceType"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select service...</option>
                   <option value="STAT">STAT (Immediate)</option>
@@ -473,14 +462,14 @@ export default function RequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="specimenCategory" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="specimenCategory" className="block text-sm font-semibold text-slate-300 mb-2">
                   Specimen Category *
                 </label>
                 <select
                   id="specimenCategory"
                   name="specimenCategory"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select category...</option>
                   <option value="UN3373_CATEGORY_B">UN3373 - Biological Substance (Category B)</option>
@@ -491,7 +480,7 @@ export default function RequestLoadPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="commodityDescription" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="commodityDescription" className="block text-sm font-semibold text-slate-300 mb-2">
                   What are you shipping? *
                 </label>
                 <textarea
@@ -499,20 +488,20 @@ export default function RequestLoadPage() {
                   name="commodityDescription"
                   required
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Laboratory blood specimens for testing, Prescription medications, Medical equipment, etc."
                 />
               </div>
 
               <div>
-                <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-slate-300 mb-2">
                   Temperature Requirement *
                 </label>
                 <select
                   id="temperatureRequirement"
                   name="temperatureRequirement"
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 >
                   <option value="">Select requirement...</option>
                   <option value="AMBIENT">Ambient (Room Temperature)</option>
@@ -523,7 +512,7 @@ export default function RequestLoadPage() {
               </div>
 
               <div>
-                <label htmlFor="estimatedContainers" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="estimatedContainers" className="block text-sm font-semibold text-slate-300 mb-2">
                   Number of Containers (Optional)
                 </label>
                 <input
@@ -531,13 +520,13 @@ export default function RequestLoadPage() {
                   id="estimatedContainers"
                   name="estimatedContainers"
                   min="1"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="5"
                 />
               </div>
 
               <div>
-                <label htmlFor="estimatedWeightLbs" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="estimatedWeightLbs" className="block text-sm font-semibold text-slate-300 mb-2">
                   Estimated Weight (lb)
                 </label>
                 <input
@@ -547,12 +536,12 @@ export default function RequestLoadPage() {
                   placeholder="e.g. 5"
                   min="0"
                   step="0.1"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               <div>
-                <label htmlFor="declaredValue" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="declaredValue" className="block text-sm font-semibold text-slate-300 mb-2">
                   Declared Value (USD)
                 </label>
                 <input
@@ -561,20 +550,20 @@ export default function RequestLoadPage() {
                   name="declaredValue"
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="500.00"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="accessNotes" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="accessNotes" className="block text-sm font-semibold text-slate-300 mb-2">
                   Additional Instructions
                 </label>
                 <textarea
                   id="accessNotes"
                   name="accessNotes"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Any special handling requirements, delivery instructions, or other important information..."
                 />
               </div>
@@ -585,14 +574,14 @@ export default function RequestLoadPage() {
           <div className="flex justify-end space-x-4">
             <Link
               href="/"
-              className="px-8 py-4 rounded-xl text-gray-700 hover:bg-white/40 transition-base font-semibold border border-gray-300"
+              className="px-8 py-4 rounded-xl text-slate-200 hover:bg-slate-700/50 transition-colors font-semibold border border-slate-600/50"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-lg hover:shadow-xl"
+              className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-xl hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-cyan-500/30"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </button>
