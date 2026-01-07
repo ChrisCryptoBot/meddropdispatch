@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import MobileBottomNav from '@/components/features/MobileBottomNav'
+import ShiftClockWidget from '@/components/features/ShiftClockWidget'
 
 export default function DriverLayout({
   children,
@@ -371,6 +372,10 @@ export default function DriverLayout({
               </div>
             </div>
             <nav className="flex items-center space-x-3 pr-4">
+              {/* Shift Clock Widget (Fleet Enterprise - Tier 1) */}
+              {driver?.id && (
+                <ShiftClockWidget driverId={driver.id} />
+              )}
               <div className="relative">
                 <button
                   onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}

@@ -417,6 +417,77 @@ export async function PATCH(
       })
     }
 
+    // FLEET ENTERPRISE - Tier 1: Auto-increment vehicle odometer on load completion
+    // Hybrid Approach: Auto-increment from calculated distance, manual entry will "true up" at shift end
+    if (data.status === 'DELIVERED' && loadRequest.vehicleId && loadRequest.totalDistance) {
+      try {
+        const vehicle = await prisma.vehicle.findUnique({
+          where: { id: loadRequest.vehicleId },
+          select: {
+            id: true,
+            vehiclePlate: true,
+            currentOdometer: true,
+            lastManualOdometerEntry: true,
+            lastManualEntryDate: true,
+          },
+        })
+
+        if (vehicle && loadRequest.totalDistance > 0) {
+          // Hybrid calculation: If manual entry exists, increment from baseline
+          // Otherwise, just add totalDistance to current odometer
+          let newOdometer: number
+
+          if (vehicle.lastManualOdometerEntry && vehicle.lastManualEntryDate) {
+            // Hybrid calculation: Current = Last Manual Entry + Sum(TotalDistance of loads completed since entry)
+            // Get sum of totalDistance from all loads completed since last manual entry (excluding current load)
+            const completedLoadsSinceEntry = await prisma.loadRequest.findMany({
+              where: {
+                vehicleId: vehicle.id,
+                status: 'DELIVERED',
+                actualDeliveryTime: {
+                  gte: vehicle.lastManualEntryDate,
+                },
+                id: {
+                  not: id, // Exclude current load (it's being processed)
+                },
+              },
+              select: {
+                totalDistance: true,
+              },
+            })
+
+            const sumOfDistances = completedLoadsSinceEntry.reduce(
+              (sum, load) => sum + (load.totalDistance || 0),
+              0
+            )
+
+            // Current = Last Manual Entry + Sum of completed loads since entry + Current load distance
+            newOdometer = vehicle.lastManualOdometerEntry + sumOfDistances + loadRequest.totalDistance
+          } else {
+            // No manual entry yet, just add distance to current odometer
+            newOdometer = vehicle.currentOdometer + loadRequest.totalDistance
+          }
+
+          // Update vehicle odometer
+          await prisma.vehicle.update({
+            where: { id: vehicle.id },
+            data: {
+              currentOdometer: newOdometer,
+            },
+          })
+
+          logger.info(`[Vehicle Odometer] Updated vehicle ${vehicle.vehiclePlate}: ${vehicle.currentOdometer} -> ${newOdometer} (+${loadRequest.totalDistance} miles)`)
+        }
+      } catch (odometerError) {
+        // Non-blocking: Odometer update failure should not prevent load completion
+        logger.error(
+          `[Vehicle Odometer] Failed to update odometer for load ${id}`,
+          odometerError instanceof Error ? odometerError : undefined,
+          { loadId: id }
+        )
+      }
+    }
+
     // AUTO-INVOICE: Generate invoice when load is marked as DELIVERED
     // Use atomic check within transaction to prevent duplicates
     if (data.status === 'DELIVERED' && !updatedLoad.currentLoad.invoiceId) {

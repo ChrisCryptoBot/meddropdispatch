@@ -77,6 +77,18 @@ export async function POST(
       )
     }
 
+    // EDGE CASE 6.5: Fleet Enterprise - Maintenance Compliance Check (Hard Block for NEW loads)
+    const { validateMaintenanceCompliance } = await import('@/lib/vehicle-compliance')
+    try {
+      await validateMaintenanceCompliance(vehicleId, false) // false = NEW load (hard block)
+    } catch (maintenanceError) {
+      throw new ValidationError(
+        maintenanceError instanceof Error
+          ? maintenanceError.message
+          : 'Vehicle maintenance check failed. Service vehicle before accepting new loads.'
+      )
+    }
+
     // Get current load request
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },

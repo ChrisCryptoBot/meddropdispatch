@@ -3,13 +3,24 @@
 
 import { prisma } from '@/lib/prisma'
 
-export type ComplianceStatus = 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | 'INACTIVE'
+export type ComplianceStatus = 'VALID' | 'EXPIRING' | 'EXPIRED' | 'MISSING' | 'INACTIVE' | 'MAINTENANCE_WARNING' | 'MAINTENANCE_DUE'
 
 export interface VehicleComplianceResult {
   isCompliant: boolean
   status: ComplianceStatus
   message: string
   daysUntilExpiry?: number
+  milesSinceLastService?: number
+  milesUntilMaintenanceDue?: number
+}
+
+export interface MaintenanceComplianceResult {
+  isCompliant: boolean
+  status: 'VALID' | 'WARNING' | 'DUE' // WARNING = 4500-5000 miles, DUE = >5000 miles
+  message: string
+  milesSinceLastService: number
+  lastServiceOdometer: number | null
+  lastServiceDate: Date | null
 }
 
 /**
@@ -204,5 +215,97 @@ export async function getNonCompliantVehicles(driverIds: string[]): Promise<Arra
   }
 
   return nonCompliant
+}
+
+/**
+ * Check maintenance compliance for a vehicle (Fleet Enterprise - Tier 1)
+ * Threshold: 5,000 miles since last OIL_CHANGE
+ * Tier A (Warning): > 4,500 miles - Show Dashboard Alert & Send Email
+ * Tier B (Hard Block): > 5,000 miles - Block NEW assignments
+ */
+export async function isMaintenanceCompliant(vehicleId: string): Promise<MaintenanceComplianceResult> {
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id: vehicleId },
+    select: {
+      id: true,
+      vehiclePlate: true,
+      currentOdometer: true,
+      maintenanceLogs: {
+        where: { type: 'OIL_CHANGE' },
+        orderBy: { performedAt: 'desc' },
+        take: 1,
+        select: {
+          odometer: true,
+          performedAt: true,
+        },
+      },
+    },
+  })
+
+  if (!vehicle) {
+    throw new Error(`Vehicle ${vehicleId} not found`)
+  }
+
+  const lastOilChange = vehicle.maintenanceLogs[0] || null
+  const lastServiceOdometer = lastOilChange?.odometer || 0
+  const milesSinceLastService = vehicle.currentOdometer - lastServiceOdometer
+
+  // Tier B: > 5,000 miles - Hard Block
+  if (milesSinceLastService > 5000) {
+    return {
+      isCompliant: false,
+      status: 'DUE',
+      message: `Vehicle ${vehicle.vehiclePlate} requires maintenance. ${milesSinceLastService} miles since last oil change (exceeds 5,000 mile limit). Service immediately before accepting new loads.`,
+      milesSinceLastService,
+      lastServiceOdometer: lastOilChange?.odometer || null,
+      lastServiceDate: lastOilChange?.performedAt || null,
+    }
+  }
+
+  // Tier A: > 4,500 miles - Warning
+  if (milesSinceLastService > 4500) {
+    return {
+      isCompliant: true, // Still compliant, but warning
+      status: 'WARNING',
+      message: `Vehicle ${vehicle.vehiclePlate} approaching maintenance due. ${milesSinceLastService} miles since last oil change. Service recommended soon.`,
+      milesSinceLastService,
+      lastServiceOdometer: lastOilChange?.odometer || null,
+      lastServiceDate: lastOilChange?.performedAt || null,
+    }
+  }
+
+  // Valid
+  return {
+    isCompliant: true,
+    status: 'VALID',
+    message: `Vehicle ${vehicle.vehiclePlate} maintenance up to date. ${milesSinceLastService} miles since last oil change.`,
+    milesSinceLastService,
+    lastServiceOdometer: lastOilChange?.odometer || null,
+    lastServiceDate: lastOilChange?.performedAt || null,
+  }
+}
+
+/**
+ * Validate vehicle maintenance compliance before assignment (Hard Stop for NEW loads)
+ * Throws ValidationError if maintenance is overdue (>5000 miles)
+ * Note: This is a HARD BLOCK for NEW assignments, but active loads should be allowed to complete
+ */
+export async function validateMaintenanceCompliance(vehicleId: string, isActiveLoad: boolean = false): Promise<void> {
+  const maintenance = await isMaintenanceCompliant(vehicleId)
+
+  // Hard block for new assignments if maintenance is due
+  if (!isActiveLoad && maintenance.status === 'DUE') {
+    throw new Error(`Vehicle maintenance overdue: ${maintenance.message}`)
+  }
+
+  // Soft warning for active loads (log but don't block)
+  if (isActiveLoad && maintenance.status === 'DUE') {
+    console.warn(`[Vehicle Maintenance] Active load with overdue maintenance: ${maintenance.message}`)
+  }
+
+  // Log warnings for both new and active loads
+  if (maintenance.status === 'WARNING') {
+    console.warn(`[Vehicle Maintenance] Warning: ${maintenance.message}`)
+  }
 }
 

@@ -124,6 +124,38 @@ export async function POST(
       )
     }
 
+    // EDGE CASE 6.5: Fleet Enterprise - Check maintenance compliance for all vehicles
+    // Driver must have at least one vehicle with valid maintenance (<5000 miles since last oil change)
+    const { isMaintenanceCompliant } = await import('@/lib/vehicle-compliance')
+    let hasMaintenanceCompliantVehicle = false
+    const maintenanceIssues: string[] = []
+    
+    for (const vehicle of driverVehicles) {
+      try {
+        const maintenance = await isMaintenanceCompliant(vehicle.id)
+        if (maintenance.status !== 'DUE') {
+          // Vehicle is either VALID or WARNING (still acceptable for new assignments)
+          hasMaintenanceCompliantVehicle = true
+        } else {
+          // Maintenance DUE - log issue but continue checking other vehicles
+          maintenanceIssues.push(`${vehicle.vehiclePlate}: ${maintenance.message}`)
+        }
+      } catch (error) {
+        // If maintenance check fails, log but don't block (vehicle might not have maintenance logs yet)
+        logger.warn(
+          `Maintenance check failed for vehicle ${vehicle.id}`,
+          { vehicleId: vehicle.id },
+          error instanceof Error ? error : undefined
+        )
+      }
+    }
+    
+    if (!hasMaintenanceCompliantVehicle && driverVehicles.length > 0) {
+      throw new ValidationError(
+        `Driver has no vehicles with valid maintenance. All vehicles require service: ${maintenanceIssues.join('; ')}. Service vehicles before assigning loads.`
+      )
+    }
+
     // Status gating - prevent assignment in mid-transit or terminal states
     const acceptableStatuses = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED']
     const terminalStatuses = ['DELIVERED', 'DENIED', 'CANCELLED', 'COMPLETED']

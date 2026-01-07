@@ -295,12 +295,12 @@ model LoadRequest {
   // Invoice Linking
   invoiceId  String? // Link to invoice when billed
   invoicedAt DateTime? // When invoice was generated
-  
+
   // Owner-Operator Payment Tracking
   shipperPaymentStatus String? // Payment status from shipper to driver: PENDING, PAID, OVERDUE, DISPUTED
   shipperPaidAt        DateTime? // When shipper paid driver
   shipperPaymentMethod String? // Payment method: CASH, CHECK, ACH, VENMO, OTHER
-  
+
   // Self-Dispatch Tracking
   createdByDriverId String? // Driver ID who created this load (for self-dispatch)
 
@@ -346,7 +346,7 @@ model LoadRequest {
   driverRating      DriverRating?
   locations         LoadRequestLocation[] // Multiple pickup/dropoff locations
   notes             LoadNote[]
-  driverPayments    DriverPayment[]      @relation("LoadRequestPayments")
+  driverPayments    DriverPayment[]       @relation("LoadRequestPayments")
 
   @@index([driverId])
   @@index([vehicleId])
@@ -470,9 +470,9 @@ model Invoice {
   createdByDriverId String? // Driver ID who created this invoice (for owner-operators)
 
   // Payee (who receives payment - Carrier Protocol)
-  payeeType      String?  // "DRIVER" | "FLEET" | null (defaults to driver who did the load)
-  payeeDriverId  String?  // If payeeType = "DRIVER"
-  payeeFleetId   String?  // If payeeType = "FLEET"
+  payeeType     String? // "DRIVER" | "FLEET" | null (defaults to driver who did the load)
+  payeeDriverId String? // If payeeType = "DRIVER"
+  payeeFleetId  String? // If payeeType = "FLEET"
 
   // Amounts
   subtotal Float // Service amount before tax
@@ -490,14 +490,14 @@ model Invoice {
   // Optional Stripe Integration (secondary, not primary)
 
   // Relations
-  shipper      Shipper       @relation(fields: [shipperId], references: [id])
-  createdByDriver Driver?   @relation("DriverCreatedInvoices", fields: [createdByDriverId], references: [id])
-  payeeDriver  Driver?      @relation("InvoicePayeeDriver", fields: [payeeDriverId], references: [id])
-  payeeFleet   Fleet?       @relation("FleetInvoices", fields: [payeeFleetId], references: [id])
-  loadRequests LoadRequest[] // Many loads can be on one invoice
-  lineItems    InvoiceLineItem[]
-  adjustments  InvoiceAdjustment[]
-  driverPayments DriverPayment[]
+  shipper         Shipper             @relation(fields: [shipperId], references: [id])
+  createdByDriver Driver?             @relation("DriverCreatedInvoices", fields: [createdByDriverId], references: [id])
+  payeeDriver     Driver?             @relation("InvoicePayeeDriver", fields: [payeeDriverId], references: [id])
+  payeeFleet      Fleet?              @relation("FleetInvoices", fields: [payeeFleetId], references: [id])
+  loadRequests    LoadRequest[] // Many loads can be on one invoice
+  lineItems       InvoiceLineItem[]
+  adjustments     InvoiceAdjustment[]
+  driverPayments  DriverPayment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -559,29 +559,30 @@ model Driver {
   isAdmin Boolean @default(false) // Whether driver has admin privileges (deprecated in favor of fleetRole)
 
   // Fleet Hierarchy (Carrier Protocol)
-  fleetId     String?  // Null = Independent, Set = Member of Fleet
-  fleetRole   String?  @default("INDEPENDENT") // INDEPENDENT, OWNER, ADMIN, DRIVER
+  fleetId            String? // Null = Independent, Set = Member of Fleet
+  fleetRole          String? @default("INDEPENDENT") // INDEPENDENT, OWNER, ADMIN, DRIVER
   canBeAssignedLoads Boolean @default(true) // ADMIN can opt out of load assignments
 
   // Relations
-  loadRequests       LoadRequest[]
-  createdLoads       LoadRequest[]       @relation("DriverCreatedLoads")
-  vehicles           Vehicle[]
-  documents          DriverDocument[]
-  gpsTrackingPoints  GPSTrackingPoint[]
-  ratings            DriverRating[]
-  callbackQueue      CallbackQueue[]
-  equipmentChecklist DriverEquipmentChecklist?
-  driverClients      DriverClient[]
-  createdInvoices    Invoice[]           @relation("DriverCreatedInvoices")
-  driverPayments     DriverPayment[]
+  loadRequests            LoadRequest[]
+  createdLoads            LoadRequest[]             @relation("DriverCreatedLoads")
+  vehicles                Vehicle[]
+  documents               DriverDocument[]
+  gpsTrackingPoints       GPSTrackingPoint[]
+  ratings                 DriverRating[]
+  callbackQueue           CallbackQueue[]
+  equipmentChecklist      DriverEquipmentChecklist?
+  driverClients           DriverClient[]
+  createdInvoices         Invoice[]                 @relation("DriverCreatedInvoices")
+  driverPayments          DriverPayment[]
   notificationPreferences NotificationPreferences?
   loadDrafts              LoadDraft[]
+  shifts                  DriverShift[] // Fleet Enterprise - Tier 1: Shift tracking
   // Fleet Relations
-  ownedFleet         Fleet?              @relation("FleetOwner")
-  fleet              Fleet?              @relation("FleetMembers", fields: [fleetId], references: [id])
-  createdFleetInvites FleetInvite[]      @relation("FleetInvitesCreated")
-  payeeInvoices      Invoice[]          @relation("InvoicePayeeDriver")
+  ownedFleet              Fleet?                    @relation("FleetOwner")
+  fleet                   Fleet?                    @relation("FleetMembers", fields: [fleetId], references: [id])
+  createdFleetInvites     FleetInvite[]             @relation("FleetInvitesCreated")
+  payeeInvoices           Invoice[]                 @relation("InvoicePayeeDriver")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -620,20 +621,63 @@ model Vehicle {
   // Compliance & Liability Shield (V2 - Strict Liability)
   registrationExpiryDate DateTime? // GATEKEEPER FIELD - Required for compliance
   insuranceExpiryDate    DateTime? // Optional redundant check
-  registrationNumber     String?   // Actual plate/doc number
+  registrationNumber     String? // Actual plate/doc number
   registrationDocumentId String?   @unique // Link to the proof document (one-to-one)
+
+  // Odometer Tracking (Fleet Enterprise - Tier 1)
+  currentOdometer         Int       @default(0) // Current vehicle mileage
+  lastManualOdometerEntry Int? // Baseline for hybrid calculation (manual entry sets this)
+  lastManualEntryDate     DateTime? // When baseline was set (last manual odometer input)
+
+  // Maintenance Tracking (Fleet Enterprise - Tier 1)
+  lastServiceDate DateTime? // Last service date (for quick lookup)
+  maintenanceLogs VehicleMaintenance[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  driver               Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver               Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)
   loadRequests         LoadRequest[]
   registrationDocument DriverDocument? @relation("VehicleRegistration", fields: [registrationDocumentId], references: [id])
 
   @@index([driverId])
   @@index([isActive])
   @@index([registrationExpiryDate])
+}
+
+// VehicleMaintenance: Maintenance logs for vehicles (Fleet Enterprise - Tier 1)
+model VehicleMaintenance {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  type        String // OIL_CHANGE, TIRE_ROTATION, INSPECTION, REPAIR
+  odometer    Int // Mileage at time of service
+  cost        Float
+  performedAt DateTime
+  notes       String?
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([type])
+  @@index([performedAt])
+}
+
+// DriverShift: Shift tracking for hourly employees (Fleet Enterprise - Tier 1)
+model DriverShift {
+  id         String    @id @default(cuid())
+  driverId   String
+  clockIn    DateTime
+  clockOut   DateTime?
+  totalHours Float? // Calculated on clockOut
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([clockIn])
+  @@index([clockOut])
 }
 
 // DriverDocument: Driver compliance and certification documents
@@ -663,8 +707,8 @@ model DriverDocument {
   updatedAt DateTime @updatedAt
 
   // Relations
-  driver   Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  vehicle  Vehicle? @relation("VehicleRegistration") // Link from Vehicle to registration document
+  driver  Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle Vehicle? @relation("VehicleRegistration") // Link from Vehicle to registration document
 
   @@index([driverId])
   @@index([type])
@@ -811,12 +855,12 @@ model LoadNote {
 
 // InvoiceLineItem: Line items for invoices (accessorial charges, base rate, etc.)
 model InvoiceLineItem {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   invoiceId   String
   description String // e.g., "Base Rate", "Wait Time", "Dry Ice", "Toner Usage"
-  quantity    Float?  // Optional quantity (e.g., 2.5 hours of wait time)
-  unitPrice   Float   // Price per unit
-  total       Float   // Calculated: quantity * unitPrice
+  quantity    Float? // Optional quantity (e.g., 2.5 hours of wait time)
+  unitPrice   Float // Price per unit
+  total       Float // Calculated: quantity * unitPrice
   notes       String? // Optional notes about this line item
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -829,15 +873,15 @@ model InvoiceLineItem {
 
 // InvoiceAdjustment: Price adjustments for invoices (credits, disputes, corrections)
 model InvoiceAdjustment {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  type        String   // ADJUSTMENT_TYPE: CREDIT, DEBIT, DISPUTE_RESOLUTION, CORRECTION
-  amount      Float    // Adjustment amount (positive for credit, negative for debit)
-  reason      String   // Reason for adjustment
-  notes       String?  // Detailed notes
-  createdBy   String   // User/Driver ID who created adjustment
+  id            String   @id @default(cuid())
+  invoiceId     String
+  type          String // ADJUSTMENT_TYPE: CREDIT, DEBIT, DISPUTE_RESOLUTION, CORRECTION
+  amount        Float // Adjustment amount (positive for credit, negative for debit)
+  reason        String // Reason for adjustment
+  notes         String? // Detailed notes
+  createdBy     String // User/Driver ID who created adjustment
   createdByType String // DRIVER, ADMIN, SHIPPER
-  createdAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   // Relations
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
@@ -848,26 +892,26 @@ model InvoiceAdjustment {
 
 // DriverClient: Private client management for owner-operators
 model DriverClient {
-  id          String   @id @default(cuid())
-  driverId    String
+  id           String   @id @default(cuid())
+  driverId     String
   ownerFleetId String? // TIER 2.7: Fleet that owns this client (if created while driver was in fleet)
-  companyName String
-  contactName String
-  email       String?
-  phone       String
+  companyName  String
+  contactName  String
+  email        String?
+  phone        String
   addressLine1 String?
   addressLine2 String?
-  city        String?
-  state       String?
-  postalCode  String?
-  notes       String?  // Private notes about this client
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  city         String?
+  state        String?
+  postalCode   String?
+  notes        String? // Private notes about this client
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  driver      Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  ownerFleet  Fleet? @relation("FleetOwnedClients", fields: [ownerFleetId], references: [id], onDelete: SetNull)
+  driver     Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  ownerFleet Fleet? @relation("FleetOwnedClients", fields: [ownerFleetId], references: [id], onDelete: SetNull)
 
   @@index([driverId])
   @@index([isActive])
@@ -876,37 +920,37 @@ model DriverClient {
 
 // Fleet: Carrier/Fleet organization (Carrier Protocol)
 model Fleet {
-  id          String   @id @default(cuid())
-  name        String   // DBA Name (e.g., "FastMed Logistics")
-  taxId       String?  // EIN for shared billing
-  ownerId     String   @unique // The "Super Admin" of this fleet (Driver ID)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String // DBA Name (e.g., "FastMed Logistics")
+  taxId     String? // EIN for shared billing
+  ownerId   String   @unique // The "Super Admin" of this fleet (Driver ID)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  owner            Driver        @relation("FleetOwner", fields: [ownerId], references: [id])
-  drivers          Driver[]      @relation("FleetMembers")
-  invites          FleetInvite[]
-  invoices         Invoice[]     @relation("FleetInvoices")
-  contractedLoads  LoadRequest[] @relation("ContractedFleetLoads")
-  ownedClients     DriverClient[] @relation("FleetOwnedClients")
+  owner           Driver         @relation("FleetOwner", fields: [ownerId], references: [id])
+  drivers         Driver[]       @relation("FleetMembers")
+  invites         FleetInvite[]
+  invoices        Invoice[]      @relation("FleetInvoices")
+  contractedLoads LoadRequest[]  @relation("ContractedFleetLoads")
+  ownedClients    DriverClient[] @relation("FleetOwnedClients")
 
   @@index([ownerId])
 }
 
 // FleetInvite: Invitation codes for joining a fleet
 model FleetInvite {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   fleetId     String
-  code        String   @unique // 8-char random string (uppercase)
-  role        String   @default("DRIVER") // Role to assign upon redemption: DRIVER, ADMIN
+  code        String    @unique // 8-char random string (uppercase)
+  role        String    @default("DRIVER") // Role to assign upon redemption: DRIVER, ADMIN
   expiresAt   DateTime?
-  maxUses     Int?     @default(1) // null = unlimited uses
-  usedCount   Int      @default(0)
-  createdById String   // Driver ID who generated invite
+  maxUses     Int?      @default(1) // null = unlimited uses
+  usedCount   Int       @default(0)
+  createdById String // Driver ID who generated invite
 
-  fleet       Fleet    @relation(fields: [fleetId], references: [id], onDelete: Cascade)
-  createdBy   Driver   @relation("FleetInvitesCreated", fields: [createdById], references: [id])
+  fleet     Fleet  @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  createdBy Driver @relation("FleetInvitesCreated", fields: [createdById], references: [id])
 
   @@index([code])
   @@index([fleetId])
@@ -915,18 +959,18 @@ model FleetInvite {
 
 // DriverPayment: Track platform payments to drivers
 model DriverPayment {
-  id            String   @id @default(cuid())
-  driverId      String
-  loadRequestId String?  // Optional: payment for specific load
-  invoiceId     String?  // Optional: payment for invoice
-  amount        Float    // Payment amount
-  paymentDate   DateTime // When payment was made
-  paymentMethod String   // ACH, CHECK, WIRE, STRIPE_ACH, OTHER
+  id               String   @id @default(cuid())
+  driverId         String
+  loadRequestId    String? // Optional: payment for specific load
+  invoiceId        String? // Optional: payment for invoice
+  amount           Float // Payment amount
+  paymentDate      DateTime // When payment was made
+  paymentMethod    String // ACH, CHECK, WIRE, STRIPE_ACH, OTHER
   paymentReference String? // Check number, transaction ID, etc.
-  status        String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
-  notes         String?  // Internal notes
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status           String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  notes            String? // Internal notes
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
   driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
