@@ -113,9 +113,26 @@ export async function createFleet(
 
 /**
  * Delete fleet and revert all drivers to INDEPENDENT
+ * TIER 1.5: Block deletion if active loads exist (prevents Fleet Dissolution Debt)
  */
 export async function deleteFleet(fleetId: string) {
   return await prisma.$transaction(async (tx) => {
+    // TIER 1.5: Check for active loads with this fleet as contractedFleetId
+    const activeLoads = await tx.loadRequest.count({
+      where: {
+        contractedFleetId: fleetId,
+        status: {
+          in: ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'],
+        },
+      },
+    })
+
+    if (activeLoads > 0) {
+      throw new Error(
+        `Cannot delete fleet: ${activeLoads} active load(s) are assigned to this fleet. Complete or cancel all active loads before deleting the fleet.`
+      )
+    }
+
     // Revert all drivers to INDEPENDENT
     await tx.driver.updateMany({
       where: { fleetId },

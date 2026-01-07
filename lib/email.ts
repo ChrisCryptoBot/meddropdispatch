@@ -7,6 +7,158 @@ import { sendEmail } from './email-service'
  * Send a load confirmation email to shipper
  * Includes load details, rate information, and links to sign up/log in
  */
+/**
+ * Send fleet invite email (Email 1: Fleet Invite Workflow)
+ * Professional email template for fleet invitation codes
+ */
+export async function sendFleetInviteEmail({
+  to,
+  fleetName,
+  inviteCode,
+  role,
+  expiresAt,
+  baseUrl,
+  createdByName,
+}: {
+  to: string
+  fleetName: string
+  inviteCode: string
+  role: 'DRIVER' | 'ADMIN'
+  expiresAt?: Date | null
+  baseUrl: string
+  createdByName: string
+}) {
+  const signupUrl = `${baseUrl}/driver/signup?invite=${inviteCode}`
+  const subject = `You're Invited to Join ${fleetName} on MED DROP`
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  const text = `
+Hello,
+
+You've been invited to join ${fleetName} on MED DROP!
+
+INVITATION DETAILS:
+- Fleet: ${fleetName}
+- Role: ${role === 'ADMIN' ? 'Fleet Administrator' : 'Driver'}
+- Invite Code: ${inviteCode}
+${expiresAt ? `- Expires: ${formatDate(expiresAt)}` : '- No expiration'}
+- Invited by: ${createdByName}
+
+HOW TO ACCEPT:
+1. Visit: ${signupUrl}
+2. Select "Join a Team" during signup
+3. Enter the invite code: ${inviteCode}
+4. Complete your driver profile
+
+Or sign up manually at ${baseUrl}/driver/signup and use code: ${inviteCode}
+
+If you have questions, contact ${createdByName} or the fleet owner.
+
+Welcome to the team!
+
+---
+MED DROP - Medical Courier Service
+${baseUrl}
+`
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">You're Invited!</h1>
+  </div>
+  
+  <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+    <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
+    
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      You've been invited to join <strong>${fleetName}</strong> on MED DROP!
+    </p>
+
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 20px 0;">
+      <h2 style="color: #0ea5e9; margin-top: 0; font-size: 18px;">Invitation Details</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; width: 120px;">Fleet:</td>
+          <td style="padding: 8px 0; font-weight: 600;">${fleetName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b;">Role:</td>
+          <td style="padding: 8px 0; font-weight: 600;">${role === 'ADMIN' ? 'Fleet Administrator' : 'Driver'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #64748b;">Invite Code:</td>
+          <td style="padding: 8px 0; font-weight: 600; font-family: monospace; font-size: 18px; color: #0ea5e9;">${inviteCode}</td>
+        </tr>
+        ${expiresAt ? `
+        <tr>
+          <td style="padding: 8px 0; color: #64748b;">Expires:</td>
+          <td style="padding: 8px 0;">${formatDate(expiresAt)}</td>
+        </tr>
+        ` : ''}
+        <tr>
+          <td style="padding: 8px 0; color: #64748b;">Invited by:</td>
+          <td style="padding: 8px 0;">${createdByName}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background: #0ea5e9; border-radius: 6px; padding: 20px; text-align: center; margin: 30px 0;">
+      <a href="${signupUrl}" style="display: inline-block; background: white; color: #0ea5e9; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+        Accept Invitation →
+      </a>
+    </div>
+
+    <div style="background: #f1f5f9; border-left: 4px solid #0ea5e9; padding: 15px; margin: 20px 0; border-radius: 4px;">
+      <p style="margin: 0; font-size: 14px; color: #475569;">
+        <strong>How to Accept:</strong><br>
+        1. Click the button above or visit: <a href="${signupUrl}" style="color: #0ea5e9;">${signupUrl}</a><br>
+        2. Select "Join a Team" during signup<br>
+        3. Enter the invite code: <code style="background: white; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${inviteCode}</code>
+      </p>
+    </div>
+
+    <p style="font-size: 14px; color: #64748b; margin-top: 30px;">
+      If you have questions, contact ${createdByName} or the fleet owner.
+    </p>
+
+    <p style="font-size: 16px; margin-top: 30px;">
+      Welcome to the team!
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px;">
+    <p>MED DROP - Medical Courier Service</p>
+    <p><a href="${baseUrl}" style="color: #0ea5e9;">${baseUrl}</a></p>
+  </div>
+</body>
+</html>
+`
+
+  return await sendEmail({
+    to,
+    subject,
+    text,
+    html,
+  })
+}
+
 export async function sendLoadConfirmationEmail({
   to,
   companyName,

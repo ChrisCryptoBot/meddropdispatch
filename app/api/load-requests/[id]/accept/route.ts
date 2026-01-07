@@ -118,6 +118,13 @@ export async function POST(
       throw eligibilityError
     }
 
+    // TIER 1.1: Snapshot driver's fleetId at acceptance to prevent payee reversion
+    const driver = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { fleetId: true, fleetRole: true },
+    })
+    const contractedFleetId = driver?.fleetRole !== 'INDEPENDENT' ? driver?.fleetId || null : null
+
     // ATOMIC UPDATE: Use updateMany with WHERE clause to prevent race condition
     // Only update if driverId is null or matches current driver (allows re-acceptance by same driver)
     const updateResult = await prisma.loadRequest.updateMany({
@@ -136,6 +143,7 @@ export async function POST(
         vehicleId,
         assignedAt: loadRequest.assignedAt || new Date(),
         acceptedByDriverAt: new Date(),
+        contractedFleetId, // Snapshot fleet at acceptance (if not already set)
         // Set status to SCHEDULED - driver accepted after phone call, tracking now active
         status: 'SCHEDULED',
         // Enable GPS tracking if driver chose to enable it

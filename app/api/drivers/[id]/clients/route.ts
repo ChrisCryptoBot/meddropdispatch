@@ -79,18 +79,18 @@ export async function POST(
       throw new AuthorizationError('Unauthorized')
     }
 
-    // Verify driver is admin (owner-operator)
+    // Verify driver is admin (owner-operator) or in a fleet
     const driver = await prisma.driver.findUnique({
       where: { id },
-      select: { isAdmin: true }
+      select: { isAdmin: true, fleetId: true, fleetRole: true }
     })
 
     if (!driver) {
       throw new NotFoundError('Driver')
     }
 
-    if (!driver.isAdmin) {
-      throw new AuthorizationError('Only owner-operators can manage private clients')
+    if (!driver.isAdmin && driver.fleetRole === 'INDEPENDENT') {
+      throw new AuthorizationError('Only owner-operators and fleet members can manage private clients')
     }
 
     // Validate request body
@@ -108,10 +108,14 @@ export async function POST(
 
     const data = validation.data
 
+    // TIER 2.7: Set ownerFleetId if driver is in a fleet (not INDEPENDENT)
+    const ownerFleetId = driver.fleetRole !== 'INDEPENDENT' && driver.fleetId ? driver.fleetId : null
+
     // Create client
     const client = await prisma.driverClient.create({
       data: {
         driverId: id,
+        ownerFleetId, // Snapshot fleet ownership at creation
         companyName: data.companyName,
         contactName: data.contactName,
         email: data.email || null,

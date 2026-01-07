@@ -19,6 +19,7 @@ import { validatePickupLocation, validateDeliveryLocation, validateCoordinates }
 const DEFAULT_TOLERANCE_RADIUS = 100 // 100 meters default
 import { verifyLoadStatusUpdateAccess, requireAuth } from '@/lib/authorization'
 import { logUserAction } from '@/lib/audit-log'
+import { logger } from '@/lib/logger'
 import {
   validateStatusTransition,
   validateSignature,
@@ -289,6 +290,38 @@ export async function PATCH(
         } catch (gpsError) {
           console.error('GPS validation error:', gpsError)
           // Don't block if GPS validation fails - log and continue
+        }
+      }
+
+      // --------------------------------------------------------
+      // TIER 1.2: MID-LOAD COMPLIANCE RE-VALIDATION
+      // Re-validate driver license and vehicle compliance at critical transitions
+      // --------------------------------------------------------
+      if (newStatus === 'PICKED_UP' || newStatus === 'DELIVERED') {
+        try {
+          const { revalidateComplianceAtTransition } = await import('@/lib/compliance-revalidation')
+          const complianceResult = await revalidateComplianceAtTransition(id, newStatus as 'PICKED_UP' | 'DELIVERED')
+          
+          // Log warnings but don't block (errors already throw)
+          if (complianceResult.warnings.length > 0) {
+            logger.warn('Compliance warnings at status transition', {
+              loadId: id,
+              status: newStatus,
+              warnings: complianceResult.warnings,
+            })
+          }
+        } catch (complianceError) {
+          if (complianceError instanceof ValidationError) {
+            return NextResponse.json(
+              {
+                error: 'ComplianceValidationError',
+                message: complianceError.message,
+                timestamp: new Date().toISOString(),
+              },
+              { status: 400 }
+            )
+          }
+          throw complianceError
         }
       }
 

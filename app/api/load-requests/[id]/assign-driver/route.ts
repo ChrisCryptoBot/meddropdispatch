@@ -42,6 +42,16 @@ export async function POST(
 
     const { driverId } = validation.data
 
+    // TIER 2.9: Check if driver has opted out of assignments
+    const driverOptOut = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { canBeAssignedLoads: true },
+    })
+    
+    if (driverOptOut && driverOptOut.canBeAssignedLoads === false) {
+      throw new ValidationError('Driver has opted out of load assignments. Cannot assign loads to this driver.')
+    }
+
     // Get current load request with requirements for eligibility validation
     const currentLoad = await prisma.loadRequest.findUnique({
       where: { id },
@@ -130,6 +140,13 @@ export async function POST(
     // Determine if we should auto-schedule (only for early statuses)
     const shouldSchedule = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED'].includes(currentLoad.status)
 
+    // TIER 1.1: Snapshot driver's fleetId at assignment to prevent payee reversion
+    const driver = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { fleetId: true, fleetRole: true },
+    })
+    const contractedFleetId = driver?.fleetRole !== 'INDEPENDENT' ? driver?.fleetId || null : null
+
     // ATOMIC UPDATE: Only assign if driverId is null (or already set to same driver for idempotency) 
     // AND status is acceptable AND NOT in terminal state
     const atomicResult = await prisma.loadRequest.updateMany({
@@ -145,6 +162,7 @@ export async function POST(
       data: {
         driverId,
         assignedAt: new Date(),
+        contractedFleetId, // Snapshot fleet at assignment
         ...(shouldSchedule ? { status: 'SCHEDULED' } : {}),
       },
     })

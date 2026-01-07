@@ -223,6 +223,7 @@ model LoadRequest {
   vehicleId          String? // Assigned vehicle for this load
   assignedAt         DateTime? // When assigned to driver
   acceptedByDriverAt DateTime? // When driver accepted
+  contractedFleetId  String? // Snapshot of driver's fleetId at assignment (prevents payee reversion on mid-load quit)
 
   // GPS Tracking (Optional - Premium Feature)
   gpsTrackingEnabled   Boolean   @default(false) // Driver can enable real-time GPS tracking
@@ -336,6 +337,7 @@ model LoadRequest {
   createdByDriver   Driver?               @relation("DriverCreatedLoads", fields: [createdByDriverId], references: [id])
   vehicle           Vehicle?              @relation(fields: [vehicleId], references: [id])
   invoice           Invoice?              @relation(fields: [invoiceId], references: [id])
+  contractedFleet   Fleet?                @relation("ContractedFleetLoads", fields: [contractedFleetId], references: [id])
   callbackQueue     CallbackQueue? // Load created from callback queue
   notifications     Notification[]
   trackingEvents    TrackingEvent[]
@@ -848,6 +850,7 @@ model InvoiceAdjustment {
 model DriverClient {
   id          String   @id @default(cuid())
   driverId    String
+  ownerFleetId String? // TIER 2.7: Fleet that owns this client (if created while driver was in fleet)
   companyName String
   contactName String
   email       String?
@@ -863,10 +866,12 @@ model DriverClient {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver      Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  ownerFleet  Fleet? @relation("FleetOwnedClients", fields: [ownerFleetId], references: [id], onDelete: SetNull)
 
   @@index([driverId])
   @@index([isActive])
+  @@index([ownerFleetId])
 }
 
 // Fleet: Carrier/Fleet organization (Carrier Protocol)
@@ -879,10 +884,12 @@ model Fleet {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  owner       Driver   @relation("FleetOwner", fields: [ownerId], references: [id])
-  drivers     Driver[] @relation("FleetMembers")
-  invites     FleetInvite[]
-  invoices    Invoice[] @relation("FleetInvoices")
+  owner            Driver        @relation("FleetOwner", fields: [ownerId], references: [id])
+  drivers          Driver[]      @relation("FleetMembers")
+  invites          FleetInvite[]
+  invoices         Invoice[]     @relation("FleetInvoices")
+  contractedLoads  LoadRequest[] @relation("ContractedFleetLoads")
+  ownedClients     DriverClient[] @relation("FleetOwnedClients")
 
   @@index([ownerId])
 }

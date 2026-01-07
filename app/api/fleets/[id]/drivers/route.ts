@@ -134,6 +134,11 @@ export async function PATCH(
       throw new ValidationError('Driver not found in this fleet')
     }
 
+    // TIER 1.3: Hardcode OWNER protection - prevent mutiny
+    if (targetDriver.fleetRole === 'OWNER') {
+      throw new ValidationError('Cannot modify fleet owner. Transfer ownership first or delete the fleet.')
+    }
+
     const updateData: any = {}
     if (fleetRole) updateData.fleetRole = fleetRole
     if (canBeAssignedLoads !== undefined) updateData.canBeAssignedLoads = canBeAssignedLoads
@@ -210,6 +215,45 @@ export async function DELETE(
     if (!targetDriver) {
       throw new ValidationError('Driver not found in this fleet')
     }
+
+    // TIER 1.3: Hardcode OWNER protection - prevent mutiny
+    if (targetDriver.fleetRole === 'OWNER') {
+      throw new ValidationError('Cannot remove fleet owner. Transfer ownership first or delete the fleet.')
+    }
+
+    // TIER 2.7: Transfer fleet-owned DriverClient records to fleet owner before removing driver
+    // Get all fleet-owned clients created by this driver
+    const fleetOwnedClients = await prisma.driverClient.findMany({
+      where: {
+        driverId: targetDriverId,
+        ownerFleetId: fleetId,
+      },
+    })
+
+    // Transfer ownership: Set driverId to fleet owner, keep ownerFleetId
+    if (fleetOwnedClients.length > 0) {
+      await prisma.driverClient.updateMany({
+        where: {
+          id: { in: fleetOwnedClients.map(c => c.id) },
+        },
+        data: {
+          driverId: driverId, // Transfer to fleet owner
+          // ownerFleetId stays the same (fleetId)
+        },
+      })
+    }
+
+    // Revoke access: Deactivate any remaining DriverClient records that belong to the fleet
+    // (Driver loses access to fleet-owned clients)
+    await prisma.driverClient.updateMany({
+      where: {
+        driverId: targetDriverId,
+        ownerFleetId: fleetId,
+      },
+      data: {
+        isActive: false, // Revoke access
+      },
+    })
 
     // Revert to INDEPENDENT
     await prisma.driver.update({

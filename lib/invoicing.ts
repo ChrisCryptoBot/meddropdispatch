@@ -84,7 +84,7 @@ export async function createInvoice(
     throw new Error('Shipper not found')
   }
 
-  // Get load requests with driver info
+  // Get load requests with driver info and contractedFleetId snapshot
   const loadRequests = await prismaClient.loadRequest.findMany({
     where: {
       id: { in: loadRequestIds },
@@ -92,7 +92,11 @@ export async function createInvoice(
       status: { in: ['DELIVERED', 'COMPLETED'] },
       quoteAmount: { not: null },
     },
-    include: {
+    select: {
+      id: true,
+      quoteAmount: true,
+      driverId: true,
+      contractedFleetId: true, // TIER 1.1: Use snapshot, not current driver status
       driver: {
         select: {
           id: true,
@@ -107,17 +111,22 @@ export async function createInvoice(
     throw new Error('No billable load requests found')
   }
 
-  // Determine payee based on driver who completed the loads
-  // For now, use the first load's driver (all loads should have same driver for single invoice)
+  // TIER 1.1: Determine payee based on contractedFleetId snapshot (prevents mid-load quit payee reversion)
+  // For now, use the first load's contractedFleetId (all loads should have same payee for single invoice)
   // TODO: Handle multi-driver invoices if needed
-  const primaryDriver = loadRequests[0]?.driver
+  const primaryLoad = loadRequests[0]
   let payeeType: 'DRIVER' | 'FLEET' | null = null
   let payeeDriverId: string | null = null
   let payeeFleetId: string | null = null
 
-  if (primaryDriver) {
+  // Use contractedFleetId if available (snapshot at assignment), otherwise fall back to current driver status
+  if (primaryLoad.contractedFleetId) {
+    payeeType = 'FLEET'
+    payeeFleetId = primaryLoad.contractedFleetId
+  } else if (primaryLoad.driverId) {
+    // Fallback: Use current driver status if no snapshot (legacy loads)
     try {
-      const payee = determinePayee(primaryDriver)
+      const payee = determinePayee(primaryLoad.driver)
       payeeType = payee.type
       if (payee.type === 'DRIVER') {
         payeeDriverId = payee.id
@@ -128,7 +137,7 @@ export async function createInvoice(
       // If driver has invalid fleet state, default to driver payment
       console.warn('Error determining payee, defaulting to driver:', error)
       payeeType = 'DRIVER'
-      payeeDriverId = primaryDriver.id
+      payeeDriverId = primaryLoad.driverId
     }
   }
 

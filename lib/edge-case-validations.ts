@@ -336,6 +336,27 @@ export async function validateDriverEligibility(
     throw new ValidationError('Inactive drivers cannot accept loads')
   }
 
+  // TIER 2.10: Validate Driver License Expiry (Ghost Driver prevention)
+  if (driver.licenseExpiry) {
+    const licenseExpiry = new Date(driver.licenseExpiry)
+    const now = new Date()
+    
+    if (licenseExpiry < now) {
+      throw new ValidationError(
+        `Driver license expired on ${licenseExpiry.toLocaleDateString()}. Cannot accept loads. Renew license immediately.`
+      )
+    }
+    
+    // Warn if expiring soon (< 30 days)
+    const daysUntilExpiry = Math.ceil((licenseExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysUntilExpiry <= 30) {
+      console.warn(`[Driver Eligibility] Driver ${driverId} license expires in ${daysUntilExpiry} days`)
+    }
+  } else {
+    // Missing license expiry is a warning (may be optional in some jurisdictions)
+    console.warn(`[Driver Eligibility] Driver ${driverId} missing license expiry date`)
+  }
+
   // Validate driver has at least one vehicle registered
   if (!driver.vehicles || driver.vehicles.length === 0) {
     throw new ValidationError('Driver must have at least one registered vehicle to accept loads')

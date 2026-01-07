@@ -83,23 +83,57 @@ export async function POST(
       throw new ValidationError('Driver is already part of a fleet')
     }
 
-    // Link driver to fleet
-    await prisma.$transaction(async (tx) => {
-      await tx.driver.update({
-        where: { id: driverId },
+    // TIER 2.8: Atomic invite redemption (prevents Zombie Invite race condition)
+    // Use updateMany with WHERE clause to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // Check expiry (Tier 3.14: Invite Expiry Staleness)
+      if (invite.expiresAt && invite.expiresAt < new Date()) {
+        throw new ValidationError('Invite code has expired')
+      }
+
+      // Atomic update: Only increment if usedCount < maxUses (or maxUses is null)
+      const inviteUpdate = await tx.fleetInvite.updateMany({
+        where: {
+          id: invite.id,
+          OR: [
+            { maxUses: null }, // No limit
+            { usedCount: { lt: invite.maxUses! } }, // Under limit
+          ],
+        },
+        data: {
+          usedCount: { increment: 1 },
+        },
+      })
+
+      if (inviteUpdate.count === 0) {
+        throw new ValidationError('Invite code has reached maximum uses or is invalid')
+      }
+
+      // Link driver to fleet (only if driver is still INDEPENDENT)
+      const driverUpdate = await tx.driver.updateMany({
+        where: {
+          id: driverId,
+          fleetId: null,
+          fleetRole: 'INDEPENDENT',
+        },
         data: {
           fleetId: invite.fleetId,
           fleetRole: invite.role,
         },
       })
 
-      // Increment used count
-      await tx.fleetInvite.update({
-        where: { id: invite.id },
-        data: {
-          usedCount: { increment: 1 },
-        },
-      })
+      if (driverUpdate.count === 0) {
+        // Rollback invite increment (manual rollback needed)
+        await tx.fleetInvite.update({
+          where: { id: invite.id },
+          data: {
+            usedCount: { decrement: 1 },
+          },
+        })
+        throw new ValidationError('Driver is already part of a fleet or state changed')
+      }
+
+      return { success: true }
     })
 
     return NextResponse.json({ success: true })

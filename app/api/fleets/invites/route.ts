@@ -126,7 +126,42 @@ export async function POST(request: NextRequest) {
         maxUses: maxUses > 0 ? maxUses : null,
         createdById: driverId,
       },
+      include: {
+        fleet: {
+          select: {
+            name: true,
+          },
+        },
+        createdBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
     })
+
+    // Email 1: Send fleet invite email (if email provided in request)
+    const { recipientEmail } = body
+    if (recipientEmail) {
+      try {
+        const { sendFleetInviteEmail } = await import('@/lib/email')
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+        await sendFleetInviteEmail({
+          to: recipientEmail,
+          fleetName: invite.fleet.name,
+          inviteCode: invite.code,
+          role: invite.role as 'DRIVER' | 'ADMIN',
+          expiresAt: invite.expiresAt,
+          baseUrl,
+          createdByName: `${invite.createdBy.firstName} ${invite.createdBy.lastName}`,
+        })
+      } catch (emailError) {
+        console.error('Failed to send fleet invite email:', emailError)
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({ invite }, { status: 201 })
   })(request)
