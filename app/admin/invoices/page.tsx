@@ -30,11 +30,11 @@ interface Invoice {
 }
 
 const INVOICE_STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700 border-gray-300',
-  SENT: 'bg-blue-100 text-blue-700 border-blue-300',
-  PAID: 'bg-green-100 text-green-700 border-green-300',
-  OVERDUE: 'bg-red-100 text-red-700 border-red-300',
-  CANCELLED: 'bg-gray-100 text-gray-500 border-gray-300',
+  DRAFT: 'bg-slate-700/50 text-slate-300 border border-slate-600/50',
+  SENT: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+  PAID: 'bg-green-500/20 text-green-400 border border-green-500/30',
+  OVERDUE: 'bg-red-500/20 text-red-400 border border-red-500/30',
+  CANCELLED: 'bg-slate-700/50 text-slate-400 border border-slate-600/50',
 }
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
@@ -202,8 +202,8 @@ export default function AdminInvoicesPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading invoices...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading invoices...</p>
           </div>
         </div>
       </div>
@@ -213,58 +213,58 @@ export default function AdminInvoicesPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Invoice Management</h1>
-        <p className="text-gray-600">View and manage all invoices</p>
+        <h1 className="text-4xl font-bold text-white mb-2 font-heading">Invoice Management</h1>
+        <p className="text-slate-400">View and manage all invoices</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-3xl font-bold text-gray-900 mb-1">{invoices.length}</div>
-          <div className="text-sm text-gray-600">Total Invoices</div>
+        <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">{invoices.length}</div>
+          <div className="text-sm text-slate-400">Total Invoices</div>
         </div>
-        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">
             {invoices.filter((i) => i.status === 'SENT').length}
           </div>
-          <div className="text-sm text-gray-600">Sent</div>
+          <div className="text-sm text-slate-400">Sent</div>
         </div>
-        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">
             {invoices.filter((i) => i.status === 'OVERDUE').length}
           </div>
-          <div className="text-sm text-gray-600">Overdue</div>
+          <div className="text-sm text-slate-400">Overdue</div>
         </div>
-        <div className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">
             {invoices.filter((i) => i.status === 'PAID').length}
           </div>
-          <div className="text-sm text-gray-600">Paid</div>
+          <div className="text-sm text-slate-400">Paid</div>
         </div>
       </div>
 
       {/* Filters, Search, and Sort */}
-      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30 shadow-glass">
+      <div className="glass-primary p-4 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4 mb-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by invoice number, company, tracking code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter by Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Status</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All</option>
               <option value="DRAFT">Draft</option>
@@ -277,11 +277,11 @@ export default function AdminInvoicesPage() {
 
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -310,8 +310,8 @@ export default function AdminInvoicesPage() {
               onClick={() => setFilter(key)}
               className={`px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 filter === key
-                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                  : 'bg-white/40 text-gray-700 hover:bg-white/60'
+                  ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                  : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-600/50'
               }`}
             >
               {label}
@@ -322,9 +322,9 @@ export default function AdminInvoicesPage() {
 
       {/* Invoices List */}
       {filteredAndSortedInvoices.length === 0 ? (
-        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
+        <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
           <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
+            className="w-16 h-16 text-slate-400 mx-auto mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -336,10 +336,10 @@ export default function AdminInvoicesPage() {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+          <h3 className="text-xl font-bold text-white mb-2">
             {searchQuery || filter !== 'all' ? 'No invoices match your filters' : 'No invoices found'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-slate-400">
             {searchQuery || filter !== 'all'
               ? 'Try adjusting your search or filter criteria'
               : 'Invoices will appear here after they are created'}
@@ -347,29 +347,29 @@ export default function AdminInvoicesPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="text-sm text-gray-600 mb-2">
+          <div className="text-sm text-slate-400 mb-2">
             Showing {filteredAndSortedInvoices.length} of {invoices.length} invoices
           </div>
           {filteredAndSortedInvoices.map((invoice) => (
-            <div key={invoice.id} className="glass-primary rounded-xl p-6 border-2 border-blue-200/30 shadow-glass">
+            <div key={invoice.id} className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg hover:border-slate-600/50 transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg">{invoice.invoiceNumber}</h3>
+                    <h3 className="font-bold text-white text-lg font-data">{invoice.invoiceNumber}</h3>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         INVOICE_STATUS_COLORS[invoice.status] || INVOICE_STATUS_COLORS.DRAFT
                       }`}
                     >
                       {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">Client: {invoice.shipper.companyName}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-400">Client: <span className="text-white">{invoice.shipper.companyName}</span></p>
+                  <p className="text-sm text-slate-400">
                     Invoice Date: {formatDate(invoice.invoiceDate)} | Due: {formatDate(invoice.dueDate)}
                   </p>
                   {invoice.paidAt && (
-                    <p className="text-sm text-green-600 mt-1">
+                    <p className="text-sm text-green-400 mt-1">
                       Paid: {formatDate(invoice.paidAt)}
                       {invoice.paymentMethod && ` via ${invoice.paymentMethod}`}
                       {invoice.paymentReference && ` (${invoice.paymentReference})`}
@@ -377,20 +377,20 @@ export default function AdminInvoicesPage() {
                   )}
                 </div>
                 <div className="text-right ml-4">
-                  <div className="text-2xl font-bold text-gray-900 mb-2">
+                  <div className="text-2xl font-bold text-white mb-2 font-data">
                     {formatCurrency(invoice.total)}
                   </div>
                   <div className="flex gap-2 flex-col">
                     <button
                       onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
-                      className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors"
+                      className="px-3 py-1 text-sm bg-slate-700/50 text-slate-200 rounded hover:bg-slate-700 transition-colors border border-slate-600/50"
                     >
                       PDF
                     </button>
                     {invoice.status === 'DRAFT' && (
                       <button
                         onClick={() => markAsSent(invoice.id)}
-                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        className="px-3 py-1 text-sm bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors border border-blue-500/30"
                       >
                         Mark Sent
                       </button>
@@ -401,7 +401,7 @@ export default function AdminInvoicesPage() {
                           setSelectedInvoice(invoice)
                           setShowPaymentModal(true)
                         }}
-                        className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
+                        className="px-3 py-1 text-sm bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-colors border border-green-500/30"
                       >
                         Mark Paid
                       </button>
@@ -412,8 +412,8 @@ export default function AdminInvoicesPage() {
 
               {/* Loads */}
               {invoice.loadRequests.length > 0 && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
+                <div className="pt-4 border-t border-slate-700/50">
+                  <p className="text-xs text-slate-500">
                     Loads: {invoice.loadRequests.map((l) => l.publicTrackingCode).join(', ')}
                   </p>
                 </div>
@@ -426,26 +426,26 @@ export default function AdminInvoicesPage() {
       {/* Payment Modal */}
       {showPaymentModal && selectedInvoice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <div className="glass-primary rounded-xl p-6 max-w-md w-full border border-slate-700/50 shadow-lg">
+            <h2 className="text-2xl font-bold text-white mb-4 font-heading">
               Mark Invoice as Paid
             </h2>
-            <p className="text-gray-600 mb-4">
-              Invoice: <span className="font-mono font-bold">{selectedInvoice.invoiceNumber}</span>
+            <p className="text-slate-400 mb-4">
+              Invoice: <span className="font-mono font-bold text-white font-data">{selectedInvoice.invoiceNumber}</span>
             </p>
-            <p className="text-gray-600 mb-6">
-              Amount: <span className="font-bold">{formatCurrency(selectedInvoice.total)}</span>
+            <p className="text-slate-400 mb-6">
+              Amount: <span className="font-bold text-white font-data">{formatCurrency(selectedInvoice.total)}</span>
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Payment Method *
                 </label>
                 <select
                   value={paymentData.paymentMethod}
                   onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   required
                 >
                   <option value="">Select payment method</option>
@@ -458,14 +458,14 @@ export default function AdminInvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Payment Reference (Optional)
                 </label>
                 <input
                   type="text"
                   value={paymentData.paymentReference}
                   onChange={(e) => setPaymentData({ ...paymentData, paymentReference: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Check number, ACH confirmation, etc."
                 />
               </div>
@@ -475,7 +475,7 @@ export default function AdminInvoicesPage() {
               <button
                 onClick={markAsPaid}
                 disabled={!paymentData.paymentMethod}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50 shadow-lg shadow-green-500/30"
               >
                 Mark Paid
               </button>
@@ -485,7 +485,7 @@ export default function AdminInvoicesPage() {
                   setSelectedInvoice(null)
                   setPaymentData({ paymentMethod: '', paymentReference: '' })
                 }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
               >
                 Cancel
               </button>

@@ -193,15 +193,13 @@ export default function DriverVehiclePage() {
 
   return (
     <div className="p-6 md:p-8 print:p-4">
-      {/* Header Section - Gold Standard - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-              Vehicle Management
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your vehicles</p>
-          </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Vehicle Management
+        </h1>
+        <p className="text-slate-400">Manage your vehicles</p>
+      </div>
+      <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => {
               resetForm()
@@ -215,23 +213,22 @@ export default function DriverVehiclePage() {
             Add Vehicle
           </button>
         </div>
-      </div>
 
       {/* Active Vehicles */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Active Vehicles</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Active Vehicles</h2>
         {activeVehicles.length === 0 ? (
-          <div className="glass-accent rounded-2xl p-8 text-center border-2 border-teal-200/30 shadow-medical">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-primary rounded-xl p-8 text-center border border-slate-700/50 shadow-lg">
+            <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
-            <p className="text-gray-600 mb-4">No active vehicles yet</p>
+            <p className="text-slate-400 mb-4">No active vehicles yet</p>
             <button
               onClick={() => {
                 resetForm()
                 setShowAddModal(true)
               }}
-              className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
             >
               Add Your First Vehicle
             </button>
@@ -239,20 +236,20 @@ export default function DriverVehiclePage() {
         ) : (
           <div className="grid gap-4">
             {activeVehicles.map((vehicle) => (
-              <div key={vehicle.id} className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
+              <div key={vehicle.id} className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">
+                      <h3 className="text-xl font-bold text-white">
                         {vehicle.nickname || `${vehicle.vehicleType.replace(/_/g, ' ')}`}
                       </h3>
                       {vehicle.hasRefrigeration && (
-                        <span className="px-2 py-1 bg-success-100 text-success-700 rounded text-xs font-medium border border-success-200">
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium border border-green-500/30">
                           Refrigerated
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div className="grid grid-cols-2 gap-4 text-sm text-slate-400">
                       <div>
                         <span className="font-medium">Type:</span> {vehicle.vehicleType.replace(/_/g, ' ')}
                       </div>
@@ -269,13 +266,13 @@ export default function DriverVehiclePage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(vehicle)}
-                      className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
+                      className="px-4 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(vehicle)}
-                      className="px-4 py-2 bg-urgent-100 text-urgent-700 rounded-lg font-semibold hover:bg-urgent-200 transition-colors border border-urgent-200"
+                      className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg font-semibold hover:bg-red-500/30 transition-colors border border-red-500/30"
                     >
                       Delete
                     </button>
@@ -290,27 +287,27 @@ export default function DriverVehiclePage() {
       {/* Inactive Vehicles */}
       {inactiveVehicles.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Inactive Vehicles</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Inactive Vehicles</h2>
           <div className="grid gap-4">
             {inactiveVehicles.map((vehicle) => (
-              <div key={vehicle.id} className="glass-accent rounded-2xl p-6 opacity-60 border-2 border-teal-200/30 shadow-medical">
+              <div key={vehicle.id} className="glass-primary rounded-xl p-6 opacity-60 border border-slate-700/50 shadow-lg">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">
+                      <h3 className="text-xl font-bold text-white">
                         {vehicle.nickname || `${vehicle.vehicleType.replace(/_/g, ' ')}`}
                       </h3>
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-300 rounded text-xs font-medium border border-slate-600/50">
                         Inactive
                       </span>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-slate-400">
                       <span className="font-medium">Plate:</span> {vehicle.vehiclePlate}
                     </div>
                   </div>
                   <button
                     onClick={() => handleEdit(vehicle)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                   >
                     Reactivate
                   </button>
@@ -324,34 +321,34 @@ export default function DriverVehiclePage() {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-accent max-w-2xl w-full rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg">
+            <h2 className="text-2xl font-bold text-white mb-6">
               {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
             </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Vehicle Nickname (Optional)
                 </label>
                 <input
                   type="text"
                   value={formData.nickname}
                   onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Work Van, Backup Truck"
                 />
-                <p className="text-xs text-gray-500 mt-1">A friendly name to identify this vehicle</p>
+                <p className="text-xs text-slate-500 mt-1">A friendly name to identify this vehicle</p>
               </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Vehicle Type *
               </label>
               <select
                 value={formData.vehicleType}
                 onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 required
               >
                 <option value="">Select vehicle type</option>
@@ -366,27 +363,27 @@ export default function DriverVehiclePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Make
                 </label>
                 <input
                   type="text"
                   value={formData.vehicleMake}
                   onChange={(e) => setFormData({ ...formData, vehicleMake: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Ford"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Model
                 </label>
                 <input
                   type="text"
                   value={formData.vehicleModel}
                   onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Transit"
                 />
               </div>
@@ -394,14 +391,14 @@ export default function DriverVehiclePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Year
                 </label>
                 <input
                   type="number"
                   value={formData.vehicleYear}
                   onChange={(e) => setFormData({ ...formData, vehicleYear: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="2024"
                   min="1900"
                   max="2100"
@@ -409,14 +406,14 @@ export default function DriverVehiclePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                     License Plate *
                 </label>
                 <input
                   type="text"
                   value={formData.vehiclePlate}
                   onChange={(e) => setFormData({ ...formData, vehiclePlate: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="ABC-1234"
                     required
                 />
@@ -429,13 +426,13 @@ export default function DriverVehiclePage() {
                   type="checkbox"
                   checked={formData.hasRefrigeration}
                   onChange={(e) => setFormData({ ...formData, hasRefrigeration: e.target.checked })}
-                  className="w-5 h-5 rounded border-teal-300 text-teal-600 focus:ring-teal-500"
+                  className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                 />
-                <span className="text-sm font-semibold text-gray-700">
+                <span className="text-sm font-semibold text-slate-300">
                   Vehicle has refrigeration capability
                 </span>
               </label>
-              <p className="text-xs text-gray-500 mt-1 ml-8">
+              <p className="text-xs text-slate-500 mt-1 ml-8">
                 Required for temperature-controlled shipments
               </p>
           </div>
@@ -447,14 +444,14 @@ export default function DriverVehiclePage() {
                     setShowAddModal(false)
                     resetForm()
                   }}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
             >
               Cancel
             </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1 px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
                 </button>

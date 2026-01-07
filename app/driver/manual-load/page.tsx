@@ -411,8 +411,8 @@ function DriverManualLoadPageContent() {
   return (
     <div className="p-8 print:p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
-          <div className="flex items-center gap-4 mb-2">
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
             <Link
               href="/driver/dashboard"
               className="text-slate-300 hover:text-cyan-400 transition-colors"
@@ -422,8 +422,8 @@ function DriverManualLoadPageContent() {
               </svg>
             </Link>
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Record Manual Load</h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">Record Manual Load</h1>
+              <p className="text-slate-400">
                 Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
               </p>
             </div>
@@ -479,21 +479,21 @@ function DriverManualLoadPageContent() {
             setFormData((prev: any) => ({ ...prev, ...data }))
           }}>
             {/* Shipper Selection */}
-            <div className="glass p-8 rounded-2xl border-2 border-slate-300">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Shipper / Client</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-4">Shipper / Client</h3>
+              <p className="text-sm text-slate-400 mb-4">
                 Select an existing shipper or create a new one for this load.
               </p>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800">New Shipper Information</h4>
+                  <h4 className="text-lg font-semibold text-white">New Shipper Information</h4>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label htmlFor="shipperCompanyName" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Company Name <span className="text-red-500">*</span>
+                    <label htmlFor="shipperCompanyName" className="block text-sm font-semibold text-slate-300 mb-2">
+                      Company Name <span className="text-red-400">*</span>
                     </label>
                     <ShipperAutocomplete
                       id="shipperCompanyName"
@@ -520,11 +520,11 @@ function DriverManualLoadPageContent() {
                         showToast.success(`Selected: ${shipper.companyName}`)
                       }}
                       placeholder="Type company name to search or enter new..."
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                       required
                     />
                     {selectedShipperData && (
-                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -532,59 +532,59 @@ function DriverManualLoadPageContent() {
                       </p>
                     )}
                     {!selectedShipperData && newShipperData.companyName && (
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-xs text-cyan-400 mt-1">
                         New shipper will be created when you submit the load
                       </p>
                     )}
                   </div>
                   <div>
-                    <label htmlFor="newShipperEmail" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
+                    <label htmlFor="newShipperEmail" className="block text-sm font-semibold text-slate-300 mb-2">
+                      Email <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="email"
                       id="newShipperEmail"
                       value={newShipperData.email}
                       onChange={(e) => setNewShipperData({ ...newShipperData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="newShipperContactName" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Contact Name <span className="text-red-500">*</span>
+                    <label htmlFor="newShipperContactName" className="block text-sm font-semibold text-slate-300 mb-2">
+                      Contact Name <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
                       id="newShipperContactName"
                       value={newShipperData.contactName}
                       onChange={(e) => setNewShipperData({ ...newShipperData, contactName: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="newShipperPhone" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone <span className="text-red-500">*</span>
+                    <label htmlFor="newShipperPhone" className="block text-sm font-semibold text-slate-300 mb-2">
+                      Phone <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="tel"
                       id="newShipperPhone"
                       value={newShipperData.phone}
                       onChange={(e) => setNewShipperData({ ...newShipperData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="newShipperClientType" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="newShipperClientType" className="block text-sm font-semibold text-slate-300 mb-2">
                       Client Type
                     </label>
                     <select
                       id="newShipperClientType"
                       value={newShipperData.clientType}
                       onChange={(e) => setNewShipperData({ ...newShipperData, clientType: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                     >
                       <option value="OTHER">Other</option>
                       <option value="CLINIC">Clinic</option>
@@ -601,14 +601,14 @@ function DriverManualLoadPageContent() {
             </div>
 
             {/* Basic Info */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Load Information</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Load Information</h3>
+              <p className="text-sm text-slate-400 mb-4">
                 Enter basic information about the load. You can add documents after creating the record.
               </p>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="serviceType" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="serviceType" className="block text-sm font-semibold text-slate-300 mb-2">
                     Service Type
                   </label>
                   <select
@@ -616,7 +616,7 @@ function DriverManualLoadPageContent() {
                     name="serviceType"
                     value={formData.serviceType || 'OTHER'}
                     onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                     required
                   >
                     <option value="STAT">STAT (Urgent)</option>
@@ -630,7 +630,7 @@ function DriverManualLoadPageContent() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="assignedDriver" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="assignedDriver" className="block text-sm font-semibold text-slate-300 mb-2">
                     Load Assigned To
                   </label>
                   <select
@@ -638,7 +638,7 @@ function DriverManualLoadPageContent() {
                     name="assignedDriver"
                     value={selectedDriverId}
                     onChange={(e) => setSelectedDriverId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   >
                     <option value="">Select a driver (optional)</option>
                     {drivers.map((d) => (
@@ -649,30 +649,30 @@ function DriverManualLoadPageContent() {
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Optional: Assign this load to a specific driver during creation
                   </p>
                 </div>
                 <div>
-                  <label htmlFor="commodityDescription" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="commodityDescription" className="block text-sm font-semibold text-slate-300 mb-2">
                     Commodity Description
                   </label>
                   <input
                     type="text"
                     id="commodityDescription"
                     name="commodityDescription"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., Blood samples, Lab specimens"
                   />
                 </div>
                 <div>
-                  <label htmlFor="specimenCategory" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="specimenCategory" className="block text-sm font-semibold text-slate-300 mb-2">
                     Specimen Category
                   </label>
                   <select
                     id="specimenCategory"
                     name="specimenCategory"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   >
                     <option value="UN3373_CATEGORY_B">UN3373 Category B</option>
                     <option value="UN3373">UN3373 (Legacy)</option>
@@ -685,13 +685,13 @@ function DriverManualLoadPageContent() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="temperatureRequirement" className="block text-sm font-semibold text-slate-300 mb-2">
                     Temperature Requirement
                   </label>
                   <select
                     id="temperatureRequirement"
                     name="temperatureRequirement"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   >
                     <option value="AMBIENT">Ambient</option>
                     <option value="REFRIGERATED">Refrigerated (2-8°C)</option>
@@ -700,25 +700,25 @@ function DriverManualLoadPageContent() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="readyTime" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="readyTime" className="block text-sm font-semibold text-slate-300 mb-2">
                     Pickup Date/Time
                   </label>
                   <input
                     type="datetime-local"
                     id="readyTime"
                     name="readyTime"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   />
                 </div>
                 <div>
-                  <label htmlFor="deliveryDeadline" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="deliveryDeadline" className="block text-sm font-semibold text-slate-300 mb-2">
                     Delivery Date/Time
                   </label>
                   <input
                     type="datetime-local"
                     id="deliveryDeadline"
                     name="deliveryDeadline"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -729,9 +729,9 @@ function DriverManualLoadPageContent() {
                       name="isRecurring"
                       checked={formData.isRecurring || false}
                       onChange={(e) => setFormData({ ...formData, isRecurring: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">This is a recurring load</span>
+                    <span className="text-sm font-semibold text-slate-300">This is a recurring load</span>
                   </label>
                 </div>
                 <div className="md:col-span-2">
@@ -742,20 +742,20 @@ function DriverManualLoadPageContent() {
                       name="directDriveRequired"
                       checked={formData.directDriveRequired || false}
                       onChange={(e) => setFormData({ ...formData, directDriveRequired: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Direct drive required (no other stops)</span>
+                    <span className="text-sm font-semibold text-slate-300">Direct drive required (no other stops)</span>
                   </label>
                 </div>
               </div>
             </div>
 
             {/* Pickup Location */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Pickup Location</h3>
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Pickup Location</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label htmlFor="pickupFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupFacilityName" className="block text-sm font-semibold text-slate-300 mb-2">
                     Facility Name
                   </label>
                   <FacilityAutocomplete
@@ -776,10 +776,10 @@ function DriverManualLoadPageContent() {
                       }))
                     }}
                     placeholder="Search for facility (e.g., Lab Corp, Quest Diagnostics)..."
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     useLocation={true}
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-slate-500">
                     Start typing to search. Results will be biased toward your current location if available.
                   </p>
                   {/* Hidden input to ensure facility name is included in form submission */}
@@ -790,7 +790,7 @@ function DriverManualLoadPageContent() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupAddressLine1" className="block text-sm font-semibold text-slate-300 mb-2">
                     Address
                   </label>
                   <input
@@ -799,11 +799,11 @@ function DriverManualLoadPageContent() {
                     name="pickupAddressLine1"
                     value={formData.pickupAddressLine1 || ''}
                     onChange={(e) => setFormData({ ...formData, pickupAddressLine1: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="pickupCity" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupCity" className="block text-sm font-semibold text-slate-300 mb-2">
                     City
                   </label>
                   <input
@@ -812,11 +812,11 @@ function DriverManualLoadPageContent() {
                     name="pickupCity"
                     value={formData.pickupCity || ''}
                     onChange={(e) => setFormData({ ...formData, pickupCity: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="pickupState" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupState" className="block text-sm font-semibold text-slate-300 mb-2">
                     State
                   </label>
                   <input
@@ -826,12 +826,12 @@ function DriverManualLoadPageContent() {
                     value={formData.pickupState || ''}
                     onChange={(e) => setFormData({ ...formData, pickupState: e.target.value.toUpperCase() })}
                     maxLength={2}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 uppercase"
                     placeholder="TX"
                   />
                 </div>
                 <div>
-                  <label htmlFor="pickupPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupPostalCode" className="block text-sm font-semibold text-slate-300 mb-2">
                     ZIP Code
                   </label>
                   <input
@@ -840,11 +840,11 @@ function DriverManualLoadPageContent() {
                     name="pickupPostalCode"
                     value={formData.pickupPostalCode || ''}
                     onChange={(e) => setFormData({ ...formData, pickupPostalCode: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="pickupContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pickupContactPhone" className="block text-sm font-semibold text-slate-300 mb-2">
                     Contact Phone
                   </label>
                   <input
@@ -853,18 +853,18 @@ function DriverManualLoadPageContent() {
                     name="pickupContactPhone"
                     value={formData.pickupContactPhone || ''}
                     onChange={(e) => setFormData({ ...formData, pickupContactPhone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Delivery Location */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Delivery Location</h3>
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Delivery Location</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label htmlFor="dropoffFacilityName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="dropoffFacilityName" className="block text-sm font-semibold text-slate-300 mb-2">
                     Facility Name
                   </label>
                   <FacilityAutocomplete
@@ -885,10 +885,10 @@ function DriverManualLoadPageContent() {
                       }))
                     }}
                     placeholder="Search for facility (e.g., Lab Corp, Quest Diagnostics)..."
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     useLocation={true}
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-slate-500">
                     Start typing to search. Results will be biased toward your current location if available.
                   </p>
                   {/* Hidden input to ensure facility name is included in form submission */}
@@ -899,8 +899,8 @@ function DriverManualLoadPageContent() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="dropoffAddressLine1" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Address <span className="text-red-500" title="Required">*</span>
+                  <label htmlFor="dropoffAddressLine1" className="block text-sm font-semibold text-slate-300 mb-2">
+                    Address <span className="text-red-400" title="Required">*</span>
                   </label>
                   <AddressAutocomplete
                     id="dropoffAddressLine1"
@@ -908,11 +908,11 @@ function DriverManualLoadPageContent() {
                     value={formData.dropoffAddressLine1 || ''}
                     onChange={(value) => setFormData({ ...formData, dropoffAddressLine1: value })}
                     placeholder="Enter full address"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="dropoffCity" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="dropoffCity" className="block text-sm font-semibold text-slate-300 mb-2">
                     City
                   </label>
                   <input
@@ -921,11 +921,11 @@ function DriverManualLoadPageContent() {
                     name="dropoffCity"
                     value={formData.dropoffCity || ''}
                     onChange={(e) => setFormData({ ...formData, dropoffCity: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="dropoffState" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="dropoffState" className="block text-sm font-semibold text-slate-300 mb-2">
                     State
                   </label>
                   <input
@@ -935,12 +935,12 @@ function DriverManualLoadPageContent() {
                     value={formData.dropoffState || ''}
                     onChange={(e) => setFormData({ ...formData, dropoffState: e.target.value.toUpperCase() })}
                     maxLength={2}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm uppercase"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 uppercase"
                     placeholder="TX"
                   />
                 </div>
                 <div>
-                  <label htmlFor="dropoffPostalCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="dropoffPostalCode" className="block text-sm font-semibold text-slate-300 mb-2">
                     ZIP Code
                   </label>
                   <input
@@ -949,11 +949,11 @@ function DriverManualLoadPageContent() {
                     name="dropoffPostalCode"
                     value={formData.dropoffPostalCode || ''}
                     onChange={(e) => setFormData({ ...formData, dropoffPostalCode: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="dropoffContactPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="dropoffContactPhone" className="block text-sm font-semibold text-slate-300 mb-2">
                     Contact Phone
                   </label>
                   <input
@@ -962,15 +962,15 @@ function DriverManualLoadPageContent() {
                     name="dropoffContactPhone"
                     value={formData.dropoffContactPhone || ''}
                     onChange={(e) => setFormData({ ...formData, dropoffContactPhone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Compliance & Handling */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Compliance & Handling</h3>
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Compliance & Handling</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -980,9 +980,9 @@ function DriverManualLoadPageContent() {
                       name="chainOfCustodyRequired"
                       checked={formData.chainOfCustodyRequired || false}
                       onChange={(e) => setFormData({ ...formData, chainOfCustodyRequired: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Chain-of-custody required</span>
+                    <span className="text-sm font-semibold text-slate-300">Chain-of-custody required</span>
                   </label>
                 </div>
                 <div>
@@ -993,9 +993,9 @@ function DriverManualLoadPageContent() {
                       name="signatureRequiredAtPickup"
                       checked={formData.signatureRequiredAtPickup !== false}
                       onChange={(e) => setFormData({ ...formData, signatureRequiredAtPickup: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Signature required at pickup</span>
+                    <span className="text-sm font-semibold text-slate-300">Signature required at pickup</span>
                   </label>
                 </div>
                 <div>
@@ -1006,9 +1006,9 @@ function DriverManualLoadPageContent() {
                       name="signatureRequiredAtDelivery"
                       checked={formData.signatureRequiredAtDelivery !== false}
                       onChange={(e) => setFormData({ ...formData, signatureRequiredAtDelivery: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Signature required at delivery</span>
+                    <span className="text-sm font-semibold text-slate-300">Signature required at delivery</span>
                   </label>
                 </div>
                 <div>
@@ -1019,9 +1019,9 @@ function DriverManualLoadPageContent() {
                       name="electronicPodAcceptable"
                       checked={formData.electronicPodAcceptable !== false}
                       onChange={(e) => setFormData({ ...formData, electronicPodAcceptable: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Electronic POD acceptable</span>
+                    <span className="text-sm font-semibold text-slate-300">Electronic POD acceptable</span>
                   </label>
                 </div>
                 <div>
@@ -1032,13 +1032,13 @@ function DriverManualLoadPageContent() {
                       name="temperatureLoggingRequired"
                       checked={formData.temperatureLoggingRequired || false}
                       onChange={(e) => setFormData({ ...formData, temperatureLoggingRequired: e.target.checked })}
-                      className="w-5 h-5 rounded border-gray-300 text-slate-600 focus:ring-slate-500"
+                      className="w-5 h-5 rounded border-slate-600/50 text-cyan-600 focus:ring-cyan-500 bg-slate-800/50"
                     />
-                    <span className="text-sm font-semibold text-gray-700">Temperature logging required</span>
+                    <span className="text-sm font-semibold text-slate-300">Temperature logging required</span>
                   </label>
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="driverInstructions" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="driverInstructions" className="block text-sm font-semibold text-slate-300 mb-2">
                     Driver Instructions / Special Handling Notes
                   </label>
                   <textarea
@@ -1047,7 +1047,7 @@ function DriverManualLoadPageContent() {
                     rows={3}
                     value={formData.driverInstructions || ''}
                     onChange={(e) => setFormData({ ...formData, driverInstructions: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="Any special instructions for the driver or handling requirements..."
                   />
                 </div>
@@ -1055,11 +1055,11 @@ function DriverManualLoadPageContent() {
             </div>
 
             {/* Billing & Internal Ops */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Billing & Internal Operations</h3>
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Billing & Internal Operations</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="poNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="poNumber" className="block text-sm font-semibold text-slate-300 mb-2">
                     PO or Reference Number
                   </label>
                   <input
@@ -1068,12 +1068,12 @@ function DriverManualLoadPageContent() {
                     name="poNumber"
                     value={formData.poNumber || ''}
                     onChange={(e) => setFormData({ ...formData, poNumber: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., PO-12345"
                   />
                 </div>
                 <div>
-                  <label htmlFor="priorityLevel" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="priorityLevel" className="block text-sm font-semibold text-slate-300 mb-2">
                     Priority Level
                   </label>
                   <select
@@ -1081,7 +1081,7 @@ function DriverManualLoadPageContent() {
                     name="priorityLevel"
                     value={formData.priorityLevel || 'NORMAL'}
                     onChange={(e) => setFormData({ ...formData, priorityLevel: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   >
                     <option value="NORMAL">Normal</option>
                     <option value="HIGH">High</option>
@@ -1089,7 +1089,7 @@ function DriverManualLoadPageContent() {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label htmlFor="tags" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="tags" className="block text-sm font-semibold text-slate-300 mb-2">
                     Tags / Labels (comma-separated)
                   </label>
                   <input
@@ -1098,32 +1098,32 @@ function DriverManualLoadPageContent() {
                     name="tags"
                     value={formData.tags || ''}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="e.g., urgent, fragile, time-sensitive"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Separate multiple tags with commas</p>
+                  <p className="mt-1 text-xs text-slate-500">Separate multiple tags with commas</p>
                 </div>
               </div>
             </div>
 
             {/* Notes */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Additional Notes</h3>
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Additional Notes</h3>
               <textarea
                 id="notes"
                 name="notes"
                 rows={4}
                 value={formData.notes || ''}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 placeholder="Any additional information about this load..."
               />
             </div>
 
             {/* Rate Calculator */}
-            <div className="glass p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Rate Calculator</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
+              <h3 className="text-2xl font-bold text-white mb-6">Rate Calculator</h3>
+              <p className="text-sm text-slate-400 mb-4">
                 Calculate the suggested rate for this load based on distance and service type. This helps you negotiate fair pricing.
               </p>
               <RateCalculator
@@ -1138,16 +1138,16 @@ function DriverManualLoadPageContent() {
               />
               
               {/* Set Final Quoted Rate - Before Load Creation */}
-              <div className="mt-6 pt-6 border-t-2 border-slate-300 space-y-3">
-                <p className="text-sm font-semibold text-gray-700 mb-2">
+              <div className="mt-6 pt-6 border-t border-slate-700/50 space-y-3">
+                <p className="text-sm font-semibold text-slate-300 mb-2">
                   Set Final Quoted Rate (After Negotiation)
                 </p>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-slate-500 mb-3">
                   Enter the final agreed-upon rate with the customer. This will be included in the confirmation email to the shipper.
                 </p>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
                     <input
                       type="number"
                       step="0.01"
@@ -1157,7 +1157,7 @@ function DriverManualLoadPageContent() {
                       value={formData.quotedRate || ''}
                       onChange={(e) => setFormData({ ...formData, quotedRate: e.target.value })}
                       placeholder="0.00"
-                      className="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full pl-8 pr-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -1173,14 +1173,14 @@ function DriverManualLoadPageContent() {
             <div className="flex items-center justify-between pt-6">
               <Link
                 href="/driver/documents"
-                className="px-6 py-3 text-gray-700 hover:text-gray-900 font-semibold transition-colors"
+                className="px-6 py-3 text-slate-300 hover:text-slate-200 font-semibold transition-colors"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-8 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -1201,16 +1201,16 @@ function DriverManualLoadPageContent() {
         ) : (
           <div className="space-y-6">
             {/* Success Message */}
-            <div className="glass p-6 rounded-2xl border-l-4 border-green-500 bg-green-50/50">
+            <div className="glass-primary p-6 rounded-xl border-l-4 border-green-500 bg-green-500/20">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-green-600 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-6 w-6 text-green-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3 flex-1">
-                  <h3 className="text-lg font-semibold text-green-800 mb-1">Load Record Created Successfully!</h3>
-                  <p className="text-sm text-green-700">
+                  <h3 className="text-lg font-semibold text-green-400 mb-1">Load Record Created Successfully!</h3>
+                  <p className="text-sm text-green-300">
                     Your load record has been created. Now you can upload documents to keep a complete record.
                   </p>
                 </div>
@@ -1218,17 +1218,17 @@ function DriverManualLoadPageContent() {
             </div>
 
             {/* Document Upload Section */}
-            <div className="glass p-8 rounded-2xl">
+            <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800">Upload Documents</h3>
-                  <p className="text-gray-600 mt-1">
+                  <h3 className="text-2xl font-bold text-white">Upload Documents</h3>
+                  <p className="text-slate-400 mt-1">
                     Add documents for this load (proof of pickup, delivery, receipts, etc.)
                   </p>
                 </div>
                 <Link
                   href={`/driver/loads/${loadId}`}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm"
+                  className="px-4 py-2 text-slate-300 hover:text-slate-200 font-medium transition-colors text-sm"
                 >
                   View Load →
                 </Link>
@@ -1237,7 +1237,7 @@ function DriverManualLoadPageContent() {
               <form onSubmit={handleDocumentUpload} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="uploadTitle" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="uploadTitle" className="block text-sm font-semibold text-slate-300 mb-2">
                       Document Title *
                     </label>
                     <input
@@ -1246,12 +1246,12 @@ function DriverManualLoadPageContent() {
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
                       required
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                       placeholder="e.g., Proof of Pickup - Hospital ABC"
                     />
                   </div>
                   <div>
-                    <label htmlFor="uploadType" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="uploadType" className="block text-sm font-semibold text-slate-300 mb-2">
                       Document Type *
                     </label>
                     <select
@@ -1259,7 +1259,7 @@ function DriverManualLoadPageContent() {
                       value={uploadType}
                       onChange={(e) => setUploadType(e.target.value)}
                       required
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                     >
                       <option value="PROOF_OF_PICKUP">Proof of Pickup</option>
                       <option value="PROOF_OF_DELIVERY">Proof of Delivery</option>
@@ -1269,27 +1269,27 @@ function DriverManualLoadPageContent() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="uploadFile" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="uploadFile" className="block text-sm font-semibold text-slate-300 mb-2">
                     File *
                   </label>
                   <div className="mt-1">
                     <label
                       htmlFor="uploadFile"
-                      className="flex flex-col justify-center items-center w-full h-32 px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-slate-400 hover:bg-gray-50 transition-colors"
+                      className="flex flex-col justify-center items-center w-full h-32 px-6 pt-5 pb-6 border-2 border-slate-600/50 border-dashed rounded-lg cursor-pointer hover:border-slate-500 hover:bg-slate-800/30 transition-colors"
                     >
                       <div className="space-y-1 text-center">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <svg className="mx-auto h-12 w-12 text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                           <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        <div className="flex text-sm text-gray-600">
-                          <span className="font-medium text-slate-600 hover:text-slate-500">Click to upload</span>
+                        <div className="flex text-sm text-slate-400">
+                          <span className="font-medium text-slate-300 hover:text-slate-200">Click to upload</span>
                           <span className="pl-1">or drag and drop</span>
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           PDF, JPG, PNG, HEIC up to 10MB
                         </p>
                         {uploadFile && (
-                          <p className="text-sm text-slate-600 mt-2 font-medium">
+                          <p className="text-sm text-slate-300 mt-2 font-medium">
                             Selected: {uploadFile.name}
                           </p>
                         )}
@@ -1308,19 +1308,19 @@ function DriverManualLoadPageContent() {
                 </div>
                 {/* Uploaded Documents List */}
                 {uploadedDocuments.length > 0 && (
-                  <div className="glass p-6 rounded-xl border-t border-gray-200">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                  <div className="glass-primary p-6 rounded-xl border-t border-slate-700/50">
+                    <h4 className="text-lg font-semibold text-white mb-4">
                       Uploaded Documents ({uploadedDocuments.length})
                     </h4>
                     <div className="space-y-2">
                       {uploadedDocuments.map((doc, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div key={index} className="flex items-center gap-3 p-3 bg-green-500/20 rounded-lg border border-green-500/30">
+                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{doc.title}</p>
-                            <p className="text-sm text-gray-600">{doc.type.replace(/_/g, ' ')}</p>
+                            <p className="font-medium text-white">{doc.title}</p>
+                            <p className="text-sm text-slate-400">{doc.type.replace(/_/g, ' ')}</p>
                           </div>
                         </div>
                       ))}
@@ -1329,11 +1329,11 @@ function DriverManualLoadPageContent() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="pt-6 border-t border-gray-200 space-y-4">
+                <div className="pt-6 border-t border-slate-700/50 space-y-4">
                   <div className="flex items-center justify-between">
                     <Link
                       href={`/driver/loads/${loadId}`}
-                      className="px-6 py-3 text-gray-700 hover:text-gray-900 font-semibold transition-colors"
+                      className="px-6 py-3 text-slate-300 hover:text-slate-200 font-semibold transition-colors"
                     >
                       {uploadedDocuments.length > 0 ? 'Done & View Load' : 'Skip & View Load'}
                     </Link>
@@ -1359,17 +1359,17 @@ function DriverManualLoadPageContent() {
                   </div>
                   {uploadedDocuments.length > 0 && (
                     <div className="text-center">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-slate-300">
                         ✓ {uploadedDocuments.length} document{uploadedDocuments.length !== 1 ? 's' : ''} uploaded successfully
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         You can upload more documents or click "Done & View Load" to finish
                       </p>
                     </div>
                   )}
                   {(!uploadFile || !uploadTitle) && (
                     <div className="text-center">
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-500">
                         Please fill in the document title and select a file to upload
                       </p>
                     </div>

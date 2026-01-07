@@ -67,7 +67,7 @@ export async function sendEmailSendGrid(options: EmailOptions): Promise<void> {
     
     // Add attachments if provided
     if (options.attachments && options.attachments.length > 0) {
-      mSG.YOUR_SENDGRID_API_KEY = options.attachments.map(att => ({
+      msg.attachments = options.attachments.map(att => ({
         content: typeof att.content === 'string' 
           ? Buffer.from(att.content).toString('base64')
           : att.content.toString('base64'),

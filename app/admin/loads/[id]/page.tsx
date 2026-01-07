@@ -271,8 +271,8 @@ export default function AdminLoadDetailPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading load details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading load details...</p>
         </div>
       </div>
     )
@@ -281,9 +281,9 @@ export default function AdminLoadDetailPage() {
   if (error || !load) {
     return (
       <div className="p-8">
-        <div className="glass-primary p-8 rounded-2xl text-center border-2 border-blue-200/30 shadow-glass">
-          <p className="text-red-600 mb-4">{error || 'Load not found'}</p>
-          <Link href="/admin/loads" className="text-primary-600 hover:text-primary-700 font-medium">
+        <div className="glass-primary p-8 rounded-xl text-center border border-slate-700/50 shadow-lg">
+          <p className="text-red-400 mb-4">{error || 'Load not found'}</p>
+          <Link href="/admin/loads" className="text-cyan-400 hover:text-cyan-300 font-medium">
             ← Back to Loads
           </Link>
         </div>
@@ -322,7 +322,7 @@ export default function AdminLoadDetailPage() {
         {/* Main Content - Left 2/3 */}
         <div className="lg:col-span-2 space-y-8">
           {/* Shipper & Facility Info */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipper & Locations</h2>
 
             {/* Shipper */}
@@ -426,7 +426,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Load Details */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Shipment Details</h2>
             <div className="grid md:grid-cols-2 gap-6 text-sm">
               <div>
@@ -473,10 +473,17 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Tracking Events */}
-          <div className="glass-primary p-8 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-8 rounded-xl border border-slate-700/50 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Tracking Events</h2>
             {load.trackingEvents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No tracking events yet</p>
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h3 className="text-xl font-bold text-white mb-2">No tracking events yet</h3>
+                <p className="text-slate-400">Tracking updates will appear here once GPS tracking is enabled</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {load.trackingEvents.map((event: any) => (
@@ -512,7 +519,7 @@ export default function AdminLoadDetailPage() {
         {/* Sidebar - Right 1/3 */}
         <div className="space-y-8">
           {/* Driver Assignment */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Driver Assignment</h3>
             {load.driver ? (
               <div className="mb-4 p-4 bg-green-50 rounded-xl border border-green-200">
@@ -558,7 +565,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Quote Management */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Quote & Pricing</h3>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <div>
@@ -595,7 +602,7 @@ export default function AdminLoadDetailPage() {
 
           {/* Invoice Generation */}
           {load.status === 'DELIVERED' && (
-            <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+            <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice</h3>
               {load.invoiceId ? (
                 <div className="space-y-4">
@@ -661,7 +668,7 @@ export default function AdminLoadDetailPage() {
           )}
 
           {/* Status Update */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Update Status</h3>
             <form onSubmit={handleStatusUpdate} className="space-y-4">
               <div>
@@ -722,7 +729,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Notes */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Notes</h3>
             <LoadNotes
               loadRequestId={load.id}
@@ -733,10 +740,16 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* Documents */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Documents</h3>
             {load.documents.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No documents yet</p>
+              <div className="text-center py-8">
+                <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 className="text-xl font-bold text-white mb-2">No documents yet</h3>
+                <p className="text-slate-400">Documents will appear here once uploaded</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {load.documents.map((doc: any) => (
@@ -767,7 +780,7 @@ export default function AdminLoadDetailPage() {
           </div>
 
           {/* GPS Tracking Map */}
-          <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-glass">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-800">GPS Tracking</h3>
               {load.gpsTrackingEnabled && (

@@ -82,7 +82,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   const defaultIcon = (
     <svg
-      className="w-16 h-16 text-gray-400"
+      className="w-16 h-16 text-slate-400"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -99,28 +99,28 @@ export function EmptyState({
 
   const portalStyles = {
     driver: {
-      container: 'glass-accent border-teal-200/30',
-      title: 'text-accent-700',
-      description: 'text-teal-600',
-      button: 'bg-gradient-accent hover:shadow-lg',
+      container: 'glass-primary border-slate-700/50',
+      title: 'text-white',
+      description: 'text-slate-400',
+      button: 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:shadow-xl hover:shadow-cyan-500/50 shadow-lg shadow-cyan-500/30',
     },
     shipper: {
-      container: 'glass-primary border-blue-200/30',
-      title: 'text-primary-700',
-      description: 'text-blue-600',
-      button: 'bg-gradient-primary hover:shadow-lg',
+      container: 'glass-primary border-slate-700/50',
+      title: 'text-white',
+      description: 'text-slate-400',
+      button: 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:shadow-xl hover:shadow-cyan-500/50 shadow-lg shadow-cyan-500/30',
     },
     admin: {
-      container: 'glass-primary border-blue-200/30',
-      title: 'text-blue-700',
-      description: 'text-gray-600',
-      button: 'bg-blue-600 hover:bg-blue-700',
+      container: 'glass-primary border-slate-700/50',
+      title: 'text-white',
+      description: 'text-slate-400',
+      button: 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:shadow-xl hover:shadow-cyan-500/50 shadow-lg shadow-cyan-500/30',
     },
     default: {
-      container: 'glass border-gray-200',
-      title: 'text-gray-700',
-      description: 'text-gray-600',
-      button: 'bg-gray-600 hover:bg-gray-700',
+      container: 'glass-primary border-slate-700/50',
+      title: 'text-white',
+      description: 'text-slate-400',
+      button: 'bg-gradient-to-r from-cyan-600 to-cyan-700 hover:shadow-xl hover:shadow-cyan-500/50 shadow-lg shadow-cyan-500/30',
     },
   }
 
@@ -158,7 +158,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center p-12 rounded-2xl text-center',
+        'flex flex-col items-center justify-center p-12 rounded-xl text-center shadow-lg',
         styles.container,
         className
       )}
@@ -190,7 +190,7 @@ export const EmptyStates = {
         )}
         action={action}
         icon={
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         }
@@ -207,7 +207,7 @@ export const EmptyStates = {
         description={description || "Invoices will appear here once loads are completed and invoiced."}
         action={action}
         icon={
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         }
@@ -224,7 +224,7 @@ export const EmptyStates = {
         description={description || "Documents will appear here once they are uploaded for your loads."}
         action={action}
         icon={
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
         }
@@ -240,7 +240,7 @@ export const EmptyStates = {
         title={title || "No notifications"}
         description={description || "You're all caught up! New notifications will appear here."}
         icon={
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
         }

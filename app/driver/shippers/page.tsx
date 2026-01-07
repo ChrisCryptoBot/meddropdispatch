@@ -228,45 +228,45 @@ export default function DriverShippersPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Shippers & Clients</h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">View all shippers you've worked with and track your business relationships</p>
-          </div>
+      <div className="mb-6">
+        <div className="sticky top-[85px] z-[55] pb-2">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+            Shippers & Clients
+          </h1>
+          <p className="text-slate-400">View all shippers you've worked with and track your business relationships</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 print:grid-cols-5 print:gap-2">
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 print:text-xl">{stats.totalShippers}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Total Shippers</div>
+        <div className="glass-primary rounded-xl p-6 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl lg:text-3xl font-bold text-white mb-1 print:text-xl font-data">{stats.totalShippers}</div>
+          <div className="text-sm text-slate-400 print:text-xs">Total Shippers</div>
         </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-success-600 mb-1 print:text-xl">{stats.activeShippers}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Active</div>
+        <div className="glass-primary rounded-xl p-6 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl lg:text-3xl font-bold text-white mb-1 print:text-xl font-data">{stats.activeShippers}</div>
+          <div className="text-sm text-slate-400 print:text-xs">Active</div>
         </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1 print:text-xl">{stats.totalLoads}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Total Loads</div>
+        <div className="glass-primary rounded-xl p-6 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl lg:text-3xl font-bold text-white mb-1 print:text-xl font-data">{stats.totalLoads}</div>
+          <div className="text-sm text-slate-400 print:text-xs">Total Loads</div>
         </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-primary-600 mb-1 print:text-xl">{stats.completedLoads}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Completed</div>
+        <div className="glass-primary rounded-xl p-6 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl lg:text-3xl font-bold text-white mb-1 print:text-xl font-data">{stats.completedLoads}</div>
+          <div className="text-sm text-slate-400 print:text-xs">Completed</div>
         </div>
-        <div className="glass-accent rounded-xl p-6 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
-          <div className="text-2xl lg:text-3xl font-bold text-success-600 mb-1 print:text-xl">${stats.totalRevenue.toFixed(2)}</div>
-          <div className="text-sm text-gray-600 print:text-xs">Total Revenue</div>
+        <div className="glass-primary rounded-xl p-6 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl lg:text-3xl font-bold text-white mb-1 print:text-xl font-data">${stats.totalRevenue.toFixed(2)}</div>
+          <div className="text-sm text-slate-400 print:text-xs">Total Revenue</div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="glass-accent p-6 rounded-2xl mb-8 print:p-4 print:border print:border-gray-300 border-2 border-teal-200/30 shadow-medical">
+      <div className="glass-primary p-6 rounded-xl mb-8 print:p-4 print:border print:border-gray-300 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="md:col-span-2">
-            <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="search" className="block text-sm font-semibold text-slate-300 mb-2">
               Search
             </label>
             <input
@@ -275,20 +275,20 @@ export default function DriverShippersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by company, contact, email, phone..."
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter */}
           <div>
-            <label htmlFor="filter" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="filter" className="block text-sm font-semibold text-slate-300 mb-2">
               Filter
             </label>
             <select
               id="filter"
               value={filter}
               onChange={(e) => setFilter(e.target.value as FilterOption)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Shippers</option>
               <option value="active">Active Only</option>
@@ -300,14 +300,14 @@ export default function DriverShippersPage() {
 
           {/* Client Type Filter */}
           <div>
-            <label htmlFor="clientType" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="clientType" className="block text-sm font-semibold text-slate-300 mb-2">
               Client Type
             </label>
             <select
               id="clientType"
               value={selectedClientType}
               onChange={(e) => setSelectedClientType(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Types</option>
               {clientTypes.map((type) => (
@@ -321,14 +321,14 @@ export default function DriverShippersPage() {
 
         {/* Sort */}
         <div className="mt-4">
-          <label htmlFor="sort" className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="sort" className="block text-sm font-semibold text-slate-300 mb-2">
             Sort By
           </label>
           <select
             id="sort"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortField)}
-            className="w-full px-4 py-3 rounded-lg border border-teal-200 focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-teal-50/60"
+            className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
           >
             <option value="recent_activity">Recent Activity (Newest)</option>
             <option value="oldest_activity">Oldest Activity</option>
@@ -345,7 +345,7 @@ export default function DriverShippersPage() {
 
       {/* Results Count */}
       <div className="mb-4">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-slate-400">
           Showing {filteredAndSortedShippers.length} of {shippers.length} shippers
         </p>
       </div>
@@ -359,12 +359,12 @@ export default function DriverShippersPage() {
           </div>
         </div>
       ) : filteredAndSortedShippers.length === 0 ? (
-        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="glass-primary p-12 rounded-xl text-center border border-slate-700/50 shadow-lg">
+            <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-3-3h-4a3 3 0 00-3 3v2zM9 10a3 3 0 100-6 3 3 0 000 6zm0 0v8a2 2 0 002 2h6a2 2 0 002-2v-8M9 10h6" />
             </svg>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No shippers found</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold text-white mb-2">No shippers found</h3>
+            <p className="text-slate-400">
               {searchQuery || filter !== 'all' || selectedClientType !== 'all'
                 ? 'Try adjusting your filters or search query'
                 : "You haven't worked with any shippers yet. Loads will appear here once you accept and complete jobs."}
@@ -375,39 +375,39 @@ export default function DriverShippersPage() {
             {filteredAndSortedShippers.map((shipper) => (
               <div
                 key={shipper.id}
-                className="glass-accent p-6 rounded-2xl hover:shadow-lg transition-all border-2 border-teal-200/30 shadow-medical"
+                className="glass-primary p-6 rounded-xl hover:shadow-xl transition-all border border-slate-700/50 shadow-lg"
               >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Left: Company Info */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        <h3 className="text-xl font-bold text-white mb-1">
                           {shipper.companyName}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-slate-400 mb-2">
                           {shipper.clientType.replace(/_/g, ' ')}
                         </p>
                       </div>
                       {!shipper.isActive && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-slate-700/50 text-slate-300 border border-slate-600/50">
                           Inactive
                         </span>
                       )}
                     </div>
-                    <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div className="grid md:grid-cols-2 gap-2 text-sm text-slate-400">
                       <div>
                         <span className="font-semibold">Contact:</span> {shipper.contactName}
                       </div>
                       <div>
                         <span className="font-semibold">Phone:</span>{' '}
-                        <a href={`tel:${shipper.phone}`} className="text-accent-600 hover:text-accent-800">
+                        <a href={`tel:${shipper.phone}`} className="text-cyan-400 hover:text-cyan-300">
                           {shipper.phone}
                         </a>
                       </div>
                       <div>
                         <span className="font-semibold">Email:</span>{' '}
-                        <a href={`mailto:${shipper.email}`} className="text-accent-600 hover:text-accent-800">
+                        <a href={`mailto:${shipper.email}`} className="text-cyan-400 hover:text-cyan-300">
                           {shipper.email}
                         </a>
                       </div>
@@ -424,27 +424,27 @@ export default function DriverShippersPage() {
                   <div className="flex-shrink-0">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="text-center">
-                        <p className="text-xs text-gray-600 mb-1">Total Loads</p>
-                        <p className="text-lg font-bold text-gray-900">{shipper.stats.totalLoads}</p>
+                        <p className="text-xs text-slate-400 mb-1">Total Loads</p>
+                        <p className="text-lg font-bold text-white font-data">{shipper.stats.totalLoads}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-gray-600 mb-1">Completed</p>
-                        <p className="text-lg font-bold text-blue-700">{shipper.stats.completedLoads}</p>
+                        <p className="text-xs text-slate-400 mb-1">Completed</p>
+                        <p className="text-lg font-bold text-white font-data">{shipper.stats.completedLoads}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-gray-600 mb-1">Pending</p>
-                        <p className="text-lg font-bold text-amber-700">{shipper.stats.pendingLoads}</p>
+                        <p className="text-xs text-slate-400 mb-1">Pending</p>
+                        <p className="text-lg font-bold text-white font-data">{shipper.stats.pendingLoads}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-gray-600 mb-1">Revenue</p>
-                        <p className="text-lg font-bold text-green-700">
+                        <p className="text-xs text-slate-400 mb-1">Revenue</p>
+                        <p className="text-lg font-bold text-white font-data">
                           ${shipper.stats.totalRevenue.toFixed(2)}
                         </p>
                       </div>
                     </div>
                     {shipper.stats.completedLoads > 0 && (
                       <div className="mt-2 text-center">
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           Avg: ${shipper.stats.averageRevenuePerLoad.toFixed(2)}/load
                         </p>
                       </div>
@@ -452,18 +452,18 @@ export default function DriverShippersPage() {
                     <div className="mt-3 flex gap-2">
                       <Link
                         href={`/driver/shippers/${shipper.id}`}
-                        className="flex-1 text-center px-4 py-2 bg-gradient-accent text-white rounded-lg hover:shadow-lg transition-all text-sm font-semibold"
+                        className="flex-1 text-center px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:shadow-xl hover:shadow-cyan-500/50 transition-all text-sm font-semibold shadow-lg shadow-cyan-500/30"
                       >
                         View Profile
                       </Link>
                       <button
                         onClick={() => handleDelete(shipper.id, shipper.companyName)}
                         disabled={deletingId === shipper.id}
-                        className="p-2 text-warning-600 hover:bg-warning-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 text-yellow-400 hover:bg-yellow-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Deactivate shipper (soft delete)"
                       >
                         {deletingId === shipper.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-600"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400"></div>
                         ) : (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />

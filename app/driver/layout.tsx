@@ -344,10 +344,10 @@ export default function DriverLayout({
     : navigation
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* Header - Same as Homepage */}
-      <header className="bg-slate-900/95 backdrop-blur-xl sticky top-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[73px]">
-        <div className="w-full py-4">
+      <header className="bg-slate-900/95 backdrop-blur-xl fixed top-0 left-0 right-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[85px]">
+        <div className="w-full py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 pl-4 md:pl-4">
               <div>
@@ -624,7 +624,7 @@ export default function DriverLayout({
       </header>
 
       {/* Sidebar - Fixed full height - Hidden on mobile */}
-      <aside className="hidden md:block fixed left-0 top-[73px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 73px)' }}>
+      <aside className="hidden md:block fixed left-0 top-[85px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 85px)' }}>
         <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
@@ -725,8 +725,8 @@ export default function DriverLayout({
       </aside>
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
-      <main className="md:ml-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen pb-16 md:pb-0 overflow-y-auto">
-        <div className="min-h-[calc(100vh-73px)]">
+      <main className="md:ml-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen pb-16 md:pb-0 pt-[85px]">
+        <div className="min-h-[calc(100vh-85px)]">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>

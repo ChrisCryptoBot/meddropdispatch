@@ -112,16 +112,11 @@ export default function DriverSecurityPage() {
 
   return (
     <div className="p-6 md:p-8 print:p-4">
-      {/* Header Section - Gold Standard - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-              Security
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">Change your password and manage security settings</p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Security
+        </h1>
+        <p className="text-slate-400">Change your password and manage security settings</p>
       </div>
 
       <div className="max-w-2xl">

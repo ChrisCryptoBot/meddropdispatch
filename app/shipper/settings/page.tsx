@@ -250,8 +250,8 @@ export default function SettingsPage() {
       <div className="p-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading settings...</p>
           </div>
         </div>
       </div>
@@ -268,24 +268,24 @@ export default function SettingsPage() {
             <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your company information and preferences</p>
           </div>
           {hasUnsavedChanges && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+              <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span className="text-sm font-semibold text-yellow-700">Unsaved changes</span>
+              <span className="text-sm font-semibold text-yellow-400">Unsaved changes</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-teal-200/30">
+      <div className="flex gap-2 mb-6 border-b border-slate-700/50">
         <button
           onClick={() => setActiveTab('profile')}
           className={`px-6 py-3 font-semibold transition-all border-b-2 ${
             activeTab === 'profile'
-              ? 'border-teal-600 text-teal-900'
-              : 'border-transparent text-gray-600 hover:text-teal-700'
+              ? 'border-cyan-500 text-cyan-400'
+              : 'border-transparent text-slate-400 hover:text-cyan-400'
           }`}
         >
           Profile
@@ -294,8 +294,8 @@ export default function SettingsPage() {
           onClick={() => setActiveTab('notifications')}
           className={`px-6 py-3 font-semibold transition-all border-b-2 ${
             activeTab === 'notifications'
-              ? 'border-teal-600 text-teal-900'
-              : 'border-transparent text-gray-600 hover:text-teal-700'
+              ? 'border-cyan-500 text-cyan-400'
+              : 'border-transparent text-slate-400 hover:text-cyan-400'
           }`}
         >
           Notifications
@@ -304,8 +304,8 @@ export default function SettingsPage() {
           onClick={() => setActiveTab('account')}
           className={`px-6 py-3 font-semibold transition-all border-b-2 ${
             activeTab === 'account'
-              ? 'border-teal-600 text-teal-900'
-              : 'border-transparent text-gray-600 hover:text-teal-700'
+              ? 'border-cyan-500 text-cyan-400'
+              : 'border-transparent text-slate-400 hover:text-cyan-400'
           }`}
         >
           Account
@@ -316,12 +316,12 @@ export default function SettingsPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="glass-accent rounded-2xl p-6 space-y-6 border-2 border-teal-200/30 shadow-medical">
+            <div className="glass-primary rounded-xl p-6 space-y-6 border border-slate-700/50 shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Company Information</h2>
+                <h2 className="text-xl font-bold text-white">Company Information</h2>
                 <Link
                   href="/shipper/security"
-                  className="text-sm text-accent-700 hover:text-accent-800 font-semibold flex items-center gap-1"
+                  className="text-sm text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -331,59 +331,59 @@ export default function SettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Company Name *
                 </label>
                 <input
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => handleFormChange('companyName', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Contact Name *
                 </label>
                 <input
                   type="text"
                   value={formData.contactName}
                   onChange={(e) => handleFormChange('contactName', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Email Address *
                 </label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleFormChange('email', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 transition-all"
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-slate-500">
                   This email will be used for account notifications and login
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Phone Number *
                 </label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleFormChange('phone', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-teal-200/30 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white/60 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 transition-all"
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-slate-500">
                   Primary contact number for dispatch and drivers
                 </p>
               </div>
@@ -392,17 +392,17 @@ export default function SettingsPage() {
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="glass-accent rounded-2xl p-6 space-y-6 border-2 border-teal-200/30 shadow-medical">
-              <h2 className="text-xl font-bold text-gray-900">Notification Preferences</h2>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="glass-primary rounded-xl p-6 space-y-6 border border-slate-700/50 shadow-lg">
+              <h2 className="text-xl font-bold text-white">Notification Preferences</h2>
+              <p className="text-sm text-slate-400 mb-4">
                 Choose how you want to be notified about your loads and account activity
               </p>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-white/40 rounded-lg border border-teal-200/30">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Email: Load Updates</h3>
-                    <p className="text-sm text-gray-600">Receive emails when new loads are created or updated</p>
+                    <h3 className="font-semibold text-white mb-1">Email: Load Updates</h3>
+                    <p className="text-sm text-slate-400">Receive emails when new loads are created or updated</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -411,14 +411,14 @@ export default function SettingsPage() {
                       onChange={(e) => handleNotificationChange('emailLoadUpdates', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/40 rounded-lg border border-teal-200/30">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Email: Status Changes</h3>
-                    <p className="text-sm text-gray-600">Get notified when load status changes (picked up, in transit, delivered)</p>
+                    <h3 className="font-semibold text-white mb-1">Email: Status Changes</h3>
+                    <p className="text-sm text-slate-400">Get notified when load status changes (picked up, in transit, delivered)</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -427,14 +427,14 @@ export default function SettingsPage() {
                       onChange={(e) => handleNotificationChange('emailStatusChanges', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/40 rounded-lg border border-teal-200/30">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Email: Document Uploads</h3>
-                    <p className="text-sm text-gray-600">Receive emails when drivers upload documents (POD, BOL, etc.)</p>
+                    <h3 className="font-semibold text-white mb-1">Email: Document Uploads</h3>
+                    <p className="text-sm text-slate-400">Receive emails when drivers upload documents (POD, BOL, etc.)</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -443,14 +443,14 @@ export default function SettingsPage() {
                       onChange={(e) => handleNotificationChange('emailDocumentUploads', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/40 rounded-lg border border-teal-200/30">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Email: Invoice Ready</h3>
-                    <p className="text-sm text-gray-600">Get notified when invoices are generated and ready for payment</p>
+                    <h3 className="font-semibold text-white mb-1">Email: Invoice Ready</h3>
+                    <p className="text-sm text-slate-400">Get notified when invoices are generated and ready for payment</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -459,14 +459,14 @@ export default function SettingsPage() {
                       onChange={(e) => handleNotificationChange('emailInvoiceReady', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/40 rounded-lg border border-teal-200/30">
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">In-App Notifications</h3>
-                    <p className="text-sm text-gray-600">Show notifications in your dashboard and notification center</p>
+                    <h3 className="font-semibold text-white mb-1">In-App Notifications</h3>
+                    <p className="text-sm text-slate-400">Show notifications in your dashboard and notification center</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -475,7 +475,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleNotificationChange('inAppNotifications', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
               </div>
@@ -485,22 +485,22 @@ export default function SettingsPage() {
           {/* Account Tab */}
           {activeTab === 'account' && (
             <div className="space-y-6">
-              <div className="glass-accent rounded-2xl p-6 border-2 border-teal-200/30 shadow-medical">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Account Information</h2>
+              <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                <h2 className="text-xl font-bold text-white mb-4">Account Information</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Account Status</label>
+                    <label className="text-sm font-medium text-slate-400">Account Status</label>
                     <div className="mt-1">
                       <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                        shipper?.isActive ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-gray-100 text-gray-700 border-2 border-gray-200'
+                        shipper?.isActive ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
                       }`}>
                         {shipper?.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Member Since</label>
-                    <p className="text-lg text-gray-900 font-medium mt-1">
+                    <label className="text-sm font-medium text-slate-400">Member Since</label>
+                    <p className="text-lg text-white font-medium mt-1">
                       {shipper?.createdAt ? new Date(shipper.createdAt).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
@@ -509,8 +509,8 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Last Updated</label>
-                    <p className="text-lg text-gray-900 font-medium mt-1">
+                    <label className="text-sm font-medium text-slate-400">Last Updated</label>
+                    <p className="text-lg text-white font-medium mt-1">
                       {shipper?.updatedAt ? new Date(shipper.updatedAt).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
@@ -531,7 +531,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving || !hasUnsavedChanges}
-                className="px-6 py-3 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -544,7 +544,7 @@ export default function SettingsPage() {
                   }
                   router.back()
                 }}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
               >
                 Cancel
               </button>
@@ -554,22 +554,22 @@ export default function SettingsPage() {
 
         {/* Delete Account Section - Only show in Account tab */}
         {activeTab === 'account' && (
-          <div className="mt-12 glass-accent rounded-2xl p-6 border-2 border-red-200/50 shadow-medical">
+          <div className="mt-12 glass-primary rounded-xl p-6 border border-red-500/30 shadow-lg">
             {!showDeleteConfirm ? (
               <div className="space-y-4">
-                <p className="text-lg font-semibold text-gray-900">Do you want to delete your account?</p>
+                <p className="text-lg font-semibold text-white">Do you want to delete your account?</p>
                 <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg"
+                    className="px-6 py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-semibold hover:bg-red-500/30 transition-colors"
                   >
                     Yes, Delete Account
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                    className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                   >
                     No, Keep Account
                   </button>
@@ -577,16 +577,16 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-lg font-semibold text-gray-900 mb-2">Please enter your current password to confirm</p>
+                <p className="text-lg font-semibold text-white mb-2">Please enter your current password to confirm</p>
                 
                 {passwordError && (
-                  <div className="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700">{passwordError}</p>
+                  <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">{passwordError}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">
                     Current Password *
                   </label>
                   <input
@@ -596,7 +596,7 @@ export default function SettingsPage() {
                       setDeletePassword(e.target.value)
                       setPasswordError(null)
                     }}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-red-200/50 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white/60 backdrop-blur-sm transition-all"
+                    className="w-full px-4 py-3 rounded-lg border border-red-500/30 focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 transition-all"
                     placeholder="Enter your password"
                     autoFocus
                   />
@@ -607,7 +607,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleDeleteAccount}
                     disabled={isDeleting || !deletePassword}
-                    className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-semibold hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isDeleting ? 'Deleting...' : 'Delete Account'}
                   </button>
@@ -619,7 +619,7 @@ export default function SettingsPage() {
                       setPasswordError(null)
                     }}
                     disabled={isDeleting}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+                    className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50 border border-slate-600/50"
                   >
                     Cancel
                   </button>

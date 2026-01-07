@@ -378,17 +378,13 @@ export default function DriverCallbackQueuePage() {
   return (
     <div className="p-8">
       {/* Header Section - Gold Standard - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-              Callback Queue
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">
-              Manage shipper callback requests. Mark callbacks as "called" when you contact the shipper, and "completed" when the load is created.
-            </p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Callback Queue
+        </h1>
+        <p className="text-slate-400">
+          Manage shipper callback requests. Mark callbacks as "called" when you contact the shipper, and "completed" when the load is created.
+        </p>
       </div>
 
       {/* Filters and Search - Separate, scrolls with page */}
@@ -445,15 +441,15 @@ export default function DriverCallbackQueuePage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
-          <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1">{pendingCallbacks.length}</div>
+          <div className="text-3xl font-bold text-white font-data mb-1">{pendingCallbacks.length}</div>
           <div className="text-sm text-slate-400 font-medium">Pending Callbacks</div>
         </div>
         <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
-          <div className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1">{calledCallbacks.length}</div>
+          <div className="text-3xl font-bold text-white font-data mb-1">{calledCallbacks.length}</div>
           <div className="text-sm text-slate-400 font-medium">Called (In Progress)</div>
         </div>
         <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
-          <div className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1">{completedCallbacks.length}</div>
+          <div className="text-3xl font-bold text-white font-data mb-1">{completedCallbacks.length}</div>
           <div className="text-sm text-slate-400 font-medium">Completed Today</div>
         </div>
       </div>
@@ -532,7 +528,7 @@ export default function DriverCallbackQueuePage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                          <div className="w-12 h-12 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-lg flex items-center justify-center text-white font-bold text-xl font-data">
                             #{callback.position}
                           </div>
                           <div className="flex-1">
@@ -655,15 +651,11 @@ export default function DriverCallbackQueuePage() {
         </div>
       ) : (
         <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg mb-6">
-          <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/30">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </div>
-          </div>
+          <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
           <h3 className="text-xl font-bold text-white mb-2">No Pending Callbacks</h3>
-          <p className="text-slate-300">All shippers have been called. Check back later for new requests.</p>
+          <p className="text-slate-400">All shippers have been called. Check back later for new requests.</p>
         </div>
       )}
 

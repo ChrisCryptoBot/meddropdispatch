@@ -187,51 +187,49 @@ export default function DriverPendingApprovalPage() {
             />
           </div>
           <h1 className="text-4xl font-bold text-gradient mb-2">MED DROP</h1>
-          <p className="text-teal-700">Driver Portal</p>
+          <p className="text-slate-400">Driver Portal</p>
         </div>
 
         {/* Pending Approval Card */}
-        <div className="glass-accent rounded-3xl p-10 border-2 border-teal-200/30 shadow-medical">
+        <div className="glass-primary rounded-xl p-10 border border-slate-700/50 shadow-lg">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Application Under Review</h2>
-            <p className="text-lg text-gray-600">
+            <svg className="w-16 h-16 text-slate-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 className="text-3xl font-bold text-white mb-3 font-heading">Application Under Review</h2>
+            <p className="text-lg text-slate-400">
               Thank you for applying to become a MED DROP driver!
             </p>
           </div>
 
-          <div className="bg-teal-50/60 rounded-xl p-6 mb-8 border-2 border-teal-200/30">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-cyan-500/20 rounded-xl p-6 mb-8 border border-cyan-500/30">
+            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               What Happens Next?
             </h3>
-            <ul className="space-y-3 text-gray-700">
+            <ul className="space-y-3 text-slate-300">
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>Our team is reviewing your application and documents</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>We'll verify your license, insurance, and vehicle information</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>You'll receive an email notification once your account is approved</span>
               </li>
               <li className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>Once approved, you'll have full access to the load board</span>
@@ -241,13 +239,13 @@ export default function DriverPendingApprovalPage() {
 
           {/* Equipment Checklist Section */}
           <div className="mb-8">
-            <h3 className="font-bold text-gray-900 mb-4">Equipment Checklist</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="font-bold text-white mb-4">Equipment Checklist</h3>
+            <p className="text-sm text-slate-400 mb-4">
               Please complete the equipment checklist to show what equipment you have available. Some items are required for approval.
             </p>
             <Link
               href="/driver/equipment-checklist"
-              className="inline-block px-6 py-3 bg-gradient-accent text-white rounded-xl font-semibold hover:shadow-lg transition-all shadow-medical"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
             >
               Complete Equipment Checklist
             </Link>
@@ -255,14 +253,14 @@ export default function DriverPendingApprovalPage() {
 
           {/* Document Upload Section */}
           <div className="mb-8">
-            <h3 className="font-bold text-gray-900 mb-4">Required Documents</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <h3 className="font-bold text-white mb-4">Required Documents</h3>
+            <p className="text-sm text-slate-400 mb-6">
               Please upload the following documents to complete your application. Our team will review them before approving your account.
             </p>
 
             {error && (
-              <div className="mb-4 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
-                <p className="text-urgent-700 text-sm font-medium">{error}</p>
+              <div className="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-xl">
+                <p className="text-red-400 text-sm font-medium">{error}</p>
               </div>
             )}
 
@@ -275,19 +273,19 @@ export default function DriverPendingApprovalPage() {
                 return (
                   <div
                     key={doc.type}
-                    className="p-6 bg-white/60 rounded-xl border-2 border-teal-200/30"
+                    className="p-6 bg-slate-800/50 rounded-xl border border-slate-700/50"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-semibold text-gray-900">{doc.label}</h4>
+                          <h4 className="font-semibold text-white">{doc.label}</h4>
                           {doc.required && (
-                            <span className="text-xs text-urgent-600 font-medium">Required</span>
+                            <span className="text-xs text-red-400 font-medium">Required</span>
                           )}
                         </div>
                         
                         {status === 'approved' && (
-                          <div className="flex items-center gap-2 text-success-700 text-sm">
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
@@ -296,7 +294,7 @@ export default function DriverPendingApprovalPage() {
                         )}
                         
                         {status === 'pending' && (
-                          <div className="flex items-center gap-2 text-amber-700 text-sm">
+                          <div className="flex items-center gap-2 text-amber-400 text-sm">
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                             </svg>
@@ -305,17 +303,17 @@ export default function DriverPendingApprovalPage() {
                         )}
                         
                         {status === 'rejected' && docData?.notes && (
-                          <div className="mt-2 p-3 bg-urgent-50 border border-urgent-200 rounded-lg">
-                            <p className="text-urgent-700 text-sm">
+                          <div className="mt-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                            <p className="text-red-400 text-sm">
                               <strong>Rejected:</strong> {docData.notes}
                             </p>
-                            <p className="text-urgent-600 text-xs mt-1">Please upload a new document.</p>
+                            <p className="text-red-300 text-xs mt-1">Please upload a new document.</p>
                           </div>
                         )}
                       </div>
 
                       {status === 'approved' && (
-                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-success-100 text-success-700 border-2 border-success-200">
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
                           ✓ Complete
                         </span>
                       )}
@@ -337,7 +335,7 @@ export default function DriverPendingApprovalPage() {
                         />
                         <label
                           htmlFor={`upload-${doc.type}`}
-                          className="inline-block px-4 py-2 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 cursor-pointer transition-colors"
+                          className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 cursor-pointer transition-all shadow-lg shadow-cyan-500/30"
                         >
                           Upload Document
                         </label>
@@ -345,8 +343,8 @@ export default function DriverPendingApprovalPage() {
                     )}
 
                     {isUploading && (
-                      <div className="mt-4 flex items-center gap-2 text-amber-700">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>
+                      <div className="mt-4 flex items-center gap-2 text-amber-400">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-400"></div>
                         <span className="text-sm">Uploading...</span>
                       </div>
                     )}

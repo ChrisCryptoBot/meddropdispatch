@@ -330,7 +330,7 @@ export default function ShipperDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-85px)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-slate-300 text-lg">Loading your loads...</p>
@@ -340,22 +340,13 @@ export default function ShipperDashboardPage() {
   }
 
   return (
-    <div>
-      {/* Header Section - Sticky - Keep as is */}
-      <div className="sticky top-[73px] z-50 bg-slate-900 pb-4 mb-0 pt-0 border-b border-slate-700/50 w-full">
-        <div className="px-6 md:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-                My Loads
-              </h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage and track all your shipment requests</p>
-            </div>
-          </div>
-        </div>
+    <div className="p-6 md:p-8 print:p-4">
+      <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          My Loads
+        </h1>
+        <p className="text-slate-400">Manage and track all your shipment requests</p>
       </div>
-
-      <div className="p-6 md:p-8 print:p-4">
         {/* Dedicated Dispatcher Card - Premium Tier Only */}
         {shipper?.subscriptionTier === 'BROKERAGE' && dispatcher && (
           <div className="mb-6 print:mb-4">
@@ -425,7 +416,7 @@ export default function ShipperDashboardPage() {
           <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30">
+                <div className="w-12 h-12 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-cyan-500/30">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
@@ -437,7 +428,7 @@ export default function ShipperDashboardPage() {
               </div>
               <a
                 href="tel:+19039140386"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-blue-500/50 transition-all shadow-lg shadow-blue-500/30 min-h-[44px] whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 min-h-[44px] whitespace-nowrap"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -448,43 +439,43 @@ export default function ShipperDashboardPage() {
           </div>
         </div>
 
-        {/* Stats Grid - Enhanced Visual Design */}
+        {/* Stats Grid - Uniform Professional Style */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 hover:shadow-xl transition-all cursor-pointer group">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+              <div className="text-2xl md:text-3xl font-bold text-white mb-1 font-data">
                 {stats.total}
               </div>
               <div className="text-xs md:text-sm text-slate-400 font-medium">Total</div>
             </div>
           </div>
-          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-yellow-500/50 hover:shadow-xl transition-all cursor-pointer group">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+              <div className="text-2xl md:text-3xl font-bold text-white mb-1 font-data">
                 {stats.pending}
               </div>
               <div className="text-xs md:text-sm text-slate-400 font-medium">Pending</div>
             </div>
           </div>
-          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer group">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+              <div className="text-2xl md:text-3xl font-bold text-white mb-1 font-data">
                 {stats.active}
               </div>
               <div className="text-xs md:text-sm text-slate-400 font-medium">Active</div>
             </div>
           </div>
-          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-green-500/50 hover:shadow-xl transition-all cursor-pointer group">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+              <div className="text-2xl md:text-3xl font-bold text-white mb-1 font-data">
                 {stats.delivered}
               </div>
               <div className="text-xs md:text-sm text-slate-400 font-medium">Delivered</div>
             </div>
           </div>
-          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg hover:border-red-500/50 hover:shadow-xl transition-all cursor-pointer group">
+          <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent mb-1 group-hover:scale-105 transition-transform">
+              <div className="text-2xl md:text-3xl font-bold text-white mb-1 font-data">
                 {stats.cancelled}
               </div>
               <div className="text-xs md:text-sm text-slate-400 font-medium">Cancelled</div>
@@ -564,7 +555,7 @@ export default function ShipperDashboardPage() {
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
                 <h2 className="text-lg font-bold text-white">Available Loads ({pendingAcceptance.length})</h2>
               </div>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent"></div>
@@ -584,13 +575,13 @@ export default function ShipperDashboardPage() {
               {pendingAcceptance.map((load) => (
                 <div
                   key={load.id}
-                  className="glass-primary rounded-xl p-5 border-2 border-blue-500/30 hover:border-blue-500/50 hover:shadow-xl transition-all bg-gradient-to-br from-slate-800/50 to-slate-800/30"
+                  className="glass-primary rounded-xl p-5 border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg transition-all"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <h3 className="font-mono font-bold text-blue-400 text-lg">{load.publicTrackingCode}</h3>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+                        <h3 className="font-mono font-bold text-cyan-400 text-lg font-data">{load.publicTrackingCode}</h3>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
@@ -708,7 +699,7 @@ export default function ShipperDashboardPage() {
             <h3 className="text-xl font-bold text-white mb-2">
               {filter === 'all' ? 'No load requests yet' : `No ${filter} loads`}
             </h3>
-            <p className="text-slate-300 mb-6">
+            <p className="text-slate-400 mb-6">
               {filter === 'all' 
                 ? 'Get started by creating your first shipment request using the button above' 
                 : 'There are no loads matching this filter'}
@@ -716,7 +707,7 @@ export default function ShipperDashboardPage() {
             {filter === 'all' && (
               <Link
                 href="/shipper/request-load"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-blue-500/50 transition-all shadow-lg shadow-blue-500/30"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -931,7 +922,6 @@ export default function ShipperDashboardPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   )
 }

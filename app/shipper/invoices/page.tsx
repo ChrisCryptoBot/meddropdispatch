@@ -112,15 +112,15 @@ export default function ShipperInvoicesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PAID':
-        return 'bg-success-50 text-success-700 border-success-200 border-2'
+        return 'bg-green-500/20 text-green-400 border border-green-500/30'
       case 'SENT':
-        return 'bg-blue-50 text-blue-700 border-blue-200 border-2'
+        return 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
       case 'OVERDUE':
-        return 'bg-urgent-50 text-urgent-700 border-urgent-200 border-2'
+        return 'bg-red-500/20 text-red-400 border border-red-500/30'
       case 'DRAFT':
-        return 'bg-gray-50 text-gray-700 border-gray-200 border-2'
+        return 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200 border-2'
+        return 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
     }
   }
 
@@ -195,52 +195,52 @@ export default function ShipperInvoicesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30">
-          <div className="text-3xl font-bold text-gradient mb-1">{stats.total}</div>
-          <div className="text-sm text-medical">Total Invoices</div>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">{stats.total}</div>
+          <div className="text-sm text-slate-400">Total Invoices</div>
         </div>
-        <div className="glass-success p-6 rounded-xl border-2 border-green-200/30">
-          <div className="text-3xl font-bold text-success-700 mb-1">{stats.paid}</div>
-          <div className="text-sm text-success-700">Paid</div>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">{stats.paid}</div>
+          <div className="text-sm text-slate-400">Paid</div>
         </div>
-        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30">
-          <div className="text-3xl font-bold text-gradient mb-1">{stats.pending}</div>
-          <div className="text-sm text-medical">Pending</div>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">{stats.pending}</div>
+          <div className="text-sm text-slate-400">Pending</div>
         </div>
-        <div className="glass-urgent p-6 rounded-xl border-2 border-red-200/30">
-          <div className="text-3xl font-bold text-urgent-700 mb-1">{stats.overdue}</div>
-          <div className="text-sm text-urgent-700">Overdue</div>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">{stats.overdue}</div>
+          <div className="text-sm text-slate-400">Overdue</div>
         </div>
-        <div className="glass-primary p-6 rounded-xl border-2 border-blue-200/30">
-          <div className="text-3xl font-bold text-gradient mb-1">
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <div className="text-3xl font-bold text-white mb-1 font-data">
             ${stats.totalAmount.toFixed(2)}
           </div>
-          <div className="text-sm text-medical">Total Amount</div>
+          <div className="text-sm text-slate-400">Total Amount</div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30">
+      <div className="glass-primary p-4 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by invoice number, tracking code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter by Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Status</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All</option>
               <option value="DRAFT">Draft</option>
@@ -252,11 +252,11 @@ export default function ShipperInvoicesPage() {
 
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortField)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 outline-none bg-white/80"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -281,35 +281,35 @@ export default function ShipperInvoicesPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="text-sm text-medical mb-2">
+          <div className="text-sm text-slate-400 mb-2">
             Showing {filteredAndSortedInvoices.length} of {invoices.length} invoices
           </div>
           {filteredAndSortedInvoices.map((invoice) => (
-            <div key={invoice.id} className="glass-primary p-6 rounded-xl border-2 border-blue-200/30 hover:shadow-glass-lg transition-all hover:border-blue-300/50">
+            <div key={invoice.id} className="glass-primary p-6 rounded-xl border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg transition-all shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">{invoice.invoiceNumber}</h3>
-                    <span className={`status-badge ${getStatusColor(invoice.status)}`}>
+                    <h3 className="text-xl font-bold text-white hover:text-cyan-400 transition-colors font-data">{invoice.invoiceNumber}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
                       {invoice.status}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-400">
                     <div>
-                      <span className="font-medium">Date:</span> {formatDate(invoice.invoiceDate)}
+                      <span className="font-medium text-slate-300">Date:</span> {formatDate(invoice.invoiceDate)}
                     </div>
                     <div>
-                      <span className="font-medium">Due:</span> {formatDate(invoice.dueDate)}
+                      <span className="font-medium text-slate-300">Due:</span> {formatDate(invoice.dueDate)}
                     </div>
                     <div>
-                      <span className="font-medium">Loads:</span> {invoice.loadRequests.length}
+                      <span className="font-medium text-slate-300">Loads:</span> {invoice.loadRequests.length}
                     </div>
                     <div>
-                      <span className="font-medium">Total:</span> <span className="font-bold text-gray-900">{formatCurrency(invoice.total)}</span>
+                      <span className="font-medium text-slate-300">Total:</span> <span className="font-bold text-white font-data">{formatCurrency(invoice.total)}</span>
                     </div>
                   </div>
                   {invoice.loadRequests.length > 0 && (
-                    <div className="mt-3 text-sm text-gray-500">
+                    <div className="mt-3 text-sm text-slate-500">
                       Tracking Codes: {invoice.loadRequests.map((l) => l.publicTrackingCode).join(', ')}
                     </div>
                   )}
@@ -317,7 +317,7 @@ export default function ShipperInvoicesPage() {
                 <div className="flex items-center gap-3 ml-6">
                   <button
                     onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
-                    className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-medium hover:shadow-lg transition-all shadow-lg"
+                    className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-medium hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
                   >
                     Download PDF
                   </button>

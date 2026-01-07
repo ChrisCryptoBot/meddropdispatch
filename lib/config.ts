@@ -86,7 +86,7 @@ export function validateConfig(): ConfigValidationResult {
 
   if (!process.env.NEXTAUTH_SECRET) {
     errors.push('NEXTAUTH_SECRET is required')
-  } else if (process.env.NEXTAUTH_SECRET=YOUR_NEXTAUTH_SECRET
+  } else if (process.env.NEXTAUTH_SECRET === 'YOUR_NEXTAUTH_SECRET') {
     warnings.push('NEXTAUTH_SECRET is using default value - change it for production')
   }
 

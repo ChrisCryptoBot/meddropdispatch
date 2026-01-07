@@ -204,9 +204,8 @@ export default function ShipperLoadsPage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50">
-          <div className="flex items-center gap-4 mb-2">
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
             <Link
               href="/driver/shippers"
               className="text-slate-300 hover:text-cyan-400 transition-colors"
@@ -216,10 +215,10 @@ export default function ShipperLoadsPage() {
               </svg>
             </Link>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
                 {shipper?.companyName || 'Shipper'} - Load History
               </h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">
+              <p className="text-slate-400">
                 All loads you've completed for this shipper
               </p>
             </div>
@@ -228,21 +227,21 @@ export default function ShipperLoadsPage() {
 
         {/* Shipper Info */}
         {shipper && (
-          <div className="glass p-6 rounded-2xl mb-6">
+          <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg mb-6">
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Contact</p>
-                <p className="font-semibold text-gray-900">{shipper.contactName}</p>
+                <p className="text-sm text-slate-400 mb-1">Contact</p>
+                <p className="font-semibold text-white">{shipper.contactName}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Phone</p>
-                <a href={`tel:${shipper.phone}`} className="font-semibold text-slate-600 hover:text-slate-800">
+                <p className="text-sm text-slate-400 mb-1">Phone</p>
+                <a href={`tel:${shipper.phone}`} className="font-semibold text-cyan-400 hover:text-cyan-300">
                   {shipper.phone}
                 </a>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Email</p>
-                <a href={`mailto:${shipper.email}`} className="font-semibold text-slate-600 hover:text-slate-800">
+                <p className="text-sm text-slate-400 mb-1">Email</p>
+                <a href={`mailto:${shipper.email}`} className="font-semibold text-cyan-400 hover:text-cyan-300">
                   {shipper.email}
                 </a>
               </div>
@@ -252,26 +251,26 @@ export default function ShipperLoadsPage() {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Total Loads</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalLoads}</p>
+          <div className="glass-primary p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">Total Loads</p>
+            <p className="text-2xl font-bold text-white font-data">{stats.totalLoads}</p>
           </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Completed</p>
-            <p className="text-2xl font-bold text-blue-700">{stats.completedLoads}</p>
+          <div className="glass-primary p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">Completed</p>
+            <p className="text-2xl font-bold text-white font-data">{stats.completedLoads}</p>
           </div>
-          <div className="glass p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-2xl font-bold text-green-700">${stats.totalRevenue.toFixed(2)}</p>
+          <div className="glass-primary p-4 rounded-xl border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">Total Revenue</p>
+            <p className="text-2xl font-bold text-white font-data">${stats.totalRevenue.toFixed(2)}</p>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="glass p-6 rounded-2xl mb-6">
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg mb-6">
           <div className="grid md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
-              <label htmlFor="search" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="search" className="block text-sm font-semibold text-slate-300 mb-2">
                 Search
               </label>
               <input
@@ -280,20 +279,20 @@ export default function ShipperLoadsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by tracking code, commodity, facility..."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
               />
             </div>
 
             {/* Filter */}
             <div>
-              <label htmlFor="filter" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="filter" className="block text-sm font-semibold text-slate-300 mb-2">
                 Filter
               </label>
               <select
                 id="filter"
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value as FilterOption)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
               >
                 <option value="all">All Loads</option>
                 <option value="completed">Completed</option>
@@ -306,14 +305,14 @@ export default function ShipperLoadsPage() {
 
           {/* Sort */}
           <div className="mt-4">
-            <label htmlFor="sort" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="sort" className="block text-sm font-semibold text-slate-300 mb-2">
               Sort By
             </label>
             <select
               id="sort"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm"
+              className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -328,7 +327,7 @@ export default function ShipperLoadsPage() {
 
         {/* Results Count */}
         <div className="mb-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-400">
             Showing {filteredAndSortedLoads.length} of {loads.length} loads
           </p>
         </div>
@@ -342,12 +341,12 @@ export default function ShipperLoadsPage() {
             </div>
           </div>
         ) : filteredAndSortedLoads.length === 0 ? (
-          <div className="glass p-12 rounded-2xl text-center">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-primary p-12 rounded-xl border border-slate-700/50 shadow-lg text-center">
+            <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No loads found</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold text-white mb-2">No loads found</h3>
+            <p className="text-slate-400">
               {searchQuery || filterBy !== 'all'
                 ? 'Try adjusting your filters or search query'
                 : "You haven't completed any loads for this shipper yet."}
@@ -359,45 +358,45 @@ export default function ShipperLoadsPage() {
               <Link
                 key={load.id}
                 href={`/driver/loads/${load.id}`}
-                className="block glass p-6 rounded-2xl hover:shadow-lg transition-all border border-white/30"
+                className="block glass-primary p-6 rounded-xl border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg transition-all"
               >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   {/* Left: Load Info */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        <h3 className="text-xl font-bold text-white mb-1 font-data">
                           {load.publicTrackingCode}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-slate-400 mb-2">
                           {load.serviceType.replace(/_/g, ' ')} • {load.commodityDescription}
                         </p>
                       </div>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS] || 'bg-gray-100 text-gray-800'
+                          LOAD_STATUS_COLORS[load.status as keyof typeof LOAD_STATUS_COLORS] || 'bg-slate-700/50 text-slate-300'
                         }`}
                       >
                         {LOAD_STATUS_LABELS[load.status as keyof typeof LOAD_STATUS_LABELS] || load.status}
                       </span>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div className="grid md:grid-cols-2 gap-3 text-sm text-slate-400">
                       <div>
-                        <span className="font-semibold">Pickup:</span> {load.pickupFacility.name},{' '}
+                        <span className="font-semibold text-slate-300">Pickup:</span> {load.pickupFacility.name},{' '}
                         {load.pickupFacility.city}, {load.pickupFacility.state}
                       </div>
                       <div>
-                        <span className="font-semibold">Delivery:</span> {load.dropoffFacility.name},{' '}
+                        <span className="font-semibold text-slate-300">Delivery:</span> {load.dropoffFacility.name},{' '}
                         {load.dropoffFacility.city}, {load.dropoffFacility.state}
                       </div>
                       {load.readyTime && (
                         <div>
-                          <span className="font-semibold">Ready:</span> {formatDate(load.readyTime)}
+                          <span className="font-semibold text-slate-300">Ready:</span> {formatDate(load.readyTime)}
                         </div>
                       )}
                       {load.actualDeliveryTime && (
                         <div>
-                          <span className="font-semibold">Delivered:</span> {formatDate(load.actualDeliveryTime)}
+                          <span className="font-semibold text-slate-300">Delivered:</span> {formatDate(load.actualDeliveryTime)}
                         </div>
                       )}
                     </div>
@@ -407,16 +406,16 @@ export default function ShipperLoadsPage() {
                   <div className="flex-shrink-0 text-right">
                     {load.quoteAmount && (
                       <div className="mb-2">
-                        <p className="text-xs text-gray-600 mb-1">Revenue</p>
-                        <p className="text-2xl font-bold text-green-700">${load.quoteAmount.toFixed(2)}</p>
+                        <p className="text-xs text-slate-400 mb-1">Revenue</p>
+                        <p className="text-2xl font-bold text-white font-data">${load.quoteAmount.toFixed(2)}</p>
                       </div>
                     )}
                     {load.documents.length > 0 && (
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-slate-400">
                         {load.documents.length} document{load.documents.length !== 1 ? 's' : ''}
                       </div>
                     )}
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-slate-500 mt-2">
                       Created: {formatDate(load.createdAt)}
                     </div>
                   </div>

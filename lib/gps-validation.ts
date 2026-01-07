@@ -207,6 +207,87 @@ export function validateCoordinates(latitude: number, longitude: number): boolea
 }
 
 /**
+ * Validate GPS timestamp - reject future dates or stale points (>12 hours old)
+ * @param timestamp - The timestamp to validate
+ * @param maxAgeHours - Maximum age in hours (default: 12)
+ * @returns Validation result with error message if invalid
+ */
+export function validateGPSTimestamp(
+  timestamp: Date | string,
+  maxAgeHours: number = 12
+): { valid: boolean; error?: string } {
+  const now = new Date()
+  const pointTime = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
+
+  // Check if timestamp is valid
+  if (isNaN(pointTime.getTime())) {
+    return { valid: false, error: 'Invalid timestamp format' }
+  }
+
+  // Reject future dates (allow 5 minute tolerance for clock skew)
+  const futureTolerance = 5 * 60 * 1000 // 5 minutes in milliseconds
+  if (pointTime.getTime() > now.getTime() + futureTolerance) {
+    return { valid: false, error: 'GPS timestamp cannot be in the future' }
+  }
+
+  // Reject stale points (>12 hours old by default)
+  const maxAgeMs = maxAgeHours * 60 * 60 * 1000
+  const ageMs = now.getTime() - pointTime.getTime()
+  if (ageMs > maxAgeMs) {
+    const ageHours = Math.round(ageMs / (60 * 60 * 1000))
+    return {
+      valid: false,
+      error: `GPS point is too old (${ageHours} hours, maximum allowed: ${maxAgeHours} hours)`,
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Check speed plausibility between two GPS points
+ * Simple heuristic: if speed > 150mph between last two points, flag as suspicious
+ * @param point1 - First GPS point
+ * @param point2 - Second GPS point
+ * @param maxSpeedMph - Maximum allowed speed in mph (default: 150)
+ * @returns Validation result with calculated speed
+ */
+export function checkSpeedPlausibility(
+  point1: { latitude: number; longitude: number; timestamp: Date | string },
+  point2: { latitude: number; longitude: number; timestamp: Date | string },
+  maxSpeedMph: number = 150
+): { valid: boolean; speedMph: number; error?: string } {
+  const distanceMeters = calculateDistance(
+    { latitude: point1.latitude, longitude: point1.longitude },
+    { latitude: point2.latitude, longitude: point2.longitude }
+  )
+
+  const time1 = typeof point1.timestamp === 'string' ? new Date(point1.timestamp) : point1.timestamp
+  const time2 = typeof point2.timestamp === 'string' ? new Date(point2.timestamp) : point2.timestamp
+
+  const timeDiffMs = Math.abs(time2.getTime() - time1.getTime())
+  const timeDiffHours = timeDiffMs / (1000 * 60 * 60)
+
+  // Avoid division by zero
+  if (timeDiffHours === 0) {
+    return { valid: true, speedMph: 0 }
+  }
+
+  const distanceMiles = distanceMeters / 1609.34 // Convert meters to miles
+  const speedMph = distanceMiles / timeDiffHours
+
+  if (speedMph > maxSpeedMph) {
+    return {
+      valid: false,
+      speedMph,
+      error: `Implausible speed detected: ${Math.round(speedMph)} mph (maximum allowed: ${maxSpeedMph} mph)`,
+    }
+  }
+
+  return { valid: true, speedMph }
+}
+
+/**
  * Geocode an address to GPS coordinates (placeholder - integrate with geocoding service)
  * This should be implemented with Google Maps Geocoding API, Mapbox, or similar
  */

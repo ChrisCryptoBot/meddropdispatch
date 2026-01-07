@@ -84,6 +84,13 @@ export async function POST(
 
     // Status gating - prevent assignment in mid-transit or terminal states
     const acceptableStatuses = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED', 'SCHEDULED']
+    const terminalStatuses = ['DELIVERED', 'DENIED', 'CANCELLED', 'COMPLETED']
+    
+    // Explicitly block assignment to CANCELLED or COMPLETED loads
+    if (terminalStatuses.includes(currentLoad.status)) {
+      throw new ValidationError(`Cannot assign driver to a load in terminal state: ${currentLoad.status}`)
+    }
+    
     if (!acceptableStatuses.includes(currentLoad.status)) {
       throw new ValidationError(`Cannot assign driver when load status is ${currentLoad.status}`)
     }
@@ -91,12 +98,17 @@ export async function POST(
     // Determine if we should auto-schedule (only for early statuses)
     const shouldSchedule = ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED'].includes(currentLoad.status)
 
-    // ATOMIC UPDATE: Only assign if driverId is null (or already set to same driver for idempotency) AND status acceptable
+    // ATOMIC UPDATE: Only assign if driverId is null (or already set to same driver for idempotency) 
+    // AND status is acceptable AND NOT in terminal state
     const atomicResult = await prisma.loadRequest.updateMany({
       where: {
         id,
         OR: [{ driverId: null }, { driverId }],
         status: { in: acceptableStatuses },
+        // Explicitly exclude terminal states (defense in depth)
+        NOT: {
+          status: { in: terminalStatuses },
+        },
       },
       data: {
         driverId,

@@ -32,7 +32,9 @@ const nextConfig = {
     },
     optimizeCss: true, // Optimize CSS
     instrumentationHook: true, // Enable Sentry instrumentation
+    optimizePackageImports: ['@prisma/client', 'recharts', 'leaflet'], // Tree-shake unused exports
   },
+  
   
   // Webpack optimizations (simplified for dev stability)
   webpack: (config, { isServer }) => {

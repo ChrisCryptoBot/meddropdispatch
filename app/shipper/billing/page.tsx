@@ -120,13 +120,9 @@ export default function ShipperBillingPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-[50] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Billing & Payments</h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your payment terms and billing information</p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">Billing & Payments</h1>
+        <p className="text-slate-400">Manage your payment terms and billing information</p>
       </div>
 
       <div className="max-w-3xl">

@@ -313,16 +313,15 @@ export default function DriverProfilePage() {
 
   return (
     <div className="p-6 md:p-8 print:p-4">
-      {/* Header Section - Gold Standard - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
               My Profile
             </h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your personal information and settings</p>
+            <p className="text-slate-400">Manage your personal information and settings</p>
           </div>
-          {!isEditing && (
+        {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
               className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center gap-2"
@@ -395,39 +394,39 @@ export default function DriverProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">License Number</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">License Number</label>
                 <input
                   type="text"
                   value={formData.licenseNumber}
                   onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">License Expiry</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">License Expiry</label>
                 <input
                   type="date"
                   value={formData.licenseExpiry}
                   onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Emergency Contact</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Emergency Contact</label>
                 <input
                   type="text"
                   value={formData.emergencyContact}
                   onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Emergency Phone</label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Emergency Phone</label>
                 <input
                   type="tel"
                   value={formData.emergencyPhone}
                   onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -548,10 +547,10 @@ export default function DriverProfilePage() {
           <div className="grid md:grid-cols-3 gap-6">
             {/* Profile Picture Display - Left Side */}
             <div className="md:col-span-1 flex">
-              <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical text-center w-full flex flex-col">
+              <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg text-center w-full flex flex-col">
                 <div className="flex justify-center mb-4">
                   {driver.profilePicture ? (
-                    <div className="relative rounded-full overflow-hidden border-4 border-teal-200 shadow-lg flex-shrink-0" style={{ width: '220px', height: '220px' }}>
+                    <div className="relative rounded-full overflow-hidden border-4 border-cyan-500/50 shadow-lg flex-shrink-0" style={{ width: '220px', height: '220px' }}>
                       <img
                         src={driver.profilePicture}
                         alt={`${driver.firstName} ${driver.lastName}`}
@@ -567,16 +566,16 @@ export default function DriverProfilePage() {
                       />
                     </div>
                   ) : (
-                    <div className="rounded-full overflow-hidden border-4 border-teal-200 shadow-lg bg-gradient-accent flex items-center justify-center flex-shrink-0" style={{ width: '220px', height: '220px' }}>
+                    <div className="rounded-full overflow-hidden border-4 border-cyan-500/50 shadow-lg bg-gradient-to-r from-cyan-600 to-cyan-700 flex items-center justify-center flex-shrink-0" style={{ width: '220px', height: '220px' }}>
                       <svg className="w-28 h-28 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                   )}
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">{driver.firstName} {driver.lastName}</h2>
+                <h2 className="text-xl font-bold text-white">{driver.firstName} {driver.lastName}</h2>
                 {driver.yearsOfExperience && (
-                  <p className="text-sm text-gray-600 mt-1">{driver.yearsOfExperience} {driver.yearsOfExperience === 1 ? 'Year' : 'Years'} Experience</p>
+                  <p className="text-sm text-slate-400 mt-1">{driver.yearsOfExperience} {driver.yearsOfExperience === 1 ? 'Year' : 'Years'} Experience</p>
                 )}
                 {ratings && ratings.ratingCount > 0 && (
                   <div className="mt-3 flex items-center justify-center gap-2">
@@ -584,7 +583,7 @@ export default function DriverProfilePage() {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <svg
                           key={star}
-                          className={`w-5 h-5 ${star <= Math.round(ratings.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                          className={`w-5 h-5 ${star <= Math.round(ratings.averageRating) ? 'text-yellow-400 fill-current' : 'text-slate-600'}`}
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -592,7 +591,7 @@ export default function DriverProfilePage() {
                         </svg>
                       ))}
                     </div>
-                    <span className="text-sm font-semibold text-gray-700">
+                    <span className="text-sm font-semibold text-slate-300">
                       {ratings.averageRating.toFixed(1)} ({ratings.ratingCount} {ratings.ratingCount === 1 ? 'rating' : 'ratings'})
                     </span>
                   </div>
@@ -600,60 +599,60 @@ export default function DriverProfilePage() {
                 {driver.specialties && (
                   <div className="flex flex-wrap gap-2 justify-center mt-2">
                     {driver.specialties.split(',').map((s: string) => (
-                      <span key={s.trim()} className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-medium border border-teal-200">
+                      <span key={s.trim()} className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-xs font-medium border border-cyan-500/30">
                         {s.trim()}
                       </span>
                     ))}
                   </div>
                 )}
                 {driver.bio && (
-                  <p className="text-sm text-gray-700 italic mt-4">"{driver.bio}"</p>
+                  <p className="text-sm text-slate-300 italic mt-4">"{driver.bio}"</p>
                 )}
               </div>
             </div>
 
             {/* Personal Information - Right Side */}
             <div className="md:col-span-2 flex">
-              <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical w-full flex flex-col">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
+              <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg w-full flex flex-col">
+                <h2 className="text-xl font-bold text-white mb-4">Personal Information</h2>
                 <div className="space-y-4 flex-1">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Name</label>
-                    <p className="text-lg text-gray-900">{driver.firstName} {driver.lastName}</p>
+                    <label className="text-sm font-medium text-slate-400">Name</label>
+                    <p className="text-lg text-white">{driver.firstName} {driver.lastName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Email</label>
-                    <p className="text-lg text-gray-900">{driver.email}</p>
+                    <label className="text-sm font-medium text-slate-400">Email</label>
+                    <p className="text-lg text-white">{driver.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-lg text-gray-900">{driver.phone}</p>
+                    <label className="text-sm font-medium text-slate-400">Phone</label>
+                    <p className="text-lg text-white">{driver.phone}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Status</label>
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border-2 ${
+                    <label className="text-sm font-medium text-slate-400">Status</label>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${
                       driver.status === 'ACTIVE'
-                        ? 'bg-success-100 text-success-700 border-success-200'
-                        : 'bg-gray-100 text-gray-700 border-gray-200'
+                        ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                        : 'bg-slate-700/50 text-slate-300 border-slate-600/50'
                     }`}>
                       {driver.status}
                     </span>
                   </div>
                   {driver.licenseNumber && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">License Number</label>
-                      <p className="text-lg text-gray-900">{driver.licenseNumber}</p>
+                      <label className="text-sm font-medium text-slate-400">License Number</label>
+                      <p className="text-lg text-white">{driver.licenseNumber}</p>
                       {driver.licenseExpiry && (
-                        <p className="text-sm text-gray-500">Expires: {new Date(driver.licenseExpiry).toLocaleDateString()}</p>
+                        <p className="text-sm text-slate-500">Expires: {new Date(driver.licenseExpiry).toLocaleDateString()}</p>
                       )}
                     </div>
                   )}
                   {driver.emergencyContact && (
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Emergency Contact</label>
-                      <p className="text-lg text-gray-900">{driver.emergencyContact}</p>
+                      <label className="text-sm font-medium text-slate-400">Emergency Contact</label>
+                      <p className="text-lg text-white">{driver.emergencyContact}</p>
                       {driver.emergencyPhone && (
-                        <p className="text-sm text-gray-500">{driver.emergencyPhone}</p>
+                        <p className="text-sm text-slate-400">{driver.emergencyPhone}</p>
                       )}
                     </div>
                   )}
@@ -664,27 +663,27 @@ export default function DriverProfilePage() {
 
           {/* Personalization Information */}
           {(driver.bio || driver.specialties || driver.yearsOfExperience || driver.languages || driver.serviceAreas) && (
-            <div className="glass-accent p-6 rounded-2xl border-2 border-teal-200/30 shadow-medical">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Profile Information</h2>
+            <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+              <h2 className="text-xl font-bold text-white mb-4">Profile Information</h2>
               <div className="space-y-4">
                 {driver.bio && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Bio</label>
-                    <p className="text-gray-900 mt-1">{driver.bio}</p>
+                    <label className="text-sm font-medium text-slate-400">Bio</label>
+                    <p className="text-white mt-1">{driver.bio}</p>
                   </div>
                 )}
                 {driver.yearsOfExperience && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Years of Experience</label>
-                    <p className="text-gray-900">{driver.yearsOfExperience} {driver.yearsOfExperience === 1 ? 'year' : 'years'}</p>
+                    <label className="text-sm font-medium text-slate-400">Years of Experience</label>
+                    <p className="text-white">{driver.yearsOfExperience} {driver.yearsOfExperience === 1 ? 'year' : 'years'}</p>
                   </div>
                 )}
                 {driver.specialties && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Specialties</label>
+                    <label className="text-sm font-medium text-slate-400">Specialties</label>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {driver.specialties.split(',').map((specialty, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium border border-teal-200">
+                        <span key={idx} className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-sm font-medium border border-cyan-500/30">
                           {specialty.trim()}
                         </span>
                       ))}
@@ -693,14 +692,14 @@ export default function DriverProfilePage() {
                 )}
                 {driver.languages && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Languages</label>
-                    <p className="text-gray-900">{driver.languages}</p>
+                    <label className="text-sm font-medium text-slate-400">Languages</label>
+                    <p className="text-white">{driver.languages}</p>
                   </div>
                 )}
                 {driver.serviceAreas && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Service Areas</label>
-                    <p className="text-gray-900">{driver.serviceAreas}</p>
+                    <label className="text-sm font-medium text-slate-400">Service Areas</label>
+                    <p className="text-white">{driver.serviceAreas}</p>
                   </div>
                 )}
               </div>
@@ -708,28 +707,28 @@ export default function DriverProfilePage() {
           )}
 
         {/* Certifications */}
-        <div className="glass p-6 rounded-2xl">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Certifications & Training</h2>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <h2 className="text-xl font-bold text-white mb-4">Certifications & Training</h2>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-600">UN3373 Certified</label>
-              <p className="text-lg text-gray-900">
+              <label className="text-sm font-medium text-slate-400">UN3373 Certified</label>
+              <p className="text-lg text-white">
                 {driver.un3373Certified ? 'Yes' : 'No'}
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">HIPAA Training</label>
-              <p className="text-lg text-gray-900">
+              <label className="text-sm font-medium text-slate-400">HIPAA Training</label>
+              <p className="text-lg text-white">
                 {driver.hipaaTrainingDate
                   ? new Date(driver.hipaaTrainingDate).toLocaleDateString()
                   : 'Not completed'}
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Driver License</label>
-              <p className="text-lg text-gray-900">{driver.licenseNumber || 'Not provided'}</p>
+              <label className="text-sm font-medium text-slate-400">Driver License</label>
+              <p className="text-lg text-white">{driver.licenseNumber || 'Not provided'}</p>
               {driver.licenseExpiry && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-400">
                   Expires: {new Date(driver.licenseExpiry).toLocaleDateString()}
                 </p>
               )}
@@ -740,13 +739,13 @@ export default function DriverProfilePage() {
       )}
 
       {/* Change Password Section */}
-      <div className="glass p-6 rounded-2xl mt-6">
+      <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Change Password</h2>
+          <h2 className="text-xl font-bold text-white">Change Password</h2>
           {!isChangingPassword && (
             <button
               onClick={() => setIsChangingPassword(true)}
-              className="px-4 py-2 text-accent-700 hover:text-accent-800 font-medium"
+              className="px-4 py-2 text-cyan-400 hover:text-cyan-300 font-medium transition-colors"
             >
               Change Password
             </button>
@@ -755,34 +754,34 @@ export default function DriverProfilePage() {
         {isChangingPassword && (
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Current Password *</label>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">Current Password *</label>
               <input
                 type="password"
                 value={passwordData.currentPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">New Password *</label>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">New Password *</label>
               <input
                 type="password"
                 value={passwordData.newPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
                 minLength={8}
               />
-              <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+              <p className="text-xs text-slate-500 mt-1">Must be at least 8 characters</p>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password *</label>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">Confirm New Password *</label>
               <input
                 type="password"
                 value={passwordData.confirmPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
               />
             </div>
@@ -790,7 +789,7 @@ export default function DriverProfilePage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-lg font-semibold hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg disabled:opacity-50"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
               >
                 {isSaving ? 'Changing...' : 'Change Password'}
               </button>
@@ -800,7 +799,7 @@ export default function DriverProfilePage() {
                   setIsChangingPassword(false)
                   setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
                 }}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
               >
                 Cancel
               </button>
@@ -810,17 +809,17 @@ export default function DriverProfilePage() {
       </div>
 
       {/* Documents Section */}
-      <div id="documents" className="glass-accent p-6 rounded-2xl mt-6 border-2 border-teal-200/30 shadow-medical">
+      <div id="documents" className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg mt-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">My Documents</h2>
-            <p className="text-sm mt-1 text-gray-600">
+            <h2 className="text-xl font-bold text-white">My Documents</h2>
+            <p className="text-sm mt-1 text-slate-400">
               Store and access your documents to share with shippers when needed
             </p>
           </div>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical flex items-center gap-2"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -829,36 +828,36 @@ export default function DriverProfilePage() {
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-slate-400 mb-4">
           Upload and manage your documents such as driver's license, insurance, certifications, and more. You can access these anytime to verify credentials with shippers.
         </p>
 
         {documents.filter(d => d.isActive).length === 0 ? (
           <div className="text-center py-8">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="text-gray-600">No documents uploaded yet</p>
+            <p className="text-slate-400">No documents uploaded yet</p>
           </div>
         ) : (
           <div className="grid gap-4">
             {documents.filter(d => d.isActive).map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 bg-white/60 rounded-lg border border-gray-200">
+              <div key={doc.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-gray-900">{doc.title}</p>
-                      <span className="px-2 py-0.5 bg-accent-100 text-accent-700 rounded text-xs font-medium border border-accent-200">
+                      <p className="font-semibold text-white">{doc.title}</p>
+                      <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs font-medium border border-cyan-500/30">
                         {doc.type.replace(/_/g, ' ')}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-xs">
-                      <span className="text-gray-500">Uploaded: {new Date(doc.createdAt).toLocaleDateString()}</span>
+                      <span className="text-slate-400">Uploaded: {new Date(doc.createdAt).toLocaleDateString()}</span>
                       {doc.expiryDate && (() => {
                         const expiryDate = new Date(doc.expiryDate)
                         const now = new Date()
@@ -869,10 +868,10 @@ export default function DriverProfilePage() {
                         return (
                           <span className={`${
                             isExpired 
-                              ? 'text-gray-500' 
+                              ? 'text-red-400' 
                               : isExpiringSoon
-                              ? 'text-gray-600'
-                              : 'text-gray-500'
+                              ? 'text-yellow-400'
+                              : 'text-slate-400'
                           }`}>
                             {isExpired ? 'Expired: ' : isExpiringSoon ? 'Expires soon: ' : 'Expires: '}
                             {expiryDate.toLocaleDateString()}
@@ -891,7 +890,7 @@ export default function DriverProfilePage() {
                   />
                   <button
                     onClick={() => handleDeleteDocument(doc.id)}
-                    className="p-2 text-urgent-600 hover:bg-urgent-50 rounded-lg transition-colors"
+                    className="p-2 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
                     title="Delete document"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -908,18 +907,18 @@ export default function DriverProfilePage() {
       {/* Upload Document Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-accent max-w-2xl w-full rounded-3xl p-6 border-2 border-teal-200/30 shadow-medical">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Upload Document</h3>
+          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-6">Upload Document</h3>
 
             <form onSubmit={handleDocumentUpload} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Document Type *
                 </label>
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   required
                 >
                   <option value="DRIVERS_LICENSE">Driver's License</option>
@@ -933,34 +932,34 @@ export default function DriverProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Document Title *
                 </label>
                 <input
                   type="text"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="e.g., Driver's License, Insurance Policy #12345"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Expiry Date (Optional)
                 </label>
                 <input
                   type="date"
                   value={uploadExpiryDate}
                   onChange={(e) => setUploadExpiryDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                 />
-                <p className="text-xs text-gray-500 mt-1">Set expiry date for licenses, insurance, certifications, etc.</p>
+                <p className="text-xs text-slate-500 mt-1">Set expiry date for licenses, insurance, certifications, etc.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   File (PDF, Image) *
                 </label>
                 <input
@@ -989,13 +988,13 @@ export default function DriverProfilePage() {
                     }
                     setUploadFile(file)
                   }}
-                  className="w-full px-4 py-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200"
                   required={!uploadFile}
                 />
                 {uploadFile && (
-                  <p className="text-sm text-green-600 mt-1">✓ {uploadFile.name} selected</p>
+                  <p className="text-sm text-green-400 mt-1">✓ {uploadFile.name} selected</p>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
+                <p className="text-xs text-slate-500 mt-1">Accepted: PDF, JPG, PNG, HEIC. Max file size: 10MB</p>
               </div>
 
               <div className="flex gap-4">
@@ -1008,14 +1007,14 @@ export default function DriverProfilePage() {
                     setUploadType('DRIVERS_LICENSE')
                     setUploadExpiryDate('')
                   }}
-                  className="flex-1 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-6 py-3 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading || !uploadFile || !uploadTitle}
-                  className="flex-1 px-6 py-3 rounded-xl bg-gradient-accent text-white font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-base shadow-medical"
+                  className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? 'Uploading...' : 'Upload Document'}
                 </button>

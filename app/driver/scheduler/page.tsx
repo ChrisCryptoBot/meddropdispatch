@@ -317,7 +317,7 @@ export default function DriverSchedulerPage() {
                   isCurrentDay
                     ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 border-teal-400 shadow-medical'
                     : isCurrentMonthDay
-                    ? 'bg-white/40 border-teal-200/30 hover:bg-white/60'
+                    ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70'
                     : 'bg-slate-800/40 border-slate-700/30 opacity-60'
                 }`}
               >
@@ -366,7 +366,7 @@ export default function DriverSchedulerPage() {
                 className={`min-h-[400px] p-4 rounded-lg border-2 ${
                   isCurrentDay
                     ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 border-teal-400 shadow-medical'
-                    : 'bg-white/40 border-teal-200/30'
+                    : 'bg-slate-800/50 border-slate-700/50'
                 }`}
               >
                 <div className={`mb-4 ${isCurrentDay ? 'text-white' : 'text-white'}`}>
@@ -386,10 +386,10 @@ export default function DriverSchedulerPage() {
                       <Link
                         key={load.id}
                         href={`/driver/loads/${load.id}`}
-                        className="block p-3 rounded-lg bg-white/90 hover:bg-white border border-slate-700/50 shadow-sm hover:shadow-md transition-all"
+                        className="block p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800/70 border border-slate-700/50 shadow-sm hover:shadow-md transition-all"
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-mono font-bold text-accent-700 text-sm">
+                          <span className="font-mono font-bold text-cyan-400 text-sm font-data">
                             {load.publicTrackingCode}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
@@ -405,7 +405,7 @@ export default function DriverSchedulerPage() {
                           </p>
                         )}
                         {load.quoteAmount && (
-                          <p className="text-xs font-bold text-accent-700 mt-1">
+                          <p className="text-xs font-bold text-cyan-400 mt-1 font-data">
                             ${load.quoteAmount.toFixed(2)}
                           </p>
                         )}
@@ -458,7 +458,7 @@ export default function DriverSchedulerPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="font-mono font-bold text-accent-700 text-lg">
+                      <span className="font-mono font-bold text-cyan-400 text-lg font-data">
                         {load.publicTrackingCode}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(load.status)}`}>
@@ -475,7 +475,7 @@ export default function DriverSchedulerPage() {
                   </div>
                   {load.quoteAmount && (
                     <div className="text-right ml-4">
-                      <p className="text-2xl font-bold text-accent-700">${load.quoteAmount.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-white font-data">${load.quoteAmount.toFixed(2)}</p>
                     </div>
                   )}
                 </div>
@@ -540,17 +540,16 @@ export default function DriverSchedulerPage() {
 
   return (
     <div className="p-8 print:p-4">
-      {/* Header - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 border-b border-slate-700/50 -mx-8 px-8">
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-                Load Scheduler
-              </h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">Visual timeline of your scheduled loads</p>
-            </div>
-            <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 glass-primary rounded-lg p-2 border border-slate-700/50">
+      <div className="mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+              Load Scheduler
+            </h1>
+            <p className="text-slate-400">Visual timeline of your scheduled loads</p>
+          </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 glass-primary rounded-lg p-2 border border-slate-700/50">
               <button
                 onClick={() => setViewMode('timeline')}
                 className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
@@ -580,23 +579,23 @@ export default function DriverSchedulerPage() {
       {/* Stats - Separate, scrolls with page */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
-          <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">{loads.length}</div>
+          <div className="text-2xl font-bold text-white font-data">{loads.length}</div>
           <div className="text-xs text-slate-400">Total Scheduled</div>
         </div>
         <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          <div className="text-2xl font-bold text-white font-data">
             {loads.filter(l => l.status === 'SCHEDULED').length}
           </div>
           <div className="text-xs text-slate-400">Scheduled</div>
         </div>
         <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
-          <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+          <div className="text-2xl font-bold text-white font-data">
             {loads.filter(l => ['PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
           </div>
           <div className="text-xs text-slate-400">In Progress</div>
         </div>
         <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
-          <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+          <div className="text-2xl font-bold text-white font-data">
             ${loads.reduce((sum, l) => sum + (l.quoteAmount || 0), 0).toFixed(0)}
           </div>
           <div className="text-xs text-slate-400">Total Value</div>
@@ -607,14 +606,12 @@ export default function DriverSchedulerPage() {
       {viewMode === 'timeline' && (
         <div className="space-y-8">
           {groupedLoads.length === 0 ? (
-            <div className="glass-primary rounded-2xl p-12 text-center border border-slate-700/50 shadow-lg">
-              <div className="w-20 h-20 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/30">
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
+            <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
+              <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
               <h3 className="text-xl font-bold text-white mb-2">No Scheduled Loads</h3>
-              <p className="text-slate-300 mb-6">
+              <p className="text-slate-400 mb-6">
                 You don't have any scheduled loads yet. Once you accept a load and submit a finalized rate, it will appear here.
               </p>
               <Link

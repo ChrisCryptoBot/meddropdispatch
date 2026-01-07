@@ -4,8 +4,9 @@ import { createErrorResponse, withErrorHandling, NotFoundError, AuthorizationErr
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 import { getCoordinates } from '@/lib/geocoding'
-import { requireAdmin, verifyDriverAssignedToLoad } from '@/lib/authorization'
+import { requireAdmin, verifyDriverAssignedToLoad, requireDriver } from '@/lib/authorization'
 import { calculateDistanceFromCoordinates } from '@/lib/distance-calculator'
+import { validateGPSTimestamp, checkSpeedPlausibility } from '@/lib/gps-validation'
 
 const enableGPSTrackingSchema = z.object({
   enabled: z.boolean(),
@@ -148,10 +149,10 @@ export async function POST(
 
     const { latitude, longitude, accuracy, heading, speed, altitude } = validation.data
 
-    // AuthZ: Only the assigned driver can submit GPS points
-    await verifyDriverAssignedToLoad(request as NextRequest, id)
-
-    // Get load request
+    // STRICTER AUTHZ: Ensure the caller is the assigned driver (not just any driver)
+    const driverAuth = await requireDriver(request as NextRequest)
+    
+    // Get load request first
     const loadRequest = await prisma.loadRequest.findUnique({
       where: { id },
       select: {
@@ -163,6 +164,14 @@ export async function POST(
 
     if (!loadRequest) {
       throw new NotFoundError('Load request')
+    }
+
+    // Verify driver is assigned to this load
+    await verifyDriverAssignedToLoad(request as NextRequest, id)
+    
+    // Double-check: Ensure the authenticated driver matches the assigned driver
+    if (loadRequest.driverId !== driverAuth.userId) {
+      throw new AuthorizationError('Only the assigned driver can submit GPS coordinates for this load')
     }
 
     console.log('[GPS Tracking API] Load request found. GPS enabled:', loadRequest.gpsTrackingEnabled, 'Driver ID:', loadRequest.driverId)
@@ -195,6 +204,12 @@ export async function POST(
       throw new ValidationError('Cannot submit GPS updates for loads in a terminal state')
     }
 
+    // GPS TIMESTAMP VALIDATION: Reject future dates or stale points (>12 hours old)
+    const timestampValidation = validateGPSTimestamp(new Date(), 12)
+    if (!timestampValidation.valid) {
+      throw new ValidationError(timestampValidation.error || 'Invalid GPS timestamp')
+    }
+
     // Anti-spoof: Compare with last point for implausible jumps
     const lastPoint = await prisma.gPSTrackingPoint.findFirst({
       where: { loadRequestId: id },
@@ -204,6 +219,26 @@ export async function POST(
 
     if (lastPoint) {
       try {
+        // Use enhanced speed plausibility check
+        const speedCheck = checkSpeedPlausibility(
+          {
+            latitude: lastPoint.latitude,
+            longitude: lastPoint.longitude,
+            timestamp: lastPoint.timestamp,
+          },
+          {
+            latitude,
+            longitude,
+            timestamp: new Date(),
+          },
+          150 // Max 150 mph
+        )
+
+        if (!speedCheck.valid) {
+          console.warn('[GPS Tracking API] Speed plausibility check failed:', speedCheck.error, 'Speed:', speedCheck.speedMph, 'mph')
+          throw new ConflictError(speedCheck.error || 'Implausible GPS movement detected')
+        }
+
         const distanceMiles = calculateDistanceFromCoordinates(
           lastPoint.latitude,
           lastPoint.longitude,
@@ -212,12 +247,11 @@ export async function POST(
         )
         const now = new Date()
         const dtSeconds = Math.max(1, (now.getTime() - new Date(lastPoint.timestamp).getTime()) / 1000)
-        const speedMph = (distanceMiles / (dtSeconds / 3600))
 
-        // Reject impossible movement (> 120 mph sustained) or huge jumps in < 2 seconds
-        if (speedMph > 120 || (dtSeconds < 2 && distanceMiles > 0.1)) {
-          console.warn('[GPS Tracking API] Anti-spoof triggered. Distance:', distanceMiles, 'mi, dt:', dtSeconds, 's, speed:', speedMph, 'mph')
-          throw new ConflictError('Implausible GPS movement detected')
+        // Additional check: Reject huge jumps in < 2 seconds (even if speed check passes)
+        if (dtSeconds < 2 && distanceMiles > 0.1) {
+          console.warn('[GPS Tracking API] Anti-spoof triggered. Distance:', distanceMiles, 'mi in', dtSeconds, 's')
+          throw new ConflictError('Implausible GPS movement detected: large distance in very short time')
         }
 
         // Ignore micro-jitter (< 15 meters ~ 0.0093 miles) by early return success with no new point
@@ -229,7 +263,7 @@ export async function POST(
           })
         }
       } catch (antiSpoofError) {
-        if (antiSpoofError instanceof ConflictError) {
+        if (antiSpoofError instanceof ConflictError || antiSpoofError instanceof ValidationError) {
           return NextResponse.json(
             { error: 'InvalidMovement', message: antiSpoofError.message },
             { status: 409 }

@@ -188,17 +188,17 @@ export default function DriverNotificationsPage() {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'SHIPPER_REQUEST_CALL':
-        return 'bg-blue-100 text-blue-700 border-blue-200'
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
       case 'NEW_LOAD_ASSIGNED':
-        return 'bg-green-100 text-green-700 border-green-200'
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
       case 'LOAD_CANCELLED':
-        return 'bg-red-100 text-red-700 border-red-200'
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
       case 'QUOTE_APPROVED':
-        return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
       case 'QUOTE_REJECTED':
-        return 'bg-orange-100 text-orange-700 border-orange-200'
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200'
+        return 'bg-slate-700/50 text-slate-300 border-slate-600/50'
     }
   }
 
@@ -223,16 +223,16 @@ export default function DriverNotificationsPage() {
     return (
       <div
         key={notification.id}
-        className={`glass-accent rounded-xl p-4 border-2 transition-all ${
+        className={`glass-primary rounded-xl p-4 border transition-all ${
           notification.isRead
-            ? 'border-teal-200/30 bg-teal-50/40'
-            : `${getNotificationColor(notification.type)} bg-teal-50/60`
+            ? 'border-slate-700/50 bg-slate-800/30'
+            : `${getNotificationColor(notification.type)} border-slate-700/50`
         }`}
       >
         <div className="flex items-start gap-4">
           <div
             className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              notification.isRead ? 'bg-teal-100 text-teal-600' : getNotificationColor(notification.type).split(' ')[0]
+              notification.isRead ? 'bg-slate-700/50 text-slate-400' : getNotificationColor(notification.type).split(' ')[0]
             }`}
           >
             {getNotificationIcon(notification.type)}
@@ -246,28 +246,28 @@ export default function DriverNotificationsPage() {
                     onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
                     className="block"
                   >
-                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-slate-400' : 'text-white'}`}>
                       {notification.title}
                     </h3>
-                    <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${notification.isRead ? 'text-slate-500' : 'text-slate-300'}`}>
                       {notification.message}
                     </p>
                     {notification.loadRequest && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Load: {notification.loadRequest.publicTrackingCode}
                       </p>
                     )}
                   </Link>
                 ) : (
                   <>
-                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                    <h3 className={`font-semibold mb-1 ${notification.isRead ? 'text-slate-400' : 'text-white'}`}>
                       {notification.title}
                     </h3>
-                    <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                    <p className={`text-sm ${notification.isRead ? 'text-slate-500' : 'text-slate-300'}`}>
                       {notification.message}
                     </p>
                     {notification.loadRequest && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Load: {notification.loadRequest.publicTrackingCode}
                       </p>
                     )}
@@ -278,7 +278,7 @@ export default function DriverNotificationsPage() {
                     <a
                       href={`tel:${notification.metadata.shipperPhone}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-accent text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all shadow-medical"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg text-sm font-medium hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -296,7 +296,7 @@ export default function DriverNotificationsPage() {
                       e.stopPropagation()
                       handleMarkAsRead(notification.id)
                     }}
-                    className="p-1.5 text-accent-400 hover:text-accent-600 rounded-lg hover:bg-teal-50 transition-colors"
+                    className="p-1.5 text-cyan-400 hover:text-cyan-300 rounded-lg hover:bg-cyan-900/30 transition-colors"
                     title="Mark as read"
                     aria-label="Mark notification as read"
                   >
@@ -311,7 +311,7 @@ export default function DriverNotificationsPage() {
                     e.stopPropagation()
                     handleDeleteNotification(notification.id)
                   }}
-                  className="p-1.5 text-gray-400 hover:text-urgent-600 rounded-lg hover:bg-urgent-50 transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-900/30 transition-colors"
                   title="Delete notification"
                   aria-label="Delete notification"
                 >
@@ -321,7 +321,7 @@ export default function DriverNotificationsPage() {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
+            <p className="text-xs text-slate-500 mt-2">
               {new Date(notification.createdAt).toLocaleString()}
             </p>
           </div>
@@ -330,10 +330,14 @@ export default function DriverNotificationsPage() {
     )
   }
 
+  if (!driver) {
+    return null
+  }
+
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
+        <div className="glass-primary p-12 rounded-xl text-center border border-slate-700/50 shadow-lg">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
           <p className="text-slate-300">Loading notifications...</p>
         </div>
@@ -343,28 +347,27 @@ export default function DriverNotificationsPage() {
 
   return (
     <div className="p-6 md:p-8 print:p-4">
-      {/* Header Section - Gold Standard - Sticky */}
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
               Notifications
             </h1>
             {unreadCount > 0 ? (
-              <p className="text-sm text-slate-400 print:text-xs">
+              <p className="text-slate-400">
                 {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
             ) : (
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">View all your notifications</p>
+              <p className="text-slate-400">View all your notifications</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 mr-4">
-              <label className="text-sm text-gray-600">Group by:</label>
+              <label className="text-sm text-slate-400">Group by:</label>
               <select
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                className="px-3 py-1.5 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-200 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 text-sm"
               >
                 <option value="none">None</option>
                 <option value="type">Type</option>
@@ -375,7 +378,7 @@ export default function DriverNotificationsPage() {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={isMarkingRead}
-                className="px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical disabled:opacity-50 text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 text-sm"
               >
                 {isMarkingRead ? 'Marking...' : 'Mark All Read'}
               </button>
@@ -385,38 +388,38 @@ export default function DriverNotificationsPage() {
       </div>
 
       {notifications.length === 0 ? (
-        <div className="glass-accent p-12 rounded-2xl text-center border-2 border-teal-200/30 shadow-medical">
-          <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="glass-primary p-12 rounded-xl text-center border border-slate-700/50 shadow-lg">
+          <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <p className="text-lg font-medium text-gray-700 mb-2">No notifications yet</p>
-          <p className="text-sm text-gray-500">Updates about new loads, call requests, and assignments will appear here</p>
+          <h3 className="text-xl font-bold text-white mb-2">No notifications yet</h3>
+          <p className="text-sm text-slate-400">Updates about new loads, call requests, and assignments will appear here</p>
         </div>
       ) : groupedNotifications ? (
         <div className="space-y-4">
           {groupedNotifications.map((group) => {
             const isCollapsed = collapsedGroups.has(group.key)
             return (
-              <div key={group.key} className="glass-accent rounded-2xl border-2 border-teal-200/30 shadow-medical overflow-hidden">
+              <div key={group.key} className="glass-primary rounded-xl border border-slate-700/50 shadow-lg overflow-hidden">
                 <button
                   onClick={() => toggleGroup(group.key)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-teal-50/50 transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <svg
-                      className={`w-5 h-5 text-gray-600 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                      className={`w-5 h-5 text-slate-400 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <h3 className="text-lg font-bold text-gray-900">{group.label}</h3>
-                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-teal-100 text-teal-700">
+                    <h3 className="text-lg font-bold text-white">{group.label}</h3>
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                       {group.notifications.length}
                     </span>
                     {group.unreadCount > 0 && (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                         {group.unreadCount} unread
                       </span>
                     )}

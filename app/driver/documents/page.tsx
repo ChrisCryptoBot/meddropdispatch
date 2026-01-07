@@ -167,21 +167,13 @@ export default function DriverDocumentsPage() {
   }
 
   return (
-    <div>
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 border-b border-slate-700/50">
-        <div className="px-8">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-                Documents
-              </h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">View all documents from your assigned loads</p>
-            </div>
-          </div>
-        </div>
+    <div className="p-8 print:p-4">
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Documents
+        </h1>
+        <p className="text-slate-400">View all documents from your assigned loads</p>
       </div>
-
-      <div className="p-8 print:p-4">
 
       {/* Filters */}
       <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
@@ -300,7 +292,6 @@ export default function DriverDocumentsPage() {
           ))}
         </div>
       )}
-      </div>
     </div>
   )
 }

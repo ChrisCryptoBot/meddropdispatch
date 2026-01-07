@@ -212,15 +212,11 @@ export default function DriverSettingsPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-[50] bg-slate-900 pt-0 pb-4 mb-6 -mx-6 md:-mx-8 px-6 md:px-8 border-b border-slate-700/50">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-              Settings
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">Manage your account preferences and system settings</p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Settings
+        </h1>
+        <p className="text-slate-400">Manage your account preferences and system settings</p>
       </div>
 
       <div className="max-w-3xl space-y-6">
@@ -232,7 +228,7 @@ export default function DriverSettingsPage() {
           </p>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between py-3 border-b border-slate-700/50">
               <div>
                 <label className="text-sm font-semibold text-white">Email Notifications</label>
                 <p className="text-xs text-slate-300">Receive notifications via email</p>
@@ -247,11 +243,11 @@ export default function DriverSettingsPage() {
                   })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
               </label>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between py-3 border-b border-slate-700/50">
               <div>
                 <label className="text-sm font-semibold text-white">SMS Notifications</label>
                 <p className="text-xs text-slate-300">Receive critical updates via text message</p>
@@ -266,11 +262,11 @@ export default function DriverSettingsPage() {
                   })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
               </label>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
+            <div className="flex items-center justify-between py-3 border-b border-slate-700/50">
               <div>
                 <label className="text-sm font-semibold text-white">Push Notifications</label>
                 <p className="text-xs text-slate-300">Receive browser push notifications</p>
@@ -285,7 +281,7 @@ export default function DriverSettingsPage() {
                   })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
               </label>
             </div>
 
@@ -304,7 +300,7 @@ export default function DriverSettingsPage() {
                     })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                 </label>
               </div>
 
@@ -320,7 +316,7 @@ export default function DriverSettingsPage() {
                     })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                 </label>
               </div>
 
@@ -336,12 +332,12 @@ export default function DriverSettingsPage() {
                     })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                 </label>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-slate-700/50">
               <button
                 onClick={handleNotificationPreferencesSave}
                 className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-medical"
@@ -354,7 +350,7 @@ export default function DriverSettingsPage() {
 
         {/* Admin Mode Toggle Section */}
         {driver?.isAdmin && (
-          <div className="mt-8 glass-primary rounded-2xl p-6 border-2 border-blue-200">
+          <div className="mt-8 glass-primary rounded-xl p-6 border border-cyan-500/30">
             <h2 className="text-xl font-bold text-white mb-2">Admin Access</h2>
             <p className="text-slate-300 mb-4">
               Switch between Driver and Admin views. Admin mode provides access to system-wide management features.
@@ -366,8 +362,8 @@ export default function DriverSettingsPage() {
                   <span className="text-sm font-medium text-slate-300">Current Mode:</span>
                   <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${
                     adminModeEnabled 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'bg-teal-100 text-teal-700'
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
+                      : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
                   }`}>
                     {adminModeEnabled ? 'Admin' : 'Driver'}
                   </span>
@@ -377,8 +373,8 @@ export default function DriverSettingsPage() {
                   onClick={handleAdminToggle}
                   className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
                     adminModeEnabled
-                      ? 'bg-gray-200 text-slate-300 hover:bg-gray-300'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? 'bg-slate-700/50 text-slate-200 hover:bg-slate-700 border border-slate-600/50'
+                      : 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30'
                   }`}
                 >
                   {adminModeEnabled ? 'Switch to Driver Mode' : 'Switch to Admin Mode'}
@@ -397,18 +393,18 @@ export default function DriverSettingsPage() {
                       setAdminPassword(e.target.value)
                       setAdminPasswordError('')
                     }}
-                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                     placeholder="Enter password"
                     autoFocus
                   />
                   {adminPasswordError && (
-                    <p className="mt-1 text-sm text-red-600">{adminPasswordError}</p>
+                    <p className="mt-1 text-sm text-red-400">{adminPasswordError}</p>
                   )}
                 </div>
                 <div className="flex gap-3">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
                   >
                     Enable Admin Mode
                   </button>
@@ -419,7 +415,7 @@ export default function DriverSettingsPage() {
                       setAdminPassword('')
                       setAdminPasswordError('')
                     }}
-                    className="px-6 py-2 bg-gray-200 text-slate-300 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
                   >
                     Cancel
                   </button>
@@ -430,8 +426,8 @@ export default function DriverSettingsPage() {
         )}
 
         {/* Delete Account Section */}
-        <div className="mt-12 glass-primary rounded-2xl p-6 border-2 border-red-200">
-          <h2 className="text-xl font-bold text-red-700 mb-2">Delete Account</h2>
+        <div className="mt-12 glass-primary rounded-xl p-6 border border-red-500/30">
+          <h2 className="text-xl font-bold text-red-400 mb-2">Delete Account</h2>
           <p className="text-slate-300 mb-4">
             Deactivate your driver account. Your account will be marked as inactive but all data will be preserved. Admins can restore your account later if needed.
           </p>
@@ -453,15 +449,15 @@ export default function DriverSettingsPage() {
                   type="password"
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-slate-600/50 rounded-lg focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Your password"
                   autoComplete="current-password"
                 />
                 {deletePasswordError && (
-                  <p className="mt-1 text-sm text-red-600">{deletePasswordError}</p>
+                  <p className="mt-1 text-sm text-red-400">{deletePasswordError}</p>
                 )}
               </div>
-              <p className="text-red-700 font-semibold">
+              <p className="text-red-400 font-semibold">
                 Are you sure you want to deactivate your account?
               </p>
               <div className="flex gap-4">
@@ -481,7 +477,7 @@ export default function DriverSettingsPage() {
                     setDeletePasswordError('')
                   }}
                   disabled={isDeleting}
-                  className="px-6 py-3 bg-gray-200 text-slate-300 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+                  className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50 disabled:opacity-50"
                 >
                   Cancel
                 </button>

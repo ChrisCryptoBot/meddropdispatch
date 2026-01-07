@@ -171,8 +171,8 @@ export default function ShipperRequestLoadPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
       </div>
     )
@@ -180,8 +180,8 @@ export default function ShipperRequestLoadPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="glass-primary p-8 rounded-2xl text-center max-w-2xl w-full border-2 border-blue-200/30 shadow-glass">
-        <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-6">
+      <div className="glass-primary p-8 rounded-xl text-center max-w-2xl w-full border border-slate-700/50 shadow-lg">
+        <div className="w-16 h-16 bg-gradient-to-r from-cyan-600 to-cyan-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/30">
           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
@@ -189,38 +189,38 @@ export default function ShipperRequestLoadPage() {
         
         {callbackStatus === 'CALLED' ? (
           <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">You've Been Called!</h1>
-            <div className="glass-primary rounded-2xl p-8 mb-6 border-2 border-yellow-200/30 shadow-glass">
-              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h1 className="text-3xl font-bold text-white mb-4 font-heading">You've Been Called!</h1>
+            <div className="glass-primary rounded-xl p-8 mb-6 border border-slate-700/50 shadow-lg">
+              <div className="w-16 h-16 bg-yellow-500/20 border border-yellow-500/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
               </div>
-              <p className="text-lg text-gray-700 mb-2 font-semibold">A driver is calling you now!</p>
+              <p className="text-lg text-slate-300 mb-2 font-semibold">A driver is calling you now!</p>
               {driver && (
-                <p className="text-sm text-gray-600 mb-4">
-                  Driver <span className="font-semibold">{driver.firstName} {driver.lastName}</span> is contacting you.
+                <p className="text-sm text-slate-400 mb-4">
+                  Driver <span className="font-semibold text-white">{driver.firstName} {driver.lastName}</span> is contacting you.
                 </p>
               )}
               {calledAt && (
-                <p className="text-xs text-gray-500 mb-6">
+                <p className="text-xs text-slate-500 mb-6">
                   Called at: {new Date(calledAt).toLocaleString()}
                 </p>
               )}
-              <p className="text-sm text-gray-700 mb-6">
-                Please answer your phone at <span className="font-semibold">{shipper?.phone}</span>. The driver will discuss your load requirements and create your load request.
+              <p className="text-sm text-slate-300 mb-6">
+                Please answer your phone at <span className="font-semibold text-cyan-400">{shipper?.phone}</span>. The driver will discuss your load requirements and create your load request.
               </p>
-              <div className="flex items-center justify-center gap-2 text-sm text-yellow-700 mb-4 bg-yellow-50 p-3 rounded-lg">
+              <div className="flex items-center justify-center gap-2 text-sm text-yellow-400 mb-4 bg-yellow-500/20 border border-yellow-500/30 p-3 rounded-lg">
                 <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Waiting for call completion...</span>
               </div>
             </div>
-            <div className="border-t border-gray-200 pt-6">
+            <div className="border-t border-slate-700/50 pt-6">
               <Link
                 href="/shipper/dashboard"
-                className="inline-block px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                className="inline-block px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all border border-slate-600/50"
               >
                 Go to Dashboard
               </Link>
@@ -228,33 +228,33 @@ export default function ShipperRequestLoadPage() {
           </>
         ) : queuePosition !== null ? (
           <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">You're in the Callback Queue</h1>
-            <div className="glass-primary rounded-2xl p-8 mb-6 border-2 border-blue-200/30 shadow-glass">
-              <div className="text-6xl font-bold text-gradient mb-4">#{queuePosition}</div>
-              <p className="text-lg text-gray-700 mb-2">You are #{queuePosition} in line for a callback</p>
-              <p className="text-sm text-gray-600 mb-6">
+            <h1 className="text-3xl font-bold text-white mb-4 font-heading">You're in the Callback Queue</h1>
+            <div className="glass-primary rounded-xl p-8 mb-6 border border-slate-700/50 shadow-lg">
+              <div className="text-6xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-600 bg-clip-text text-transparent mb-4 font-data">#{queuePosition}</div>
+              <p className="text-lg text-slate-300 mb-2">You are #{queuePosition} in line for a callback</p>
+              <p className="text-sm text-slate-400 mb-6">
                 Our dispatch team will call you shortly to discuss your load requirements and create your load request.
               </p>
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
-                <svg className="w-4 h-4 animate-pulse text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
+                <svg className="w-4 h-4 animate-pulse text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Your position updates automatically</span>
               </div>
               <button
                 onClick={handleCancelQueue}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all text-sm"
+                className="px-6 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all text-sm border border-slate-600/50"
               >
                 Cancel Callback Request
               </button>
             </div>
-            <div className="border-t border-gray-200 pt-6">
-              <p className="text-sm text-gray-600 mb-4">
-                Please keep your phone nearby. We'll call you at <span className="font-semibold">{shipper?.phone}</span>
+            <div className="border-t border-slate-700/50 pt-6">
+              <p className="text-sm text-slate-400 mb-4">
+                Please keep your phone nearby. We'll call you at <span className="font-semibold text-cyan-400">{shipper?.phone}</span>
               </p>
               <Link
                 href="/shipper/dashboard"
-                className="inline-block px-6 py-3 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
               >
                 Go to Dashboard
               </Link>
@@ -262,19 +262,19 @@ export default function ShipperRequestLoadPage() {
           </>
         ) : (
           <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Request a Callback to Book Your Load</h1>
-            <p className="text-lg text-gray-700 mb-6">
+            <h1 className="text-3xl font-bold text-white mb-4 font-heading">Request a Callback to Book Your Load</h1>
+            <p className="text-lg text-slate-300 mb-6">
               Join our callback queue and our dispatch team will call you to discuss your load requirements, negotiate pricing, and create your load request.
             </p>
             
-            <div className="glass-primary rounded-2xl p-6 mb-6 border-2 border-blue-200/30 shadow-glass">
-              <p className="text-sm text-gray-600 mb-4">
-                We'll call you at <span className="font-semibold">{shipper?.phone}</span> when it's your turn.
+            <div className="glass-primary rounded-xl p-6 mb-6 border border-slate-700/50 shadow-lg">
+              <p className="text-sm text-slate-400 mb-4">
+                We'll call you at <span className="font-semibold text-cyan-400">{shipper?.phone}</span> when it's your turn.
               </p>
               <button
                 onClick={handleJoinQueue}
                 disabled={isJoiningQueue}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-primary text-white rounded-lg font-bold text-xl hover:shadow-lg transition-all shadow-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-bold text-xl hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isJoiningQueue ? (
                   <>
@@ -290,16 +290,16 @@ export default function ShipperRequestLoadPage() {
                   </>
                 )}
               </button>
-              <p className="text-xs text-gray-500">Available 24/7 for urgent medical courier needs</p>
+              <p className="text-xs text-slate-500">Available 24/7 for urgent medical courier needs</p>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="border-t border-slate-700/50 pt-6">
+              <p className="text-sm text-slate-400 mb-4">
                 After we call and create your load, you'll receive email notifications and can track it from your dashboard.
               </p>
               <Link
                 href="/shipper/dashboard"
-                className="inline-block px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                className="inline-block px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all border border-slate-600/50"
               >
                 Go to Dashboard
               </Link>

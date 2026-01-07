@@ -3,7 +3,7 @@ import Image from 'next/image'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-slate-950">
       {/* Modern Dark Header */}
       <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,17 +31,21 @@ export default function HomePage() {
       </header>
 
       <main>
-        {/* Premium Dark Hero Section */}
-        <section className="relative bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 overflow-hidden">
-          {/* Decorative Background Elements */}
+        {/* Premium Dark Hero Section - True Obsidian */}
+        <section className="relative bg-slate-950 overflow-hidden">
+          {/* Technical Grid Background with Radar Scan Effect */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob"></div>
-            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+            {/* Sharp technical grid - replaces blobs */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-20"></div>
+            
+            {/* Radar scan effect - rotating gradient */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(34,211,238,0.1)_50%,transparent_100%)] animate-spin" style={{ animationDuration: '20s' }}></div>
+            </div>
+            
+            {/* Subtle crosshair pattern for precision feel */}
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_49%,rgba(34,211,238,0.05)_50%,transparent_51%),linear-gradient(0deg,transparent_49%,rgba(34,211,238,0.05)_50%,transparent_51%)]"></div>
           </div>
-
-          {/* Grid Pattern Overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-10"></div>
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-32">
             <div className="text-center max-w-4xl mx-auto">
@@ -84,8 +88,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Compliance & Certifications - Dark Theme */}
-        <section className="py-20 bg-slate-800/50 border-y border-slate-700/50 backdrop-blur-sm">
+        {/* Compliance & Certifications - True Obsidian */}
+        <section className="py-20 bg-slate-900/50 border-y border-slate-800/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">

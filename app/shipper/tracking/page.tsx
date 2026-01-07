@@ -26,10 +26,10 @@ export default function ShipperTrackingPage() {
       </div>
       <div className="max-w-2xl mx-auto">
 
-        <div className="glass rounded-2xl p-8">
+        <div className="glass-primary rounded-xl p-8 border border-slate-700/50 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="trackingCode" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="trackingCode" className="block text-sm font-semibold text-slate-300 mb-2">
                 Tracking Code
               </label>
               <input
@@ -37,15 +37,15 @@ export default function ShipperTrackingPage() {
                 id="trackingCode"
                 value={trackingCode}
                 onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
-                placeholder="MED-XXXX-YY"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-lg font-mono"
+                placeholder="123456789"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500 text-lg font-mono font-data"
                 required
               />
             </div>
 
             <button
               type="submit"
-              className="w-full min-h-[44px] px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold text-lg hover:from-primary-700 hover:to-primary-800 transition-base shadow-lg"
+              className="w-full min-h-[44px] px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-bold text-lg hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
             >
               Track Shipment
             </button>

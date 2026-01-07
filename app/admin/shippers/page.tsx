@@ -128,7 +128,7 @@ export default function ShippersPage() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading shippers...</p>
+            <p className="text-slate-300">Loading shippers...</p>
           </div>
         </div>
       </div>
@@ -141,12 +141,12 @@ export default function ShippersPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Shippers</h1>
-            <p className="text-gray-600">Manage client companies and facilities</p>
+            <h1 className="text-4xl font-bold text-white mb-2 font-heading">Shippers</h1>
+            <p className="text-slate-400">Manage client companies and facilities</p>
           </div>
           <Link
             href="/admin/shippers/brokerage"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-accent text-white rounded-lg font-semibold hover:shadow-lg transition-all shadow-lg"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -157,12 +157,12 @@ export default function ShippersPage() {
       </div>
 
       {/* Shippers Table */}
-      <div className="glass-primary rounded-2xl overflow-hidden border-2 border-blue-200/30 shadow-glass">
+      <div className="glass-primary rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <tr className="border-b border-slate-700/50">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Company
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -191,50 +191,50 @@ export default function ShippersPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-700/50">
               {shippers.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex flex-col items-center justify-center">
+                      <svg className="w-16 h-16 mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
-                      <p className="text-lg font-medium">No shippers yet</p>
-                      <p className="text-sm">Shippers will be created when load requests are submitted</p>
+                      <h3 className="text-xl font-bold text-white mb-2">No shippers yet</h3>
+                      <p className="text-sm text-slate-400">Shippers will be created when load requests are submitted</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 shippers.map((shipper) => (
-                  <tr key={shipper.id} className="hover:bg-white/40 transition-base">
+                  <tr key={shipper.id} className="hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-800">{shipper.companyName}</div>
+                      <div className="font-semibold text-white">{shipper.companyName}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-slate-300">
                         {shipper.clientType.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                       {shipper.contactName}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-6 py-4 text-sm text-slate-300">
                       {shipper.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                       {shipper.phone}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                         {shipper._count.facilities}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-accent-100 text-accent-800">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                         {shipper._count.loadRequests}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {formatDateTime(shipper.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -242,7 +242,7 @@ export default function ShippersPage() {
                         <button
                           onClick={() => handleDelete(shipper.id)}
                           disabled={deletingId === shipper.id}
-                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Deactivate shipper (soft delete)"
                         >
                           {deletingId === shipper.id ? (
@@ -256,7 +256,7 @@ export default function ShippersPage() {
                         <button
                           onClick={() => handleDNU(shipper.id)}
                           disabled={deletingId === shipper.id}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Mark as DNU (permanently delete and block email)"
                         >
                           {deletingId === shipper.id ? (

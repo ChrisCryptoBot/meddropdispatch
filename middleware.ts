@@ -38,8 +38,8 @@ function getSessionFromRequest(request: NextRequest): { userId: string; userType
  * Note: In-memory storage is per-edge-instance and best-effort only.
  */
 const trackingRateStore: Map<string, { count: number; reset: number }> = new Map()
-const TRACK_WINDOW_MS = 60_000
-const TRACK_MAX_REQ = 30
+const TRACK_WINDOW_MS = 60_000 // 1 minute
+const TRACK_MAX_REQ = 5 // Stricter: 5 requests per minute (was 30)
 
 function rateLimitTracking(request: NextRequest): boolean {
   try {
@@ -73,11 +73,19 @@ function rateLimitTracking(request: NextRequest): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Public tracking page rate-limiting
+  // Public tracking page rate-limiting (stricter: 5 req/min per IP)
   if (pathname.startsWith('/track')) {
     const allowed = rateLimitTracking(request)
     if (!allowed) {
       return new NextResponse('Too many requests. Please slow down.', { status: 429 })
+    }
+  }
+  
+  // API tracking endpoint rate-limiting (even stricter)
+  if (pathname.startsWith('/api/tracking/')) {
+    const allowed = rateLimitTracking(request)
+    if (!allowed) {
+      return new NextResponse('Too many tracking requests. Please try again later.', { status: 429 })
     }
   }
 

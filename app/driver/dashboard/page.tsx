@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -330,12 +330,16 @@ export default function DriverDashboardPage() {
     }
   }
 
-  // Get driver's accepted loads (loads assigned to this driver)
-  const myLoads = allLoads.filter(load => load.driver?.id === driver?.id)
+  // Get driver's accepted loads (loads assigned to this driver) - memoized
+  const myLoads = useMemo(() => {
+    if (!driver?.id) return []
+    return allLoads.filter(load => load.driver?.id === driver.id)
+  }, [allLoads, driver?.id])
 
-  // Filter and sort loads based on current settings
-  const getFilteredAndSortedLoads = (loads: Load[]) => {
-    let filtered = loads
+  // Filter and sort loads based on current settings - memoized for performance
+  const filteredLoads = useMemo(() => {
+    const displayLoads = activeTab === 'my' ? myLoads : allLoads
+    let filtered = displayLoads
 
     // Apply search filter
     if (searchQuery) {
@@ -434,31 +438,23 @@ export default function DriverDashboardPage() {
     })
 
     return sorted
-  }
+  }, [activeTab, myLoads, allLoads, searchQuery, filterBy, sortBy])
 
+  // Get display loads for count display
   const displayLoads = activeTab === 'my' ? myLoads : allLoads
-  const filteredLoads = getFilteredAndSortedLoads(displayLoads)
 
   if (!driver) {
     return null
   }
 
   return (
-    <div>
-      {/* Header Section - Integrated with dark theme - Sticky */}
-      <div className="sticky top-[73px] z-50 bg-slate-900 pb-4 mb-0 pt-0 border-b border-slate-700/50 w-full">
-        <div className="px-6 md:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">
-                Load Board
-              </h1>
-              <p className="text-slate-400 text-sm md:text-base print:text-sm">View and accept available loads</p>
-            </div>
-          </div>
-        </div>
+    <div className="p-6 md:p-8 print:p-4">
+      <div className="sticky top-[85px] z-[55] mb-6 pb-2">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+          Load Board
+        </h1>
+        <p className="text-slate-400">View and accept available loads</p>
       </div>
-      <div className="p-6 md:p-8 print:p-4">
 
       {/* Driver Info Card - Redesigned for dark theme */}
       <div className="glass-primary p-6 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
@@ -488,23 +484,23 @@ export default function DriverDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Stats Cards - Redesigned for dark theme */}
+      {/* Quick Stats Cards - Uniform Professional Style */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg">
           <div className="text-center">
-            <p className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1">{allLoads.length}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{allLoads.length}</p>
             <p className="text-sm text-slate-400 font-medium">All Loads</p>
           </div>
         </div>
-        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg">
           <div className="text-center">
-            <p className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-1">{myLoads.length}</p>
+            <p className="text-3xl font-bold text-white mb-1 font-data">{myLoads.length}</p>
             <p className="text-sm text-slate-400 font-medium">My Loads</p>
           </div>
         </div>
-        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg hover:border-cyan-500/50 transition-all">
+        <div className="glass-primary rounded-xl p-5 border border-slate-700/50 shadow-lg">
           <div className="text-center">
-            <p className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1">
+            <p className="text-3xl font-bold text-white mb-1 font-data">
               {myLoads.filter(l => ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'].includes(l.status)).length}
             </p>
             <p className="text-sm text-slate-400 font-medium">Active</p>
@@ -1358,7 +1354,6 @@ export default function DriverDashboardPage() {
             </div>
           </div>
         )}
-      </div>
       </div>
     </div>
   )

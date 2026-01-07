@@ -245,63 +245,59 @@ export default function SavedFacilitiesPage() {
 
   return (
     <div className="p-8 print:p-4">
-      <div className="sticky top-[73px] z-[50] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 mb-6 -mx-8 px-8 border-b border-slate-700/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 print:text-2xl">Saved Facilities</h1>
-            <p className="text-slate-400 text-sm md:text-base print:text-sm">View and manage your frequently used pickup and delivery locations</p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">Saved Facilities</h1>
+        <p className="text-slate-400">View and manage your frequently used pickup and delivery locations</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="glass-primary rounded-xl p-4 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-2xl font-bold text-primary-700">{facilities.length}</div>
-          <div className="text-xs text-gray-600">Total Facilities</div>
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold text-white font-data">{facilities.length}</div>
+          <div className="text-xs text-slate-400">Total Facilities</div>
         </div>
-        <div className="glass-primary rounded-xl p-4 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-2xl font-bold text-accent-700">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold text-white font-data">
             {facilities.reduce((sum, f) => sum + f.totalUsage, 0)}
           </div>
-          <div className="text-xs text-gray-600">Total Loads</div>
+          <div className="text-xs text-slate-400">Total Loads</div>
         </div>
-        <div className="glass-primary rounded-xl p-4 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-2xl font-bold text-success-700">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold text-white font-data">
             {facilityTypes.length}
           </div>
-          <div className="text-xs text-gray-600">Facility Types</div>
+          <div className="text-xs text-slate-400">Facility Types</div>
         </div>
-        <div className="glass-primary rounded-xl p-4 border-2 border-blue-200/30 shadow-glass">
-          <div className="text-2xl font-bold text-warning-700">
+        <div className="glass-primary rounded-xl p-4 border border-slate-700/50 shadow-lg">
+          <div className="text-2xl font-bold text-white font-data">
             {filteredAndSortedFacilities.length}
           </div>
-          <div className="text-xs text-gray-600">Showing</div>
+          <div className="text-xs text-slate-400">Showing</div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="glass-primary p-4 rounded-xl mb-6 border-2 border-blue-200/30 shadow-glass">
+      <div className="glass-primary p-4 rounded-xl mb-6 border border-slate-700/50 shadow-lg">
         <div className="grid md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search by name, address, city, contact..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
             />
           </div>
 
           {/* Filter by Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Type</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Type</label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="all">All Types</option>
               {facilityTypes.map((type) => (
@@ -314,11 +310,11 @@ export default function SavedFacilitiesPage() {
 
           {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+              className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
             >
               <option value="name">Name (A-Z)</option>
               <option value="type">Type</option>
@@ -330,30 +326,30 @@ export default function SavedFacilitiesPage() {
       </div>
 
       {facilities.length === 0 ? (
-        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
+        <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
           <div className="flex items-center justify-center mb-4">
-            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No saved facilities yet</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-xl font-bold text-white mb-2">No saved facilities yet</h3>
+          <p className="text-slate-400 mb-6">
             Facilities are automatically saved when loads are created. They will appear here for quick reference.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-400">
             When you request a callback to book a load, you can reference these facilities to help our dispatch team.
           </p>
         </div>
       ) : filteredAndSortedFacilities.length === 0 ? (
-        <div className="glass-primary rounded-2xl p-12 text-center border-2 border-blue-200/30 shadow-glass">
+        <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
           <div className="flex items-center justify-center mb-4">
-            <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No facilities match your filters</h3>
-          <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+          <h3 className="text-xl font-bold text-white mb-2">No facilities match your filters</h3>
+          <p className="text-slate-400">Try adjusting your search or filter criteria</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -361,17 +357,17 @@ export default function SavedFacilitiesPage() {
             <div
               key={facility.id}
               onClick={() => setSelectedFacility(facility)}
-              className="glass-primary rounded-xl p-6 hover:shadow-glass-lg transition-all border-2 border-blue-200/30 hover:border-blue-300/50 shadow-glass cursor-pointer relative"
+              className="glass-primary rounded-xl p-6 hover:shadow-lg transition-all border border-slate-700/50 hover:border-slate-600/50 shadow-lg cursor-pointer relative"
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900 flex-1">{facility.name}</h3>
+                <h3 className="text-lg font-bold text-white flex-1">{facility.name}</h3>
                 <div className="flex items-center gap-2 ml-2">
-                  <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-700 rounded border border-primary-200">
+                  <span className="px-2 py-1 text-xs font-medium bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30">
                     {getFacilityTypeLabel(facility.facilityType)}
                   </span>
                   <button
                     onClick={(e) => handleEditFacility(facility, e)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-cyan-400 rounded-lg hover:bg-cyan-900/30 transition-colors"
                     title="Edit facility"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,7 +377,7 @@ export default function SavedFacilitiesPage() {
                   <button
                     onClick={(e) => handleDeleteFacility(facility.id, facility.name, e)}
                     disabled={deletingFacilityId === facility.id}
-                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Delete facility"
                   >
                     {deletingFacilityId === facility.id ? (
@@ -398,9 +394,9 @@ export default function SavedFacilitiesPage() {
               </div>
 
               {/* Address */}
-              <div className="space-y-1 text-sm text-gray-600 mb-4">
+              <div className="space-y-1 text-sm text-slate-300 mb-4">
                 <div className="flex items-start gap-2">
-                  <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -415,21 +411,21 @@ export default function SavedFacilitiesPage() {
               </div>
 
               {/* Contact Info */}
-              <div className="border-t border-gray-200 pt-3 mb-3">
+              <div className="border-t border-slate-700/50 pt-3 mb-3">
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-gray-600">
+                    <span className="text-slate-300">
                       <span className="font-medium">Contact:</span> {facility.contactName}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <a href={`tel:${facility.contactPhone}`} className="text-primary-600 hover:text-primary-700 font-medium">
+                    <a href={`tel:${facility.contactPhone}`} className="text-cyan-400 hover:text-cyan-300 font-medium">
                       {facility.contactPhone}
                     </a>
                   </div>
@@ -438,24 +434,24 @@ export default function SavedFacilitiesPage() {
 
               {/* Access Notes */}
               {facility.defaultAccessNotes && (
-                <div className="border-t border-gray-200 pt-3 mb-3">
-                  <p className="text-xs text-gray-500 mb-1 font-medium">Access Notes:</p>
-                  <p className="text-xs text-gray-600 italic">{facility.defaultAccessNotes}</p>
+                <div className="border-t border-slate-700/50 pt-3 mb-3">
+                  <p className="text-xs text-slate-500 mb-1 font-medium">Access Notes:</p>
+                  <p className="text-xs text-slate-400 italic">{facility.defaultAccessNotes}</p>
                 </div>
               )}
 
               {/* Usage Stats and Details */}
-              <div className="border-t border-gray-200 pt-3">
+              <div className="border-t border-slate-700/50 pt-3">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <span className="text-gray-600">
-                      Used in <span className="font-semibold text-primary-700">{facility.totalUsage}</span> load{facility.totalUsage !== 1 ? 's' : ''}
+                    <span className="text-slate-300">
+                      Used in <span className="font-semibold text-white">{facility.totalUsage}</span> load{facility.totalUsage !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <span className="text-gray-400">
+                  <span className="text-slate-500">
                     Added {formatDate(facility.createdAt)}
                   </span>
                 </div>
@@ -468,12 +464,12 @@ export default function SavedFacilitiesPage() {
       {/* Facility Detail Modal */}
       {selectedFacility && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedFacility(null)}>
-          <div className="glass-primary max-w-2xl w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass" onClick={(e) => e.stopPropagation()}>
+          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">{selectedFacility.name}</h2>
+              <h2 className="text-2xl font-bold text-white">{selectedFacility.name}</h2>
               <button
                 onClick={() => setSelectedFacility(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-slate-400 hover:text-slate-300 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -484,16 +480,16 @@ export default function SavedFacilitiesPage() {
             <div className="space-y-4">
               {/* Facility Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Facility Type</label>
-                <span className="px-3 py-1 text-sm font-medium bg-primary-100 text-primary-700 rounded border border-primary-200">
+                <label className="block text-sm font-medium text-slate-300 mb-1">Facility Type</label>
+                <span className="px-3 py-1 text-sm font-medium bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30">
                   {getFacilityTypeLabel(selectedFacility.facilityType)}
                 </span>
               </div>
 
               {/* Address */}
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
-                <div className="space-y-1 text-gray-700">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Address</label>
+                <div className="space-y-1 text-slate-300">
                   <p className="font-medium">{selectedFacility.addressLine1}</p>
                   {selectedFacility.addressLine2 && <p>{selectedFacility.addressLine2}</p>}
                   <p>{selectedFacility.city}, {selectedFacility.state} {selectedFacility.postalCode}</p>
@@ -502,14 +498,14 @@ export default function SavedFacilitiesPage() {
 
               {/* Contact Info */}
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">Contact Information</label>
-                <div className="space-y-2 text-gray-700">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Contact Information</label>
+                <div className="space-y-2 text-slate-300">
                   <div>
                     <span className="font-medium">Name:</span> {selectedFacility.contactName}
                   </div>
                   <div>
                     <span className="font-medium">Phone:</span>{' '}
-                    <a href={`tel:${selectedFacility.contactPhone}`} className="text-primary-600 hover:text-primary-700">
+                    <a href={`tel:${selectedFacility.contactPhone}`} className="text-cyan-400 hover:text-cyan-300">
                       {selectedFacility.contactPhone}
                     </a>
                   </div>
@@ -519,29 +515,29 @@ export default function SavedFacilitiesPage() {
               {/* Access Notes */}
               {selectedFacility.defaultAccessNotes && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">Access Notes</label>
-                  <p className="text-gray-700 italic bg-blue-50/60 p-3 rounded-lg border border-blue-200/30">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Access Notes</label>
+                  <p className="text-slate-300 italic bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
                     {selectedFacility.defaultAccessNotes}
                   </p>
                 </div>
               )}
 
               {/* Usage Stats */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-slate-700/50 pt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Total Usage</label>
-                    <p className="text-lg font-bold text-primary-700">{selectedFacility.totalUsage} load{selectedFacility.totalUsage !== 1 ? 's' : ''}</p>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Total Usage</label>
+                    <p className="text-lg font-bold text-white font-data">{selectedFacility.totalUsage} load{selectedFacility.totalUsage !== 1 ? 's' : ''}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Date Added</label>
-                    <p className="text-gray-700">{formatDate(selectedFacility.createdAt)}</p>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Date Added</label>
+                    <p className="text-slate-300">{formatDate(selectedFacility.createdAt)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center pt-4 border-t border-slate-700/50">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -549,7 +545,7 @@ export default function SavedFacilitiesPage() {
                       handleEditFacility(selectedFacility, e)
                     }
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -586,7 +582,7 @@ export default function SavedFacilitiesPage() {
                   </button>
                   <button
                     onClick={() => setSelectedFacility(null)}
-                    className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+                    className="px-6 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all border border-slate-600/50"
                   >
                     Close
                   </button>
@@ -600,12 +596,12 @@ export default function SavedFacilitiesPage() {
       {/* Edit Facility Modal */}
       {editingFacility && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setEditingFacility(null)}>
-          <div className="glass-primary max-w-2xl w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Edit Facility</h2>
+              <h2 className="text-2xl font-bold text-white">Edit Facility</h2>
               <button
                 onClick={() => setEditingFacility(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-slate-400 hover:text-slate-300 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -616,24 +612,24 @@ export default function SavedFacilitiesPage() {
             <form onSubmit={handleSaveFacility} className="space-y-4">
               {/* Facility Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Facility Name *</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Facility Name *</label>
                 <input
                   type="text"
                   required
                   value={editingFacility.name}
                   onChange={(e) => setEditingFacility({ ...editingFacility, name: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               {/* Facility Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Facility Type *</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Facility Type *</label>
                 <select
                   required
                   value={editingFacility.facilityType}
                   onChange={(e) => setEditingFacility({ ...editingFacility, facilityType: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
                 >
                   {facilityTypeOptions.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -645,111 +641,111 @@ export default function SavedFacilitiesPage() {
 
               {/* Address Line 1 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Address Line 1 *</label>
                 <input
                   type="text"
                   required
                   value={editingFacility.addressLine1}
                   onChange={(e) => setEditingFacility({ ...editingFacility, addressLine1: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               {/* Address Line 2 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Address Line 2</label>
                 <input
                   type="text"
                   value={editingFacility.addressLine2 || ''}
                   onChange={(e) => setEditingFacility({ ...editingFacility, addressLine2: e.target.value || null })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               {/* City, State, Postal Code */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">City *</label>
                   <input
                     type="text"
                     required
                     value={editingFacility.city}
                     onChange={(e) => setEditingFacility({ ...editingFacility, city: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">State *</label>
                   <input
                     type="text"
                     required
                     maxLength={2}
                     value={editingFacility.state}
                     onChange={(e) => setEditingFacility({ ...editingFacility, state: e.target.value.toUpperCase() })}
-                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60 uppercase"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500 uppercase"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Postal Code *</label>
                   <input
                     type="text"
                     required
                     value={editingFacility.postalCode}
                     onChange={(e) => setEditingFacility({ ...editingFacility, postalCode: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                    className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   />
                 </div>
               </div>
 
               {/* Contact Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Contact Name *</label>
                 <input
                   type="text"
                   required
                   value={editingFacility.contactName}
                   onChange={(e) => setEditingFacility({ ...editingFacility, contactName: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               {/* Contact Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Phone *</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Contact Phone *</label>
                 <input
                   type="tel"
                   required
                   value={editingFacility.contactPhone}
                   onChange={(e) => setEditingFacility({ ...editingFacility, contactPhone: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 />
               </div>
 
               {/* Access Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Default Access Notes</label>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Default Access Notes</label>
                 <textarea
                   value={editingFacility.defaultAccessNotes || ''}
                   onChange={(e) => setEditingFacility({ ...editingFacility, defaultAccessNotes: e.target.value || null })}
                   rows={3}
-                  className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-blue-50/60"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                   placeholder="Enter default access instructions for this facility..."
                 />
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-700/50">
                 <button
                   type="button"
                   onClick={() => setEditingFacility(null)}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-all"
+                  className="px-6 py-2 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-all border border-slate-600/50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSaving ? (
                     <>

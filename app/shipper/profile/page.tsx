@@ -58,8 +58,8 @@ export default function ShipperProfilePage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading profile...</p>
         </div>
       </div>
     )
@@ -82,33 +82,33 @@ export default function ShipperProfilePage() {
 
       <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
         {/* Company Information */}
-        <div className="glass p-6 rounded-2xl">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Company Information</h2>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <h2 className="text-xl font-bold text-white mb-4">Company Information</h2>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-600">Company Name</label>
-              <p className="text-lg text-gray-900 font-medium">{shipper.companyName}</p>
+              <label className="text-sm font-medium text-slate-400">Company Name</label>
+              <p className="text-lg text-white font-medium">{shipper.companyName}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Business Type</label>
-              <p className="text-lg text-gray-900">{getClientTypeLabel(shipper.clientType)}</p>
+              <label className="text-sm font-medium text-slate-400">Business Type</label>
+              <p className="text-lg text-white">{getClientTypeLabel(shipper.clientType)}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Contact Name</label>
-              <p className="text-lg text-gray-900">{shipper.contactName}</p>
+              <label className="text-sm font-medium text-slate-400">Contact Name</label>
+              <p className="text-lg text-white">{shipper.contactName}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Email</label>
-              <p className="text-lg text-gray-900">{shipper.email}</p>
+              <label className="text-sm font-medium text-slate-400">Email</label>
+              <p className="text-lg text-white">{shipper.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Phone</label>
-              <p className="text-lg text-gray-900">{shipper.phone}</p>
+              <label className="text-sm font-medium text-slate-400">Phone</label>
+              <p className="text-lg text-white">{shipper.phone}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Account Status</label>
+              <label className="text-sm font-medium text-slate-400">Account Status</label>
               <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                shipper.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                shipper.isActive ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50'
               }`}>
                 {shipper.isActive ? 'Active' : 'Inactive'}
               </span>
@@ -117,12 +117,12 @@ export default function ShipperProfilePage() {
         </div>
 
         {/* Payment Terms */}
-        <div className="glass p-6 rounded-2xl">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Payment Terms</h2>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
+          <h2 className="text-xl font-bold text-white mb-4">Payment Terms</h2>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-600">Payment Terms</label>
-              <p className="text-lg text-gray-900">
+              <label className="text-sm font-medium text-slate-400">Payment Terms</label>
+              <p className="text-lg text-white">
                 {shipper.paymentTerms === 'NET_7' ? 'Net 7 Days' :
                  shipper.paymentTerms === 'NET_14' ? 'Net 14 Days' :
                  shipper.paymentTerms === 'NET_30' ? 'Net 30 Days' :
@@ -132,17 +132,17 @@ export default function ShipperProfilePage() {
             </div>
             {shipper.billingContactName && (
               <div>
-                <label className="text-sm font-medium text-gray-600">Billing Contact</label>
-                <p className="text-lg text-gray-900">{shipper.billingContactName}</p>
+                <label className="text-sm font-medium text-slate-400">Billing Contact</label>
+                <p className="text-lg text-white">{shipper.billingContactName}</p>
                 {shipper.billingContactEmail && (
-                  <p className="text-sm text-gray-600">{shipper.billingContactEmail}</p>
+                  <p className="text-sm text-slate-400">{shipper.billingContactEmail}</p>
                 )}
               </div>
             )}
             {(shipper.billingAddressLine1 || shipper.billingCity) && (
               <div>
-                <label className="text-sm font-medium text-gray-600">Billing Address</label>
-                <div className="text-sm text-gray-900">
+                <label className="text-sm font-medium text-slate-400">Billing Address</label>
+                <div className="text-sm text-white">
                   {shipper.billingAddressLine1 && <p>{shipper.billingAddressLine1}</p>}
                   {shipper.billingAddressLine2 && <p>{shipper.billingAddressLine2}</p>}
                   {(shipper.billingCity || shipper.billingState || shipper.billingPostalCode) && (
@@ -159,12 +159,12 @@ export default function ShipperProfilePage() {
         </div>
 
         {/* Account Details */}
-        <div className="glass p-6 rounded-2xl md:col-span-2">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Account Details</h2>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg md:col-span-2">
+          <h2 className="text-xl font-bold text-white mb-4">Account Details</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-600">Member Since</label>
-              <p className="text-lg text-gray-900">
+              <label className="text-sm font-medium text-slate-400">Member Since</label>
+              <p className="text-lg text-white">
                 {new Date(shipper.createdAt).toLocaleDateString('en-US', {
                   month: 'long',
                   year: 'numeric',
@@ -172,8 +172,8 @@ export default function ShipperProfilePage() {
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Last Updated</label>
-              <p className="text-lg text-gray-900">
+              <label className="text-sm font-medium text-slate-400">Last Updated</label>
+              <p className="text-lg text-white">
                 {new Date(shipper.updatedAt).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
@@ -185,24 +185,24 @@ export default function ShipperProfilePage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="glass p-6 rounded-2xl md:col-span-2">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg md:col-span-2">
+          <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-4">
             <Link
               href="/shipper/settings"
-              className="px-4 py-2 rounded-lg bg-gradient-primary text-white font-semibold hover:shadow-lg transition-all shadow-lg"
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
             >
               Edit Profile
             </Link>
             <Link
               href="/shipper/billing"
-              className="px-4 py-2 rounded-lg bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
+              className="px-4 py-2 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
             >
               Update Billing Settings
             </Link>
             <Link
               href="/shipper/security"
-              className="px-4 py-2 rounded-lg bg-primary-100 text-primary-700 font-semibold hover:bg-primary-200 transition-colors border border-primary-200"
+              className="px-4 py-2 rounded-lg bg-slate-700/50 text-slate-200 font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
             >
               Change Password
             </Link>
