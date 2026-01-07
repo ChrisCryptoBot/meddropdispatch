@@ -23,7 +23,7 @@ datasource db {
 // Scheduling system: QUOTE_REQUESTED (email-based) → REQUESTED (initial) → ACCEPTED (after phone call) → SCHEDULED → PICKED_UP → IN_TRANSIT → DELIVERED → COMPLETED
 // OR: REQUESTED → DENIED (if doesn't fit schedule)
 // PreferredContactMethod: PHONE, EMAIL
-// CreatedVia: EMAIL, WEB_FORM, INTERNAL
+// CreatedVia: EMAIL, WEB_FORM, INTERNAL, DRIVER_SELF_DISPATCH
 // TrackingEventCode: REQUEST_RECEIVED, PRICE_QUOTED, SHIPPER_CONFIRMED, DRIVER_EN_ROUTE_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, DRIVER_DENIED
 // DocumentType: PROOF_OF_PICKUP, PROOF_OF_DELIVERY, BILL_OF_LADING, OTHER
 // UserRole: ADMIN, DISPATCHER, VIEW_ONLY
@@ -294,6 +294,14 @@ model LoadRequest {
   // Invoice Linking
   invoiceId  String? // Link to invoice when billed
   invoicedAt DateTime? // When invoice was generated
+  
+  // Owner-Operator Payment Tracking
+  shipperPaymentStatus String? // Payment status from shipper to driver: PENDING, PAID, OVERDUE, DISPUTED
+  shipperPaidAt        DateTime? // When shipper paid driver
+  shipperPaymentMethod String? // Payment method: CASH, CHECK, ACH, VENMO, OTHER
+  
+  // Self-Dispatch Tracking
+  createdByDriverId String? // Driver ID who created this load (for self-dispatch)
 
   // Cancellation Tracking
   cancellationReason      String? // CancellationReason enum: CLIENT_CANCELLED, DRIVER_NO_SHOW, VEHICLE_BREAKDOWN, FACILITY_CLOSED, WEATHER, OTHER
@@ -325,6 +333,7 @@ model LoadRequest {
   pickupFacility    Facility              @relation("PickupFacility", fields: [pickupFacilityId], references: [id])
   dropoffFacility   Facility              @relation("DropoffFacility", fields: [dropoffFacilityId], references: [id])
   driver            Driver?               @relation(fields: [driverId], references: [id])
+  createdByDriver   Driver?               @relation("DriverCreatedLoads", fields: [createdByDriverId], references: [id])
   vehicle           Vehicle?              @relation(fields: [vehicleId], references: [id])
   invoice           Invoice?              @relation(fields: [invoiceId], references: [id])
   callbackQueue     CallbackQueue? // Load created from callback queue
@@ -335,6 +344,7 @@ model LoadRequest {
   driverRating      DriverRating?
   locations         LoadRequestLocation[] // Multiple pickup/dropoff locations
   notes             LoadNote[]
+  driverPayments    DriverPayment[]      @relation("LoadRequestPayments")
 
   @@index([driverId])
   @@index([vehicleId])
@@ -454,6 +464,9 @@ model Invoice {
   invoiceDate DateTime @default(now())
   dueDate     DateTime // Calculated based on payment terms
 
+  // Owner-Operator Support
+  createdByDriverId String? // Driver ID who created this invoice (for owner-operators)
+
   // Amounts
   subtotal Float // Service amount before tax
   tax      Float @default(0) // Tax amount
@@ -471,7 +484,11 @@ model Invoice {
 
   // Relations
   shipper      Shipper       @relation(fields: [shipperId], references: [id])
+  createdByDriver Driver?   @relation("DriverCreatedInvoices", fields: [createdByDriverId], references: [id])
   loadRequests LoadRequest[] // Many loads can be on one invoice
+  lineItems    InvoiceLineItem[]
+  adjustments  InvoiceAdjustment[]
+  driverPayments DriverPayment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -481,6 +498,7 @@ model Invoice {
   @@index([dueDate])
   @@index([invoiceNumber])
   @@index([invoiceDate])
+  @@index([createdByDriverId])
 }
 
 // Driver: Courier drivers
@@ -531,19 +549,21 @@ model Driver {
 
   // Relations
   loadRequests       LoadRequest[]
+  createdLoads       LoadRequest[]       @relation("DriverCreatedLoads")
   vehicles           Vehicle[]
   documents          DriverDocument[]
   gpsTrackingPoints  GPSTrackingPoint[]
   ratings            DriverRating[]
   callbackQueue      CallbackQueue[]
   equipmentChecklist DriverEquipmentChecklist?
+  driverClients      DriverClient[]
+  createdInvoices    Invoice[]           @relation("DriverCreatedInvoices")
+  driverPayments     DriverPayment[]
+  notificationPreferences NotificationPreferences?
+  loadDrafts              LoadDraft[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  notificationPreferences NotificationPreferences?
-  loadDrafts              LoadDraft[]
 
   // Soft Delete
   deletedAt     DateTime? // When driver was soft deleted
@@ -755,6 +775,95 @@ model LoadNote {
   @@index([loadRequestId])
   @@index([createdAt])
   @@index([createdBy])
+}
+
+// InvoiceLineItem: Line items for invoices (accessorial charges, base rate, etc.)
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String // e.g., "Base Rate", "Wait Time", "Dry Ice", "Toner Usage"
+  quantity    Float?  // Optional quantity (e.g., 2.5 hours of wait time)
+  unitPrice   Float   // Price per unit
+  total       Float   // Calculated: quantity * unitPrice
+  notes       String? // Optional notes about this line item
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// InvoiceAdjustment: Price adjustments for invoices (credits, disputes, corrections)
+model InvoiceAdjustment {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  type        String   // ADJUSTMENT_TYPE: CREDIT, DEBIT, DISPUTE_RESOLUTION, CORRECTION
+  amount      Float    // Adjustment amount (positive for credit, negative for debit)
+  reason      String   // Reason for adjustment
+  notes       String?  // Detailed notes
+  createdBy   String   // User/Driver ID who created adjustment
+  createdByType String // DRIVER, ADMIN, SHIPPER
+  createdAt   DateTime @default(now())
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([createdAt])
+}
+
+// DriverClient: Private client management for owner-operators
+model DriverClient {
+  id          String   @id @default(cuid())
+  driverId    String
+  companyName String
+  contactName String
+  email       String?
+  phone       String
+  addressLine1 String?
+  addressLine2 String?
+  city        String?
+  state       String?
+  postalCode  String?
+  notes       String?  // Private notes about this client
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([isActive])
+}
+
+// DriverPayment: Track platform payments to drivers
+model DriverPayment {
+  id            String   @id @default(cuid())
+  driverId      String
+  loadRequestId String?  // Optional: payment for specific load
+  invoiceId     String?  // Optional: payment for invoice
+  amount        Float    // Payment amount
+  paymentDate   DateTime // When payment was made
+  paymentMethod String   // ACH, CHECK, WIRE, STRIPE_ACH, OTHER
+  paymentReference String? // Check number, transaction ID, etc.
+  status        String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  notes         String?  // Internal notes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  loadRequest LoadRequest? @relation("LoadRequestPayments", fields: [loadRequestId], references: [id], onDelete: SetNull)
+  invoice     Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([driverId])
+  @@index([loadRequestId])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@index([status])
 }
 
 // NotificationPreferences: User notification preferences

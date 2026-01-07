@@ -230,12 +230,12 @@ export default function ShippersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                        {shipper._count.facilities}
+                        {shipper._count?.facilities ?? 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                        {shipper._count.loadRequests}
+                        {shipper._count?.loadRequests ?? 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">

@@ -42,6 +42,13 @@ export async function GET(request: NextRequest) {
         email: true,
         isActive: true,
         deletedAt: true,
+        createdAt: true,
+        _count: {
+          select: {
+            facilities: true,
+            loadRequests: true,
+          },
+        },
       },
       orderBy: { companyName: 'asc' },
       take: search ? 10 : undefined, // Limit results when searching
