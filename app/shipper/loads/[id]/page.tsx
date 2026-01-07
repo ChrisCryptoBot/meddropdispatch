@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
 import GPSTrackingMap from '@/components/features/GPSTrackingMap'
+import LoadNotes from '@/components/features/LoadNotes'
 import { getLoadStatusColor, getLoadStatusLabel } from '@/lib/constants'
 
 interface LoadRequest {
@@ -1013,6 +1014,19 @@ export default function ShipperLoadDetailPage() {
                   <strong>Note:</strong> If you received documents via email due to a technical issue, you can upload them here for your records. All documents uploaded by drivers will also appear here automatically.
                 </p>
               </div>
+            </div>
+
+            {/* Notes Section */}
+            <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass mt-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Notes</h3>
+              {load && (
+                <LoadNotes
+                  loadRequestId={load.id}
+                  currentUserId={shipper?.id || ''}
+                  currentUserType="SHIPPER"
+                  canEdit={true}
+                />
+              )}
             </div>
           </div>
 

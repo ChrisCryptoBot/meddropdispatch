@@ -35,6 +35,13 @@ export default function ShipperTemplatesPage() {
   const [shipper, setShipper] = useState<any>(null)
   const [templates, setTemplates] = useState<LoadTemplate[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<LoadTemplate | null>(null)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    isActive: true,
+  })
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
@@ -107,6 +114,48 @@ export default function ShipperTemplatesPage() {
     } catch (error) {
       console.error('Error creating load from template:', error)
       showToast.error('Failed to create load')
+    }
+  }
+
+  const handleEdit = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId)
+    if (template) {
+      setEditingTemplate(template)
+      setEditFormData({
+        name: template.name,
+        isActive: template.isActive,
+      })
+      setShowEditModal(true)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingTemplate) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/load-templates/${editingTemplate.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData),
+      })
+
+      if (response.ok) {
+        if (shipper?.id) {
+          fetchTemplates(shipper.id)
+        }
+        setShowEditModal(false)
+        setEditingTemplate(null)
+        showToast.success('Template updated successfully')
+      } else {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to update template')
+      }
+    } catch (error) {
+      console.error('Error updating template:', error)
+      showApiError(error, 'Failed to update template')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -188,9 +237,68 @@ export default function ShipperTemplatesPage() {
               key={template.id}
               template={template}
               onBook={handleBook}
+              onEdit={handleEdit}
               onDelete={handleDelete}
             />
           ))}
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingTemplate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowEditModal(false)}>
+          <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-white mb-4 font-heading">Edit Template</h2>
+            <p className="text-slate-400 mb-6">
+              Template: <span className="font-mono font-bold text-white">{editingTemplate.name}</span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Template Name *</label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  placeholder="Template name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.isActive}
+                    onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-600/50 bg-slate-800/50 text-cyan-600 focus:ring-cyan-500/50"
+                  />
+                  <span className="text-sm font-semibold text-slate-300">Active Template</span>
+                </label>
+                <p className="text-xs text-slate-500 mt-1 ml-8">Inactive templates won't appear in quick booking</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingTemplate(null)
+                }}
+                className="flex-1 px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 transition-colors border border-slate-600/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving || !editFormData.name.trim()}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/30"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

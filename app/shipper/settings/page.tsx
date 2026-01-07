@@ -28,11 +28,19 @@ export default function SettingsPage() {
 
   // Notification preferences
   const [notificationPrefs, setNotificationPrefs] = useState({
-    emailLoadUpdates: true,
-    emailStatusChanges: true,
-    emailDocumentUploads: true,
-    emailInvoiceReady: true,
-    inAppNotifications: true,
+    emailNotifications: {
+      callbackRequested: true,
+      loadUpdated: true,
+      statusChanges: true,
+      documentUploads: true,
+      invoiceReady: true,
+    },
+    inAppNotifications: {
+      enabled: true,
+    },
+    smsNotifications: {
+      enabled: false,
+    },
   })
 
 
@@ -95,14 +103,22 @@ export default function SettingsPage() {
         setFormData(initialData)
         initialFormDataRef.current = initialData
         
-        // Load notification preferences from localStorage (will be migrated to DB later)
-        const savedPrefs = localStorage.getItem(`shipper_${shipperId}_notifications`)
-        if (savedPrefs) {
-          try {
-            setNotificationPrefs(JSON.parse(savedPrefs))
-          } catch {
-            // Use defaults if parse fails
+        // Load notification preferences from API
+        try {
+          const prefsResponse = await fetch(`/api/shippers/${shipperId}/notification-preferences`)
+          if (prefsResponse.ok) {
+            const prefsData = await prefsResponse.json()
+            if (prefsData.preferences) {
+              setNotificationPrefs({
+                emailNotifications: prefsData.preferences.emailNotifications || {},
+                inAppNotifications: prefsData.preferences.inAppNotifications || { enabled: true },
+                smsNotifications: prefsData.preferences.smsNotifications || { enabled: false },
+              })
+            }
           }
+        } catch (err) {
+          console.error('Error fetching notification preferences:', err)
+          // Use defaults if fetch fails
         }
       }
     } catch (error) {
@@ -118,8 +134,14 @@ export default function SettingsPage() {
     setHasUnsavedChanges(true)
   }
 
-  const handleNotificationChange = (field: string, value: boolean) => {
-    setNotificationPrefs({ ...notificationPrefs, [field]: value })
+  const handleNotificationChange = (category: 'emailNotifications' | 'inAppNotifications' | 'smsNotifications', field: string, value: boolean) => {
+    setNotificationPrefs({
+      ...notificationPrefs,
+      [category]: {
+        ...notificationPrefs[category],
+        [field]: value,
+      },
+    })
     setHasUnsavedChanges(true)
   }
 
@@ -173,9 +195,20 @@ export default function SettingsPage() {
         setShipper(data.shipper)
         localStorage.setItem('shipper', JSON.stringify(data.shipper))
         
-        // Save notification preferences to localStorage (will be migrated to DB later)
+        // Save notification preferences to API
         if (shipper?.id) {
-          localStorage.setItem(`shipper_${shipper.id}_notifications`, JSON.stringify(notificationPrefs))
+          try {
+            const prefsResponse = await fetch(`/api/shippers/${shipper.id}/notification-preferences`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(notificationPrefs),
+            })
+            if (!prefsResponse.ok) {
+              console.error('Failed to save notification preferences')
+            }
+          } catch (err) {
+            console.error('Error saving notification preferences:', err)
+          }
         }
         
         initialFormDataRef.current = { ...formData }
@@ -402,80 +435,112 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white mb-1">Email: Load Updates</h3>
-                    <p className="text-sm text-slate-400">Receive emails when new loads are created or updated</p>
+                    <p className="text-sm text-slate-400">Receive emails when loads are updated</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={notificationPrefs.emailLoadUpdates}
-                      onChange={(e) => handleNotificationChange('emailLoadUpdates', e.target.checked)}
+                      checked={notificationPrefs.emailNotifications?.loadUpdated ?? true}
+                      onChange={(e) => handleNotificationChange('emailNotifications', 'loadUpdated', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white mb-1">Email: Status Changes</h3>
-                    <p className="text-sm text-slate-400">Get notified when load status changes (picked up, in transit, delivered)</p>
+                    <p className="text-sm text-slate-400">Receive emails when load status changes</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={notificationPrefs.emailStatusChanges}
-                      onChange={(e) => handleNotificationChange('emailStatusChanges', e.target.checked)}
+                      checked={notificationPrefs.emailNotifications?.statusChanges ?? true}
+                      onChange={(e) => handleNotificationChange('emailNotifications', 'statusChanges', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white mb-1">Email: Document Uploads</h3>
-                    <p className="text-sm text-slate-400">Receive emails when drivers upload documents (POD, BOL, etc.)</p>
+                    <p className="text-sm text-slate-400">Receive emails when documents are uploaded</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={notificationPrefs.emailDocumentUploads}
-                      onChange={(e) => handleNotificationChange('emailDocumentUploads', e.target.checked)}
+                      checked={notificationPrefs.emailNotifications?.documentUploads ?? true}
+                      onChange={(e) => handleNotificationChange('emailNotifications', 'documentUploads', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white mb-1">Email: Invoice Ready</h3>
-                    <p className="text-sm text-slate-400">Get notified when invoices are generated and ready for payment</p>
+                    <p className="text-sm text-slate-400">Receive emails when invoices are ready</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={notificationPrefs.emailInvoiceReady}
-                      onChange={(e) => handleNotificationChange('emailInvoiceReady', e.target.checked)}
+                      checked={notificationPrefs.emailNotifications?.invoiceReady ?? true}
+                      onChange={(e) => handleNotificationChange('emailNotifications', 'invoiceReady', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white mb-1">Email: Callback Requests</h3>
+                    <p className="text-sm text-slate-400">Receive emails when callback requests are made</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificationPrefs.emailNotifications?.callbackRequested ?? true}
+                      onChange={(e) => handleNotificationChange('emailNotifications', 'callbackRequested', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div className="flex-1">
                     <h3 className="font-semibold text-white mb-1">In-App Notifications</h3>
-                    <p className="text-sm text-slate-400">Show notifications in your dashboard and notification center</p>
+                    <p className="text-sm text-slate-400">Enable in-app notification system</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={notificationPrefs.inAppNotifications}
-                      onChange={(e) => handleNotificationChange('inAppNotifications', e.target.checked)}
+                      checked={notificationPrefs.inAppNotifications?.enabled ?? true}
+                      onChange={(e) => handleNotificationChange('inAppNotifications', 'enabled', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-600/50 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white mb-1">SMS Notifications</h3>
+                    <p className="text-sm text-slate-400">Enable SMS notifications (requires phone number)</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificationPrefs.smsNotifications?.enabled ?? false}
+                      onChange={(e) => handleNotificationChange('smsNotifications', 'enabled', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
                   </label>
                 </div>
               </div>
@@ -520,6 +585,76 @@ export default function SettingsPage() {
                       }) : 'N/A'}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Data Export Section */}
+              <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                <h2 className="text-xl font-bold text-white mb-4">Data Export</h2>
+                <p className="text-sm text-slate-400 mb-4">
+                  Export your load data, documents, and chain-of-custody logs
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      if (shipper?.id) {
+                        window.open(`/api/shippers/${shipper.id}/export?type=loads`, '_blank')
+                        showToast.success('Exporting loads data...')
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center justify-between"
+                  >
+                    <span>Export Loads (CSV)</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (shipper?.id) {
+                        window.open(`/api/shippers/${shipper.id}/export?type=chain-of-custody`, '_blank')
+                        showToast.success('Exporting chain-of-custody data...')
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center justify-between"
+                  >
+                    <span>Export Chain-of-Custody (CSV)</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (shipper?.id) {
+                        try {
+                          const response = await fetch(`/api/shippers/${shipper.id}/export?type=documents`)
+                          if (response.ok) {
+                            const data = await response.json()
+                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${shipper.companyName}_documents_${new Date().toISOString().split('T')[0]}.json`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            URL.revokeObjectURL(url)
+                            showToast.success('Document metadata exported!')
+                          } else {
+                            throw new Error('Failed to export documents')
+                          }
+                        } catch (error) {
+                          showApiError(error, 'Failed to export documents')
+                        }
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 flex items-center justify-between"
+                  >
+                    <span>Export Documents (JSON)</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>

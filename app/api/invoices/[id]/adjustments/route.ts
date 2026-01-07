@@ -13,6 +13,42 @@ const createAdjustmentSchema = z.object({
 })
 
 /**
+ * GET /api/invoices/[id]/adjustments
+ * Get all adjustments for an invoice
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withErrorHandling(async (req: Request | NextRequest) => {
+    try {
+      rateLimit(RATE_LIMITS.api)(request)
+    } catch (error) {
+      return createErrorResponse(error)
+    }
+
+    const { id } = await params
+
+    // Verify invoice exists
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+    })
+
+    if (!invoice) {
+      throw new NotFoundError('Invoice')
+    }
+
+    // Get adjustments
+    const adjustments = await prisma.invoiceAdjustment.findMany({
+      where: { invoiceId: id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json({ adjustments })
+  })(request)
+}
+
+/**
  * POST /api/invoices/[id]/adjustments
  * Create an invoice adjustment (owner-operator or admin)
  */

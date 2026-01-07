@@ -6,11 +6,15 @@ import { formatDateTime } from '@/lib/utils'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS } from '@/lib/constants'
 import type { LoadStatus } from '@/lib/types'
 import { EmptyStates } from '@/components/ui/EmptyState'
+import { showToast, showApiError } from '@/lib/toast'
 
 export default function AdminLoadsPage() {
   const [loads, setLoads] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, active: 0, completed: 0, new: 0 })
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedLoads, setSelectedLoads] = useState<Set<string>>(new Set())
+  const [showBulkMenu, setShowBulkMenu] = useState(false)
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false)
 
   useEffect(() => {
     fetchLoads()
@@ -33,6 +37,62 @@ export default function AdminLoadsPage() {
   }
 
   const filteredLoads = loads // For now, no filtering
+
+  const handleSelectLoad = (loadId: string) => {
+    const newSelected = new Set(selectedLoads)
+    if (newSelected.has(loadId)) {
+      newSelected.delete(loadId)
+    } else {
+      newSelected.add(loadId)
+    }
+    setSelectedLoads(newSelected)
+  }
+
+  const handleSelectAll = () => {
+    if (selectedLoads.size === filteredLoads.length) {
+      setSelectedLoads(new Set())
+    } else {
+      setSelectedLoads(new Set(filteredLoads.map(l => l.id)))
+    }
+  }
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedLoads.size === 0) {
+      showToast.warning('Please select at least one load')
+      return
+    }
+
+    setIsBulkProcessing(true)
+    try {
+      let body: any = {
+        loadRequestIds: Array.from(selectedLoads),
+        action,
+      }
+
+      if (action === 'update_status') {
+        body.status = 'CANCELLED'
+        body.eventLabel = 'Bulk Cancelled'
+      }
+
+      const response = await fetch('/api/load-requests/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) throw new Error('Failed to perform bulk action')
+
+      await fetchLoads()
+      setSelectedLoads(new Set())
+      setShowBulkMenu(false)
+      showToast.success(`Bulk ${action} completed successfully!`)
+    } catch (error) {
+      console.error('Error performing bulk action:', error)
+      showApiError(error, 'Failed to perform bulk action')
+    } finally {
+      setIsBulkProcessing(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -99,12 +159,71 @@ export default function AdminLoadsPage() {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedLoads.size > 0 && (
+        <div className="glass-primary p-4 rounded-xl mb-6 border border-cyan-500/50 shadow-lg bg-cyan-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-white font-semibold">{selectedLoads.size} load(s) selected</span>
+              <button
+                onClick={handleSelectAll}
+                className="text-cyan-400 hover:text-cyan-300 text-sm font-medium"
+              >
+                {selectedLoads.size === filteredLoads.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowBulkMenu(!showBulkMenu)}
+                disabled={isBulkProcessing}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
+              >
+                Bulk Actions ▼
+              </button>
+              {showBulkMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowBulkMenu(false)}></div>
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-50 border border-slate-700/50 overflow-hidden">
+                    <button
+                      onClick={() => handleBulkAction('update_status')}
+                      className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700/50 transition-colors"
+                    >
+                      Cancel Selected
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('generate_invoices')}
+                      className="w-full px-4 py-2 text-left text-sm text-green-400 hover:bg-green-900/20 transition-colors"
+                    >
+                      Generate Invoices
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('export_csv')}
+                      className="w-full px-4 py-2 text-left text-sm text-cyan-400 hover:bg-cyan-900/20 transition-colors"
+                    >
+                      Export CSV
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loads Table */}
       <div className="glass-primary rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700/50">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectedLoads.size === filteredLoads.length && filteredLoads.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-slate-600/50 bg-slate-800/50 text-cyan-600 focus:ring-cyan-500/50"
+                  />
+                </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Tracking Code
                 </th>
@@ -134,7 +253,7 @@ export default function AdminLoadsPage() {
             <tbody className="divide-y divide-slate-700/50">
               {filteredLoads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-12 text-center">
                     <EmptyStates.NoLoads
                       title="No Load Requests"
                       description="New load requests will appear here when they are created."
@@ -148,6 +267,14 @@ export default function AdminLoadsPage() {
               ) : (
                 filteredLoads.map((load) => (
                   <tr key={load.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedLoads.has(load.id)}
+                        onChange={() => handleSelectLoad(load.id)}
+                        className="w-4 h-4 rounded border-slate-600/50 bg-slate-800/50 text-cyan-600 focus:ring-cyan-500/50"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
                         href={`/admin/loads/${load.id}`}

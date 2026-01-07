@@ -21,7 +21,7 @@ export async function PATCH(
 
     const { id } = await params
     const rawData = await nextReq.json()
-    const { isActive } = rawData
+    const { isActive, reason } = rawData
 
     const blockedEmail = await prisma.blockedEmail.findUnique({
       where: { id },
@@ -34,7 +34,8 @@ export async function PATCH(
     const updated = await prisma.blockedEmail.update({
       where: { id },
       data: {
-        isActive: isActive !== undefined ? isActive : !blockedEmail.isActive,
+        isActive: isActive !== undefined ? isActive : blockedEmail.isActive,
+        reason: reason !== undefined ? reason : blockedEmail.reason,
       },
     })
 

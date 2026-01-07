@@ -1699,6 +1699,19 @@ export default function DriverLoadDetailPage() {
         </div>
       )}
 
+      {/* Notes Section */}
+      {load && (
+        <div className="glass-primary p-6 rounded-2xl border-2 border-blue-200/30 shadow-medical mt-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Notes</h3>
+          <LoadNotes
+            loadRequestId={load.id}
+            currentUserId={driver?.id || ''}
+            currentUserType="DRIVER"
+            canEdit={true}
+          />
+        </div>
+      )}
+
     </div>
   )
 }

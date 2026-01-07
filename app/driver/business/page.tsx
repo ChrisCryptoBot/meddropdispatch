@@ -535,7 +535,7 @@ export default function DriverBusinessPage() {
           <div className="glass-primary rounded-xl border border-slate-700/50 overflow-hidden">
             <div className="p-6 border-b border-slate-700/50 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">Team Roster</h2>
-              {driver?.fleetRole === 'OWNER' && (
+              {(driver?.fleetRole === 'OWNER' || driver?.fleetRole === 'ADMIN') && (
                 <button
                   onClick={() => setShowInviteModal(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30"
@@ -565,7 +565,7 @@ export default function DriverBusinessPage() {
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Role</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Loads</th>
-                      {driver?.fleetRole === 'OWNER' && (
+                      {(driver?.fleetRole === 'OWNER' || driver?.fleetRole === 'ADMIN') && (
                         <th className="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
                       )}
                     </tr>
@@ -589,23 +589,31 @@ export default function DriverBusinessPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            member.status === 'AVAILABLE'
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                              : member.status === 'ON_ROUTE'
-                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                              : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
-                          }`}>
-                            {member.status?.replace(/_/g, ' ')}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              member.status === 'AVAILABLE'
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : member.status === 'ON_ROUTE'
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                            }`}>
+                              {member.status?.replace(/_/g, ' ')}
+                            </span>
+                            {member.canBeAssignedLoads === false && (
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                                Suspended
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
                           {member._count?.loadRequests || 0}
                         </td>
-                        {driver?.fleetRole === 'OWNER' && member.fleetRole !== 'OWNER' && (
+                        {(driver?.fleetRole === 'OWNER' || driver?.fleetRole === 'ADMIN') && member.fleetRole !== 'OWNER' && (
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {member.fleetRole === 'DRIVER' && (
+                              {/* TIER 2.11: Only OWNER can promote/demote roles */}
+                              {driver?.fleetRole === 'OWNER' && member.fleetRole === 'DRIVER' && (
                                 <button
                                   onClick={async () => {
                                     if (!confirm(`Promote ${member.firstName} ${member.lastName} to ADMIN?`)) return
@@ -622,7 +630,8 @@ export default function DriverBusinessPage() {
                                         showToast.success('Driver promoted to ADMIN')
                                         await fetchFleetData(driver.id)
                                       } else {
-                                        throw new Error('Failed to promote driver')
+                                        const data = await response.json()
+                                        throw new Error(data.message || 'Failed to promote driver')
                                       }
                                     } catch (error) {
                                       showApiError(error, 'Failed to promote driver')
@@ -636,7 +645,7 @@ export default function DriverBusinessPage() {
                                   </svg>
                                 </button>
                               )}
-                              {member.fleetRole === 'ADMIN' && (
+                              {driver?.fleetRole === 'OWNER' && member.fleetRole === 'ADMIN' && (
                                 <button
                                   onClick={async () => {
                                     if (!confirm(`Demote ${member.firstName} ${member.lastName} to DRIVER?`)) return
@@ -653,7 +662,8 @@ export default function DriverBusinessPage() {
                                         showToast.success('Admin demoted to DRIVER')
                                         await fetchFleetData(driver.id)
                                       } else {
-                                        throw new Error('Failed to demote admin')
+                                        const data = await response.json()
+                                        throw new Error(data.message || 'Failed to demote admin')
                                       }
                                     } catch (error) {
                                       showApiError(error, 'Failed to demote admin')
@@ -667,31 +677,80 @@ export default function DriverBusinessPage() {
                                   </svg>
                                 </button>
                               )}
-                              <button
-                                onClick={async () => {
-                                  if (!confirm(`Remove ${member.firstName} ${member.lastName} from the fleet?`)) return
-                                  try {
-                                    const response = await fetch(`/api/fleets/${fleet.id}/drivers/${member.id}`, {
-                                      method: 'DELETE',
-                                      credentials: 'include',
-                                    })
-                                    if (response.ok) {
-                                      showToast.success('Driver removed from fleet')
-                                      await fetchFleetData(driver.id)
-                                    } else {
-                                      throw new Error('Failed to remove driver')
+                              {/* TIER 2.11: Admins can suspend/unsuspend DRIVER role only */}
+                              {(driver?.fleetRole === 'OWNER' || (driver?.fleetRole === 'ADMIN' && member.fleetRole === 'DRIVER')) && (
+                                <button
+                                  onClick={async () => {
+                                    const isSuspended = member.canBeAssignedLoads === false
+                                    const action = isSuspended ? 'unsuspend' : 'suspend'
+                                    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${member.firstName} ${member.lastName}? ${isSuspended ? 'They will be able to receive load assignments again.' : 'They will not receive new load assignments.'}`)) return
+                                    try {
+                                      const response = await fetch(`/api/fleets/${fleet.id}/drivers/${member.id}`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        credentials: 'include',
+                                        body: JSON.stringify({ canBeAssignedLoads: !isSuspended }),
+                                      })
+                                      if (response.ok) {
+                                        showToast.success(`Driver ${isSuspended ? 'unsuspended' : 'suspended'}`)
+                                        await fetchFleetData(driver.id)
+                                      } else {
+                                        const data = await response.json()
+                                        throw new Error(data.message || `Failed to ${action} driver`)
+                                      }
+                                    } catch (error) {
+                                      showApiError(error, `Failed to ${action} driver`)
                                     }
-                                  } catch (error) {
-                                    showApiError(error, 'Failed to remove driver')
-                                  }
-                                }}
-                                className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                title="Remove from Fleet"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
+                                  }}
+                                  className={`p-2 rounded-lg transition-colors ${
+                                    member.canBeAssignedLoads === false
+                                      ? 'text-green-400 hover:bg-green-500/10'
+                                      : 'text-orange-400 hover:bg-orange-500/10'
+                                  }`}
+                                  title={member.canBeAssignedLoads === false ? 'Unsuspend Driver' : 'Suspend Driver'}
+                                >
+                                  {member.canBeAssignedLoads === false ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                  )}
+                                </button>
+                              )}
+                              {/* TIER 2.11: Admins can only remove DRIVER role */}
+                              {(driver?.fleetRole === 'OWNER' || (driver?.fleetRole === 'ADMIN' && member.fleetRole === 'DRIVER')) && (
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Remove ${member.firstName} ${member.lastName} from the fleet?`)) return
+                                    try {
+                                      const response = await fetch(`/api/fleets/${fleet.id}/drivers/${member.id}`, {
+                                        method: 'DELETE',
+                                        credentials: 'include',
+                                      })
+                                      if (response.ok) {
+                                        showToast.success('Driver removed from fleet')
+                                        await fetchFleetData(driver.id)
+                                      } else {
+                                        const data = await response.json()
+                                        throw new Error(data.message || 'Failed to remove driver')
+                                      }
+                                    } catch (error) {
+                                      showApiError(error, 'Failed to remove driver')
+                                    }
+                                  }}
+                                  className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                  title="Remove from Fleet"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}
@@ -704,7 +763,7 @@ export default function DriverBusinessPage() {
           </div>
 
           {/* Active Invites */}
-          {driver?.fleetRole === 'OWNER' && (
+          {(driver?.fleetRole === 'OWNER' || driver?.fleetRole === 'ADMIN') && (
             <div className="glass-primary rounded-xl border border-slate-700/50 overflow-hidden">
               <div className="p-6 border-b border-slate-700/50">
                 <h2 className="text-xl font-bold text-white">Active Invites</h2>

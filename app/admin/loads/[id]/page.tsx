@@ -54,6 +54,16 @@ export default function AdminLoadDetailPage() {
   // GPS Map full-screen
   const [showFullScreenMap, setShowFullScreenMap] = useState(false)
 
+  // Auto-Quote
+  const [isAutoQuoting, setIsAutoQuoting] = useState(false)
+  const [autoQuotePreview, setAutoQuotePreview] = useState<any>(null)
+  const [showAutoQuoteModal, setShowAutoQuoteModal] = useState(false)
+
+  // Auto-Assign Driver
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false)
+  const [autoAssignPreview, setAutoAssignPreview] = useState<any>(null)
+  const [showAutoAssignModal, setShowAutoAssignModal] = useState(false)
+
   // Load data
   useEffect(() => {
     if (params.id) {
@@ -264,6 +274,111 @@ export default function AdminLoadDetailPage() {
       showApiError(err, 'Failed to assign driver')
     } finally {
       setIsAssigningDriver(false)
+    }
+  }
+
+  const handleAutoQuote = async () => {
+    setIsAutoQuoting(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/auto-quote`, {
+        method: 'GET',
+      })
+
+      if (!response.ok) throw new Error('Failed to generate auto-quote')
+
+      const data = await response.json()
+      setAutoQuotePreview(data)
+      setShowAutoQuoteModal(true)
+    } catch (err) {
+      showApiError(err, 'Failed to generate auto-quote')
+    } finally {
+      setIsAutoQuoting(false)
+    }
+  }
+
+  const handleApplyAutoQuote = async () => {
+    if (!autoQuotePreview) return
+
+    setIsAutoQuoting(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/auto-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      if (!response.ok) throw new Error('Failed to apply auto-quote')
+
+      await fetchLoad()
+      setShowAutoQuoteModal(false)
+      setAutoQuotePreview(null)
+      showToast.success('Auto-quote applied successfully!')
+    } catch (err) {
+      showApiError(err, 'Failed to apply auto-quote')
+    } finally {
+      setIsAutoQuoting(false)
+    }
+  }
+
+  const handleAutoAssign = async () => {
+    setIsAutoAssigning(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/auto-assign-driver`, {
+        method: 'GET',
+      })
+
+      if (!response.ok) throw new Error('Failed to find auto-assignment')
+
+      const data = await response.json()
+      setAutoAssignPreview(data)
+      setShowAutoAssignModal(true)
+    } catch (err) {
+      showApiError(err, 'Failed to find auto-assignment')
+    } finally {
+      setIsAutoAssigning(false)
+    }
+  }
+
+  const handleApplyAutoAssign = async () => {
+    if (!autoAssignPreview || !autoAssignPreview.recommendedDriver) return
+
+    setIsAutoAssigning(true)
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/auto-assign-driver`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assign: true }),
+      })
+
+      if (!response.ok) throw new Error('Failed to apply auto-assignment')
+
+      await fetchLoad()
+      setShowAutoAssignModal(false)
+      setAutoAssignPreview(null)
+      showToast.success('Driver auto-assigned successfully!')
+    } catch (err) {
+      showApiError(err, 'Failed to apply auto-assignment')
+    } finally {
+      setIsAutoAssigning(false)
+    }
+  }
+
+  const handleConvertToLoad = async () => {
+    if (!confirm('Convert this quote request to a scheduled load? This will change the status to SCHEDULED.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/load-requests/${params.id}/convert-to-load`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) throw new Error('Failed to convert quote to load')
+
+      await fetchLoad()
+      showToast.success('Quote converted to load successfully!')
+    } catch (err) {
+      showApiError(err, 'Failed to convert quote to load')
     }
   }
 
@@ -568,7 +683,18 @@ export default function AdminLoadDetailPage() {
 
           {/* Quote Management */}
           <div className="glass-primary p-6 rounded-xl border border-slate-700/50 shadow-lg">
-            <h3 className="text-xl font-bold text-white mb-4">Quote & Pricing</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Quote & Pricing</h3>
+              {load.status === 'NEW' || load.status === 'QUOTE_REQUESTED' ? (
+                <button
+                  onClick={handleAutoQuote}
+                  disabled={isAutoQuoting}
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-yellow-500/50 transition-all disabled:opacity-50 shadow-lg shadow-yellow-500/30 text-sm"
+                >
+                  {isAutoQuoting ? 'Calculating...' : 'Auto-Quote'}
+                </button>
+              ) : null}
+            </div>
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">Quote Amount (USD)</label>
@@ -592,13 +718,24 @@ export default function AdminLoadDetailPage() {
                   placeholder="Internal notes about pricing..."
                 />
               </div>
-              <button
-                type="submit"
-                disabled={isSubmittingQuote || !quoteAmount}
-                className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold hover:from-primary-700 hover:to-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-base"
-              >
-                {isSubmittingQuote ? 'Submitting...' : 'Submit Quote'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isSubmittingQuote || !quoteAmount}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/30"
+                >
+                  {isSubmittingQuote ? 'Submitting...' : 'Submit Quote'}
+                </button>
+                {load.status === 'QUOTE_REQUESTED' && (
+                  <button
+                    type="button"
+                    onClick={handleConvertToLoad}
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-green-500/50 transition-all shadow-lg shadow-green-500/30"
+                  >
+                    Convert to Load
+                  </button>
+                )}
+              </div>
             </form>
           </div>
 
@@ -816,6 +953,102 @@ export default function AdminLoadDetailPage() {
               fullScreen={true}
               onCloseFullScreen={() => setShowFullScreenMap(false)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Quote Preview Modal */}
+      {showAutoQuoteModal && autoQuotePreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAutoQuoteModal(false)}>
+          <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-white mb-4 font-heading">Auto-Quote Preview</h2>
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-sm text-slate-400 mb-1">Suggested Quote Amount</p>
+                <p className="text-2xl font-bold text-white font-data">${autoQuotePreview.suggestedAmount?.toFixed(2) || '0.00'}</p>
+              </div>
+              {autoQuotePreview.factors && (
+                <div>
+                  <p className="text-sm text-slate-400 mb-2">Pricing Factors:</p>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {Object.entries(autoQuotePreview.factors).map(([key, value]: [string, any]) => (
+                      <li key={key} className="flex justify-between">
+                        <span>{key.replace(/_/g, ' ')}:</span>
+                        <span className="font-semibold">{typeof value === 'number' ? `$${value.toFixed(2)}` : String(value)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowAutoQuoteModal(false)
+                  setAutoQuotePreview(null)
+                }}
+                className="flex-1 px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 transition-colors border border-slate-600/50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyAutoQuote}
+                disabled={isAutoQuoting}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-yellow-500/50 transition-all disabled:opacity-50 shadow-lg shadow-yellow-500/30"
+              >
+                {isAutoQuoting ? 'Applying...' : 'Apply Quote'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Assign Preview Modal */}
+      {showAutoAssignModal && autoAssignPreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAutoAssignModal(false)}>
+          <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold text-white mb-4 font-heading">Auto-Assign Driver</h2>
+            {autoAssignPreview.recommendedDriver ? (
+              <div className="space-y-4 mb-6">
+                <div>
+                  <p className="text-sm text-slate-400 mb-1">Recommended Driver</p>
+                  <p className="text-xl font-bold text-white">
+                    {autoAssignPreview.recommendedDriver.firstName} {autoAssignPreview.recommendedDriver.lastName}
+                  </p>
+                  <p className="text-sm text-slate-300">{autoAssignPreview.recommendedDriver.vehicleType}</p>
+                </div>
+                {autoAssignPreview.reason && (
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Reason</p>
+                    <p className="text-sm text-slate-300">{autoAssignPreview.reason}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mb-6">
+                <p className="text-slate-400">No suitable driver found for this load.</p>
+              </div>
+            )}
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setShowAutoAssignModal(false)
+                  setAutoAssignPreview(null)
+                }}
+                className="flex-1 px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 transition-colors border border-slate-600/50"
+              >
+                Cancel
+              </button>
+              {autoAssignPreview.recommendedDriver && (
+                <button
+                  onClick={handleApplyAutoAssign}
+                  disabled={isAutoAssigning}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-purple-500/50 transition-all disabled:opacity-50 shadow-lg shadow-purple-500/30"
+                >
+                  {isAutoAssigning ? 'Assigning...' : 'Assign Driver'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
