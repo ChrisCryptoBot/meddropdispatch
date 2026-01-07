@@ -182,6 +182,10 @@ export default function FleetMaintenancePage() {
     )
   }
 
+  // Calculate alert counts for dashboard
+  const overdueCount = vehicles.filter(v => v.status === 'DUE').length
+  const warningCount = vehicles.filter(v => v.status === 'WARNING').length
+
   return (
     <div className="px-6 md:px-8 pb-6 md:pb-8">
       {/* Header */}
@@ -189,6 +193,41 @@ export default function FleetMaintenancePage() {
         <h1 className="text-3xl font-bold text-white mb-2">Fleet Maintenance Dashboard</h1>
         <p className="text-slate-400">Monitor vehicle maintenance status and service intervals</p>
       </div>
+
+      {/* Alert Banners */}
+      {overdueCount > 0 && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-xl">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-red-400 mb-1">Maintenance Overdue</h3>
+              <p className="text-red-300 text-sm">
+                {overdueCount} vehicle{overdueCount !== 1 ? 's' : ''} {overdueCount !== 1 ? 'are' : 'is'} overdue for maintenance (&gt;5,000 miles). 
+                These vehicles are blocked from new load assignments. Schedule service immediately.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {warningCount > 0 && overdueCount === 0 && (
+        <div className="mb-6 p-4 bg-orange-500/20 border border-orange-500/30 rounded-xl">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-orange-400 mb-1">Maintenance Approaching</h3>
+              <p className="text-orange-300 text-sm">
+                {warningCount} vehicle{warningCount !== 1 ? 's' : ''} {warningCount !== 1 ? 'are' : 'is'} approaching maintenance due (4,500-5,000 miles). 
+                Schedule service soon to avoid blocking new load assignments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Vehicles Table */}
       <div className="glass-primary rounded-xl border border-slate-700/50 overflow-hidden">

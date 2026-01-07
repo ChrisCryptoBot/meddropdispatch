@@ -3,7 +3,7 @@
 // Example: Vercel Cron, GitHub Actions, or external cron service
 
 import { NextRequest, NextResponse } from 'next/server'
-import { runVehicleExpiryCheck } from '@/lib/vehicle-notifications'
+import { runVehicleExpiryCheck, runMaintenanceCheck } from '@/lib/vehicle-notifications'
 
 /**
  * POST /api/cron/vehicle-expiry-check
@@ -24,10 +24,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Run both expiry and maintenance checks
     await runVehicleExpiryCheck()
+    await runMaintenanceCheck()
     return NextResponse.json({
       success: true,
-      message: 'Vehicle expiry check completed',
+      message: 'Vehicle compliance check completed (expiry + maintenance)',
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
@@ -58,9 +60,10 @@ export async function GET(request: NextRequest) {
 
   try {
     await runVehicleExpiryCheck()
+    await runMaintenanceCheck()
     return NextResponse.json({
       success: true,
-      message: 'Vehicle expiry check completed (manual trigger)',
+      message: 'Vehicle compliance check completed (manual trigger - expiry + maintenance)',
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

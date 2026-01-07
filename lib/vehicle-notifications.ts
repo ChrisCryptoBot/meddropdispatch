@@ -5,8 +5,10 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { sendSMS } from '@/lib/sms'
 import { getVehicleComplianceStatus } from './vehicle-compliance'
+import { isMaintenanceCompliant } from './vehicle-compliance'
 
 export type NotificationLevel = 'WARNING_30_DAYS' | 'URGENT_7_DAYS' | 'CRITICAL_1_DAY' | 'EXPIRED'
+export type MaintenanceNotificationLevel = 'WARNING_4500_MILES' | 'URGENT_4750_MILES' | 'DUE_5000_MILES'
 
 interface NotificationCheck {
   vehicleId: string
@@ -268,5 +270,273 @@ export async function runVehicleExpiryCheck(): Promise<void> {
   }
 
   console.log('[Vehicle Expiry Check] Completed')
+}
+
+// ============================================================================
+// Vehicle Maintenance Notification System (Fleet Enterprise - Tier 2)
+// ============================================================================
+
+interface MaintenanceNotificationCheck {
+  vehicleId: string
+  vehiclePlate: string
+  driverId: string
+  driverName: string
+  driverEmail: string
+  driverPhone: string
+  fleetOwnerId?: string
+  fleetOwnerEmail?: string
+  fleetOwnerName?: string
+  milesSinceLastService: number
+  lastServiceOdometer: number | null
+  lastServiceDate: Date | null
+  currentOdometer: number
+  level: MaintenanceNotificationLevel
+}
+
+/**
+ * Check for vehicles needing maintenance notifications
+ * Returns list of vehicles that need notifications sent
+ */
+export async function checkMaintenanceNotifications(): Promise<MaintenanceNotificationCheck[]> {
+  // Get all active vehicles
+  const vehicles = await prisma.vehicle.findMany({
+    where: {
+      isActive: true,
+    },
+    include: {
+      driver: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          fleetId: true,
+          fleetRole: true,
+          fleet: {
+            include: {
+              owner: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const notifications: MaintenanceNotificationCheck[] = []
+
+  for (const vehicle of vehicles) {
+    try {
+      const maintenance = await isMaintenanceCompliant(vehicle.id)
+      
+      // Only notify for WARNING (4500-5000 miles) or DUE (>5000 miles)
+      if (maintenance.status === 'VALID') continue
+
+      // Determine notification level based on miles
+      let level: MaintenanceNotificationLevel | null = null
+      if (maintenance.status === 'DUE') {
+        level = 'DUE_5000_MILES'
+      } else if (maintenance.milesSinceLastService >= 4750) {
+        level = 'URGENT_4750_MILES'
+      } else if (maintenance.status === 'WARNING') {
+        level = 'WARNING_4500_MILES'
+      }
+
+      if (!level) continue
+
+      // Check if notification was already sent (prevent duplicates)
+      const existingNotification = await prisma.notification.findFirst({
+        where: {
+          driverId: vehicle.driverId,
+          type: 'VEHICLE_MAINTENANCE_DUE',
+          metadata: {
+            contains: `"vehicleId":"${vehicle.id}"`,
+          },
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Within last 24 hours
+          },
+        },
+      })
+
+      if (existingNotification) continue // Already notified today
+
+      const driverName = `${vehicle.driver.firstName} ${vehicle.driver.lastName}`
+      const fleetOwner = vehicle.driver.fleet?.owner
+
+      notifications.push({
+        vehicleId: vehicle.id,
+        vehiclePlate: vehicle.vehiclePlate,
+        driverId: vehicle.driverId,
+        driverName,
+        driverEmail: vehicle.driver.email,
+        driverPhone: vehicle.driver.phone,
+        fleetOwnerId: fleetOwner?.id,
+        fleetOwnerEmail: fleetOwner?.email,
+        fleetOwnerName: fleetOwner ? `${fleetOwner.firstName} ${fleetOwner.lastName}` : undefined,
+        milesSinceLastService: maintenance.milesSinceLastService,
+        lastServiceOdometer: maintenance.lastServiceOdometer,
+        lastServiceDate: maintenance.lastServiceDate,
+        currentOdometer: vehicle.currentOdometer,
+        level,
+      })
+    } catch (error) {
+      // Skip vehicles where maintenance check fails (might not have maintenance logs yet)
+      console.warn(`[Maintenance Check] Failed to check maintenance for vehicle ${vehicle.id}:`, error)
+      continue
+    }
+  }
+
+  return notifications
+}
+
+/**
+ * Send maintenance notification to driver and fleet owner
+ */
+export async function sendMaintenanceNotification(check: MaintenanceNotificationCheck): Promise<void> {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  const maintenanceUrl = `${baseUrl}/admin/fleet/maintenance`
+  const vehicleUrl = `${baseUrl}/driver/vehicle`
+
+  // Determine message content based on level
+  let subject: string
+  let emailBody: string
+  let smsMessage: string
+
+  if (check.level === 'DUE_5000_MILES') {
+    subject = `URGENT: Vehicle ${check.vehiclePlate} Maintenance Overdue`
+    emailBody = `
+      <h2>Vehicle Maintenance Overdue</h2>
+      <p><strong>Vehicle:</strong> ${check.vehiclePlate}</p>
+      <p><strong>Current Odometer:</strong> ${check.currentOdometer.toLocaleString()} miles</p>
+      <p><strong>Miles Since Last Service:</strong> ${check.milesSinceLastService.toLocaleString()} miles</p>
+      <p><strong>Last Service:</strong> ${check.lastServiceDate ? new Date(check.lastServiceDate).toLocaleDateString() : 'Never'} (${check.lastServiceOdometer ? check.lastServiceOdometer.toLocaleString() : 'N/A'} miles)</p>
+      <p style="color: red; font-weight: bold;">This vehicle requires immediate service. New load assignments are blocked until maintenance is performed.</p>
+      <p>Schedule an oil change immediately to restore vehicle availability.</p>
+      <a href="${maintenanceUrl}" style="display: inline-block; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log Maintenance</a>
+    `
+    smsMessage = `URGENT: Vehicle ${check.vehiclePlate} maintenance overdue (${check.milesSinceLastService.toLocaleString()} miles since last service). Service immediately: ${vehicleUrl}`
+  } else if (check.level === 'URGENT_4750_MILES') {
+    subject = `URGENT: Vehicle ${check.vehiclePlate} Maintenance Due Soon`
+    emailBody = `
+      <h2>Maintenance Due Soon</h2>
+      <p><strong>Vehicle:</strong> ${check.vehiclePlate}</p>
+      <p><strong>Current Odometer:</strong> ${check.currentOdometer.toLocaleString()} miles</p>
+      <p><strong>Miles Since Last Service:</strong> ${check.milesSinceLastService.toLocaleString()} miles</p>
+      <p><strong>Last Service:</strong> ${check.lastServiceDate ? new Date(check.lastServiceDate).toLocaleDateString() : 'Never'}</p>
+      <p style="color: orange; font-weight: bold;">Vehicle will be blocked from new assignments at 5,000 miles. Schedule service immediately.</p>
+      <a href="${maintenanceUrl}" style="display: inline-block; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log Maintenance</a>
+    `
+    smsMessage = `URGENT: Vehicle ${check.vehiclePlate} needs service soon (${check.milesSinceLastService.toLocaleString()} miles). Schedule now: ${vehicleUrl}`
+  } else {
+    // WARNING_4500_MILES
+    subject = `Vehicle ${check.vehiclePlate} Approaching Maintenance Due`
+    emailBody = `
+      <h2>Maintenance Approaching</h2>
+      <p><strong>Vehicle:</strong> ${check.vehiclePlate}</p>
+      <p><strong>Current Odometer:</strong> ${check.currentOdometer.toLocaleString()} miles</p>
+      <p><strong>Miles Since Last Service:</strong> ${check.milesSinceLastService.toLocaleString()} miles</p>
+      <p><strong>Last Service:</strong> ${check.lastServiceDate ? new Date(check.lastServiceDate).toLocaleDateString() : 'Never'}</p>
+      <p>Vehicle is approaching 5,000 miles since last oil change. Consider scheduling service soon to avoid blocking new load assignments.</p>
+      <a href="${maintenanceUrl}" style="display: inline-block; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log Maintenance</a>
+    `
+    smsMessage = `Vehicle ${check.vehiclePlate} approaching maintenance due (${check.milesSinceLastService.toLocaleString()} miles since last service). Schedule soon: ${vehicleUrl}`
+  }
+
+  // Send email to driver
+  try {
+    await sendEmail({
+      to: check.driverEmail,
+      subject,
+      html: emailBody,
+      text: emailBody.replace(/<[^>]*>/g, ''), // Strip HTML for plain text
+    })
+  } catch (error) {
+    console.error(`Failed to send maintenance email to driver ${check.driverId}:`, error)
+  }
+
+  // Send SMS for urgent/overdue (4750+ miles or overdue)
+  if (['URGENT_4750_MILES', 'DUE_5000_MILES'].includes(check.level)) {
+    try {
+      await sendSMS({
+        to: check.driverPhone,
+        message: smsMessage,
+      })
+    } catch (error) {
+      console.error(`Failed to send maintenance SMS to driver ${check.driverId}:`, error)
+    }
+  }
+
+  // Send email to fleet owner if applicable
+  if (check.fleetOwnerEmail && check.fleetOwnerId) {
+    const fleetEmailBody = `
+      <h2>Fleet Vehicle Maintenance Alert</h2>
+      <p><strong>Driver:</strong> ${check.driverName}</p>
+      <p><strong>Vehicle:</strong> ${check.vehiclePlate}</p>
+      <p><strong>Current Odometer:</strong> ${check.currentOdometer.toLocaleString()} miles</p>
+      <p><strong>Miles Since Last Service:</strong> ${check.milesSinceLastService.toLocaleString()} miles</p>
+      <p><strong>Last Service:</strong> ${check.lastServiceDate ? new Date(check.lastServiceDate).toLocaleDateString() : 'Never'}</p>
+      <p>Please ensure this vehicle is serviced promptly to avoid blocking load assignments.</p>
+      <a href="${maintenanceUrl}" style="display: inline-block; padding: 12px 24px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Fleet Maintenance</a>
+    `
+    try {
+      await sendEmail({
+        to: check.fleetOwnerEmail,
+        subject: `Fleet Alert: ${subject}`,
+        html: fleetEmailBody,
+        text: fleetEmailBody.replace(/<[^>]*>/g, ''),
+      })
+    } catch (error) {
+      console.error(`Failed to send maintenance email to fleet owner ${check.fleetOwnerId}:`, error)
+    }
+  }
+
+  // Create notification record to prevent duplicates
+  await prisma.notification.create({
+    data: {
+      driverId: check.driverId,
+      type: 'VEHICLE_MAINTENANCE_DUE',
+      title: subject,
+      message: emailBody.replace(/<[^>]*>/g, ''), // Strip HTML for plain text
+      link: maintenanceUrl,
+      metadata: JSON.stringify({
+        vehicleId: check.vehicleId,
+        vehiclePlate: check.vehiclePlate,
+        milesSinceLastService: check.milesSinceLastService,
+        lastServiceOdometer: check.lastServiceOdometer,
+        lastServiceDate: check.lastServiceDate?.toISOString(),
+        currentOdometer: check.currentOdometer,
+        level: check.level,
+      }),
+    },
+  })
+}
+
+/**
+ * Daily cron job: Check and send maintenance notifications
+ * Should be called daily (can run same time as expiry check)
+ */
+export async function runMaintenanceCheck(): Promise<void> {
+  console.log('[Maintenance Check] Starting daily check...')
+  
+  const notifications = await checkMaintenanceNotifications()
+  console.log(`[Maintenance Check] Found ${notifications.length} vehicles needing notifications`)
+
+  for (const check of notifications) {
+    try {
+      await sendMaintenanceNotification(check)
+      console.log(`[Maintenance Check] Sent notification for vehicle ${check.vehiclePlate}`)
+    } catch (error) {
+      console.error(`[Maintenance Check] Failed to send notification for vehicle ${check.vehiclePlate}:`, error)
+    }
+  }
+
+  console.log('[Maintenance Check] Completed')
 }
 
