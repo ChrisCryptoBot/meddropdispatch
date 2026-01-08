@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { showToast, showApiError } from '@/lib/toast'
 
 interface ShiftClockWidgetProps {
@@ -13,16 +14,37 @@ interface CurrentShift {
   clockOut: string | null
   totalHours: number | null
   currentHours: number
+  vehicleId?: string | null
+}
+
+interface Vehicle {
+  id: string
+  vehicleType: string
+  vehicleMake?: string | null
+  vehicleModel?: string | null
+  vehiclePlate: string
+  nickname?: string | null
+  vehicleNumber?: string | null
+  isActive: boolean
 }
 
 export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
   const [currentShift, setCurrentShift] = useState<CurrentShift | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [showOdometerModal, setShowOdometerModal] = useState(false)
-  const [odometerReading, setOdometerReading] = useState('')
-  const [actionType, setActionType] = useState<'clock-in' | 'clock-out'>('clock-in')
   const [elapsedTime, setElapsedTime] = useState(0)
   const [fetchError, setFetchError] = useState(false)
+  const [showOdometerModal, setShowOdometerModal] = useState(false)
+  const [odometerReading, setOdometerReading] = useState('')
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false)
+  const [showVehicleSelector, setShowVehicleSelector] = useState(false)
+  const [actionType, setActionType] = useState<'clock-in' | 'clock-out'>('clock-in')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load shift from localStorage on mount (backup if API fails)
   useEffect(() => {
@@ -53,6 +75,42 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
     const interval = setInterval(fetchCurrentShift, 30000)
     return () => clearInterval(interval)
   }, [driverId])
+
+  // Fetch vehicles when modal opens
+  useEffect(() => {
+    if (showOdometerModal) {
+      if (actionType === 'clock-in') {
+        // For clock-in, fetch all active vehicles for selection
+        fetchVehicles()
+      } else if (actionType === 'clock-out' && currentShift?.vehicleId) {
+        // For clock-out, fetch vehicles to display the vehicle name, and pre-select the shift vehicle
+        fetchVehicles()
+        setSelectedVehicleId(currentShift.vehicleId)
+      }
+    }
+  }, [showOdometerModal, actionType, currentShift])
+
+  const fetchVehicles = async () => {
+    setIsLoadingVehicles(true)
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/vehicles`, {
+        credentials: 'include',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        const activeVehicles = (data.vehicles || []).filter((v: Vehicle) => v.isActive)
+        setVehicles(activeVehicles)
+        // Auto-select first vehicle if only one available
+        if (activeVehicles.length === 1) {
+          setSelectedVehicleId(activeVehicles[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+    } finally {
+      setIsLoadingVehicles(false)
+    }
+  }
 
   // Live timer that updates every second when clocked in
   useEffect(() => {
@@ -110,19 +168,49 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
     }
   }
 
-  const handleClockIn = async () => {
+  const handleClockIn = () => {
+    // Show odometer modal (time is captured automatically by server)
     setActionType('clock-in')
+    setOdometerReading('')
+    setSelectedVehicleId('')
     setShowOdometerModal(true)
   }
 
-  const handleClockOut = async () => {
+  const handleClockOut = () => {
+    // Show odometer modal (time is captured automatically by server)
     setActionType('clock-out')
+    setOdometerReading('')
+    // Pre-select the vehicle from the shift
+    if (currentShift?.vehicleId) {
+      setSelectedVehicleId(currentShift.vehicleId)
+    }
     setShowOdometerModal(true)
+  }
+
+  const closeModal = () => {
+    if (!isLoading) {
+      setShowOdometerModal(false)
+      setShowVehicleSelector(false)
+      setOdometerReading('')
+      setSelectedVehicleId('')
+    }
+  }
+
+  const handleVehicleSelect = (vehicleId: string) => {
+    setSelectedVehicleId(vehicleId)
+    setShowVehicleSelector(false)
   }
 
   const handleSubmitOdometer = async () => {
-    if (!odometerReading || isNaN(Number(odometerReading))) {
-      showToast.error('Please enter a valid odometer reading')
+    // Validate vehicle selection for clock-in (required)
+    if (actionType === 'clock-in' && !selectedVehicleId) {
+      showToast.error('Please select a vehicle')
+      return
+    }
+
+    // Validate odometer if provided (it's optional)
+    if (odometerReading && isNaN(Number(odometerReading))) {
+      showToast.error('Please enter a valid odometer reading or leave it blank')
       return
     }
 
@@ -134,13 +222,18 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
 
       const method = actionType === 'clock-in' ? 'POST' : 'PATCH'
 
+      const body: any = {
+        vehicleId: actionType === 'clock-in' ? selectedVehicleId : (selectedVehicleId || currentShift?.vehicleId),
+      }
+      if (odometerReading && odometerReading.trim() !== '') {
+        body.odometerReading = parseInt(odometerReading)
+      }
+
       const response = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          odometerReading: parseInt(odometerReading),
-        }),
+        body: JSON.stringify(body),
       })
 
       if (response.ok) {
@@ -157,7 +250,22 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
         } else if (actionType === 'clock-in') {
           showToast.success(data.message || 'Clocked in successfully')
           if (data.shift) {
-            localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(data.shift))
+            // Immediately update UI with the new shift data (no waiting for refetch)
+            const shiftData: CurrentShift = {
+              id: data.shift.id,
+              clockIn: typeof data.shift.clockIn === 'string' 
+                ? data.shift.clockIn 
+                : data.shift.clockIn.toISOString(),
+              clockOut: data.shift.clockOut 
+                ? (typeof data.shift.clockOut === 'string' 
+                    ? data.shift.clockOut 
+                    : data.shift.clockOut.toISOString())
+                : null,
+              totalHours: data.shift.totalHours || null,
+              currentHours: 0, // Will be calculated by the timer
+            }
+            setCurrentShift(shiftData)
+            localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(shiftData))
           }
         } else {
           showToast.success(data.message || 'Clocked out successfully')
@@ -166,19 +274,19 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
         }
         setShowOdometerModal(false)
         setOdometerReading('')
-        await fetchCurrentShift()
+        // Fetch in background to ensure sync, but don't wait for it (UI already updated)
+        fetchCurrentShift().catch(err => console.error('Background fetch error:', err))
       } else {
         const error = await response.json()
-        // Don't clear shift on error - preserve state
         showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
       }
     } catch (error) {
-      // Don't clear shift on network errors
       showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
     } finally {
       setIsLoading(false)
     }
   }
+
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
@@ -210,12 +318,22 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
         {!currentShift ? (
           <button
             onClick={handleClockIn}
-            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-green-500/50 transition-all shadow-lg shadow-green-500/30 flex items-center gap-2"
+            disabled={isLoading}
+            className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-green-500/50 transition-all shadow-lg shadow-green-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Clock In
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Clocking In...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Clock In
+              </>
+            )}
           </button>
         ) : (
           <div className="flex items-center gap-3">
@@ -237,140 +355,246 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
             </div>
             <button
               onClick={handleClockOut}
-              className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-red-500/50 transition-all shadow-lg shadow-red-500/30 flex items-center gap-2"
+              disabled={isLoading}
+              className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-red-500/50 transition-all shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-              </svg>
-              Clock Out
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Clocking Out...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                  </svg>
+                  Clock Out
+                </>
+              )}
             </button>
           </div>
         )}
       </div>
 
-      {/* Odometer Input Modal */}
-      {showOdometerModal && (
+      {/* Clock In/Out Modal - Centered - Portal to body */}
+      {showOdometerModal && mounted && createPortal(
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" 
-          onClick={() => {
-            // Only allow closing if not loading and it's not critical (clock out can be cancelled)
-            if (!isLoading) {
-              setShowOdometerModal(false)
-              setOdometerReading('')
-            }
-          }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          onClick={closeModal}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <div className="glass-primary p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {actionType === 'clock-in' ? 'Clock In' : 'Clock Out'}
-            </h2>
-            
-            <div className="space-y-4">
+          <div 
+            className="glass-primary rounded-2xl border border-slate-700/50 shadow-2xl w-full max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close X Button */}
+            <button
+              onClick={closeModal}
+              disabled={isLoading}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
+              title="Close"
+              type="button"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-slate-700/50">
+              <h2 className="text-2xl font-bold text-white pr-8">
+                {actionType === 'clock-in' ? 'Clock In' : 'Clock Out'}
+              </h2>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-6 space-y-5">
+              {/* Vehicle Selection */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Current Odometer Reading <span className="text-slate-500">(optional)</span>
+                <label className="block text-sm font-semibold text-slate-300 mb-3">
+                  Vehicle {actionType === 'clock-in' && <span className="text-urgent-500">*</span>}
+                </label>
+                
+                {actionType === 'clock-in' ? (
+                  isLoadingVehicles ? (
+                    <div className="w-full px-4 py-3 rounded-lg border border-slate-600/50 bg-slate-800/50 text-slate-400 text-center">
+                      Loading vehicles...
+                    </div>
+                  ) : vehicles.length === 0 ? (
+                    <div className="w-full px-4 py-3 rounded-lg border border-urgent-500/50 bg-urgent-500/10 text-urgent-400 text-sm">
+                      No active vehicles found. Please add a vehicle in your vehicle settings first.
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowVehicleSelector(true)}
+                        disabled={isLoading || isLoadingVehicles}
+                        className="w-full px-4 py-3 rounded-lg border border-slate-600/50 bg-slate-800/50 text-left flex items-center justify-between hover:border-cyan-500/50 hover:bg-slate-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className={selectedVehicleId ? 'text-white font-medium' : 'text-slate-400'}>
+                          {selectedVehicleId 
+                            ? (() => {
+                                const vehicle = vehicles.find(v => v.id === selectedVehicleId)
+                                return vehicle 
+                                  ? (vehicle.vehicleNumber || vehicle.nickname || vehicle.vehiclePlate)
+                                  : 'Select a vehicle...'
+                              })()
+                            : 'Select a vehicle...'}
+                        </span>
+                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {selectedVehicleId && (() => {
+                        const vehicle = vehicles.find(v => v.id === selectedVehicleId)
+                        return vehicle?.vehiclePlate && (vehicle.vehicleNumber || vehicle.nickname) ? (
+                          <p className="text-xs text-slate-500 mt-2 ml-1">
+                            Plate: {vehicle.vehiclePlate}
+                          </p>
+                        ) : null
+                      })()}
+                    </>
+                  )
+                ) : (
+                  <div className="w-full px-4 py-3 rounded-lg border border-slate-600/50 bg-slate-700/30 text-slate-300">
+                    {(() => {
+                      const vehicle = vehicles.find(v => v.id === selectedVehicleId)
+                      return vehicle 
+                        ? (vehicle.vehicleNumber || vehicle.nickname || vehicle.vehiclePlate || 'Vehicle')
+                        : 'Vehicle'
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Odometer Reading */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-3">
+                  Odometer Reading <span className="text-slate-500 font-normal">(optional)</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={odometerReading}
                   onChange={(e) => setOdometerReading(e.target.value)}
-                  placeholder="e.g., 45230"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-white"
-                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isLoading && !(actionType === 'clock-in' && !selectedVehicleId)) {
+                      handleSubmitOdometer()
+                    }
+                  }}
+                  placeholder="Enter mileage (e.g., 45230)"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-white placeholder:text-slate-500"
+                  autoFocus={actionType === 'clock-out'}
+                  disabled={isLoading}
                 />
                 <p className="text-xs text-slate-400 mt-2">
-                  Enter your vehicle's current odometer reading to update mileage tracking.
+                  Current mileage on the odometer. Time is captured automatically.
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-4 mt-6">
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-700/50 flex gap-3">
               <button
-                onClick={() => {
-                  setShowOdometerModal(false)
-                  setOdometerReading('')
-                }}
-                className="flex-1 px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 border border-slate-600/50 transition-colors"
+                onClick={closeModal}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2.5 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
-                onClick={async () => {
-                  if (odometerReading && isNaN(Number(odometerReading))) {
-                    showToast.error('Please enter a valid odometer reading')
-                    return
-                  }
-                  // If no odometer provided, proceed without it
-                  setIsLoading(true)
-                  try {
-                    const endpoint = actionType === 'clock-in'
-                      ? `/api/drivers/${driverId}/shifts/clock-in`
-                      : `/api/drivers/${driverId}/shifts/clock-out`
-
-                    const method = actionType === 'clock-in' ? 'POST' : 'PATCH'
-
-                    const body: any = {}
-                    if (odometerReading) {
-                      body.odometerReading = parseInt(odometerReading)
-                    }
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (actionType === 'clock-out' && data.shift?.totalHours) {
-          const hours = Math.floor(data.shift.totalHours)
-          const minutes = Math.floor((data.shift.totalHours - hours) * 60)
-          const timeWorked = hours > 0 
-            ? `${hours}h ${minutes}m` 
-            : `${minutes}m`
-          showToast.success(`Clocked out successfully. Time worked: ${timeWorked}`)
-          // Clear shift and localStorage on successful clock out
-          setCurrentShift(null)
-          localStorage.removeItem(`driver_${driverId}_shift`)
-        } else if (actionType === 'clock-in') {
-          showToast.success(data.message || 'Clocked in successfully')
-          // Store new shift in localStorage
-          if (data.shift) {
-            localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(data.shift))
-          }
-        } else {
-          showToast.success(data.message || 'Clocked out successfully')
-          // Clear shift on clock out
-          setCurrentShift(null)
-          localStorage.removeItem(`driver_${driverId}_shift`)
-        }
-        setShowOdometerModal(false)
-        setOdometerReading('')
-        await fetchCurrentShift()
-      } else {
-        const error = await response.json()
-        // If clock-out fails, don't clear the shift - keep showing it
-        // If clock-in fails, user can try again
-        showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
-        // Don't clear currentShift on error - preserve the current state
-      }
-                  } catch (error) {
-                    showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
-                  } finally {
-                    setIsLoading(false)
-                  }
-                }}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSubmitOdometer}
+                disabled={isLoading || (actionType === 'clock-in' && !selectedVehicleId) || isLoadingVehicles}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Processing...' : (actionType === 'clock-in' ? 'Clock In' : 'Clock Out')}
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </span>
+                ) : (
+                  actionType === 'clock-in' ? 'Clock In' : 'Clock Out'
+                )}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Vehicle Selector Modal - Centered - Portal to body */}
+      {showVehicleSelector && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          onClick={() => setShowVehicleSelector(false)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div 
+            className="glass-primary rounded-2xl border border-slate-700/50 shadow-2xl w-full max-w-lg relative max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close X Button */}
+            <button
+              onClick={() => setShowVehicleSelector(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors z-10"
+              title="Close"
+              type="button"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-slate-700/50">
+              <h3 className="text-xl font-bold text-white pr-8">
+                Select Vehicle
+              </h3>
+            </div>
+            
+            {/* Vehicle List - Scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+              {vehicles.map((vehicle) => (
+                <button
+                  key={vehicle.id}
+                  onClick={() => handleVehicleSelect(vehicle.id)}
+                  className={`w-full px-4 py-4 rounded-lg border text-left transition-all ${
+                    selectedVehicleId === vehicle.id
+                      ? 'bg-cyan-600/20 border-cyan-500/50 shadow-lg shadow-cyan-500/10'
+                      : 'bg-slate-800/50 border-slate-600/50 hover:bg-slate-700/50 hover:border-slate-500/50'
+                  }`}
+                >
+                  <div className={`font-semibold ${selectedVehicleId === vehicle.id ? 'text-white' : 'text-slate-200'}`}>
+                    {vehicle.vehicleNumber || vehicle.nickname || vehicle.vehiclePlate}
+                  </div>
+                  {vehicle.vehiclePlate && (vehicle.vehicleNumber || vehicle.nickname) && (
+                    <div className="text-sm text-slate-400 mt-1">
+                      Plate: {vehicle.vehiclePlate}
+                    </div>
+                  )}
+                  {vehicle.vehicleMake && vehicle.vehicleModel && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      {vehicle.vehicleMake} {vehicle.vehicleModel}{vehicle.vehicleYear && ` • ${vehicle.vehicleYear}`}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-700/50">
+              <button
+                onClick={() => setShowVehicleSelector(false)}
+                className="w-full px-4 py-2.5 bg-slate-700/50 text-slate-300 rounded-lg font-semibold hover:bg-slate-700/70 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   )

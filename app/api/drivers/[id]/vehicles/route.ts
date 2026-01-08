@@ -10,6 +10,7 @@ const vehicleSchema = z.object({
   vehicleModel: z.string().optional().nullable(),
   vehicleYear: z.number().int().min(1900).max(2100).optional().nullable(),
   vehiclePlate: z.string().min(1),
+  vehicleNumber: z.string().optional().nullable(), // Client ID for vehicle
   hasRefrigeration: z.boolean().default(false),
   nickname: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
@@ -94,6 +95,35 @@ export async function POST(
     }
 
     const data = validation.data
+
+    // Validate vehicleNumber uniqueness per driver
+    if (data.vehicleNumber) {
+      const trimmedVehicleNumber = data.vehicleNumber.trim().toUpperCase()
+      if (trimmedVehicleNumber.length === 0) {
+        throw new ValidationError('Vehicle number cannot be empty')
+      }
+
+      // Check for duplicate vehicleNumber for this driver
+      const existingVehicle = await prisma.vehicle.findFirst({
+        where: {
+          driverId: id,
+          vehicleNumber: trimmedVehicleNumber,
+          isActive: true, // Only check active vehicles
+        },
+      })
+
+      if (existingVehicle) {
+        throw new ValidationError(`Vehicle number "${trimmedVehicleNumber}" is already in use. Please choose a different number.`)
+      }
+
+      // Validate format: alphanumeric, dash, underscore only
+      if (!/^[A-Z0-9_-]+$/.test(trimmedVehicleNumber)) {
+        throw new ValidationError('Vehicle number can only contain letters, numbers, dashes, and underscores')
+      }
+
+      // Update data with trimmed/normalized value
+      data.vehicleNumber = trimmedVehicleNumber
+    }
     
     // Parse dates if provided as strings
     const registrationExpiryDate = data.registrationExpiryDate
@@ -115,6 +145,7 @@ export async function POST(
         vehicleModel: data.vehicleModel || null,
         vehicleYear: data.vehicleYear || null,
         vehiclePlate: data.vehiclePlate,
+        vehicleNumber: data.vehicleNumber || null,
         hasRefrigeration: data.hasRefrigeration,
         nickname: data.nickname || null,
         isActive: data.isActive,

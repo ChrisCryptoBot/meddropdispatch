@@ -148,7 +148,7 @@ export default function RateCalculator({
     <div className={`space-y-4 ${className}`}>
       {showDeadhead && (
         <div>
-          <label htmlFor="driverStartingLocation" className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="driverStartingLocation" className="block text-sm font-semibold text-slate-300 mb-2">
             Your Current Location (Deadhead Starting Point)
           </label>
           <div className="flex gap-2">
@@ -158,19 +158,19 @@ export default function RateCalculator({
                 value={driverStartingLocation}
                 onChange={setDriverStartingLocation}
                 placeholder="Enter address or use current location"
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white/60 backdrop-blur-sm text-sm"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
               />
             </div>
             <button
               onClick={handleUseCurrentLocation}
               disabled={isGettingLocation}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-3 bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/50 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               title="Use GPS location"
               type="button"
             >
               {isGettingLocation ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-300"></div>
                   <span>Getting...</span>
                 </>
               ) : (
@@ -184,7 +184,7 @@ export default function RateCalculator({
               )}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Optional: Enter your location to include deadhead miles in rate calculation
           </p>
         </div>

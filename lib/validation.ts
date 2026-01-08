@@ -21,7 +21,9 @@ export const createLoadRequestSchema = z.object({
   shipperId: z.string().optional(),
 
   // Driver assignment (optional - can assign during creation)
+  // Support both driverId and assignedDriverId field names
   driverId: z.string().optional(),
+  assignedDriverId: z.string().optional(),
 
   // Pickup Facility
   pickupFacilityName: nonEmptyStringSchema,
@@ -76,6 +78,12 @@ export const createLoadRequestSchema = z.object({
   poNumber: z.string().optional(),
   priorityLevel: z.enum(['NORMAL', 'HIGH', 'CRITICAL']).optional(),
   tags: z.array(z.string()).or(z.string()).optional(), // Accept array or JSON string
+  
+  // Additional fields for admin/internal creation
+  callbackId: z.string().optional(), // Link to callback queue
+  createdVia: z.enum(['WEB_FORM', 'EMAIL', 'INTERNAL', 'DRIVER_MANUAL']).optional(),
+  quotedRate: z.number().positive().optional(), // Final quoted rate (alternative to quoteAmount)
+  quoteAmount: z.number().positive().optional(), // Quote amount (for compatibility)
 })
 
 export const updateLoadRequestSchema = z.object({

@@ -409,7 +409,7 @@ export default function DispatchBoardPage() {
             </div>
 
             {/* Driver Rows */}
-            <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+            <div className="overflow-y-auto scrollbar-thin flex-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
               {drivers.length === 0 ? (
                 <div className="p-12 text-center">
                   <EmptyStates.NoLoads
@@ -579,7 +579,7 @@ export default function DispatchBoardPage() {
               {showBulkAssignMenu && selectedLoadsForBulk.size > 0 && (
                 <div className="p-4 border-b border-slate-700/50 bg-slate-800/30">
                   <p className="text-sm text-slate-300 mb-3">Select driver to assign {selectedLoadsForBulk.size} load(s):</p>
-                  <div className="max-h-48 overflow-y-auto space-y-2">
+                  <div className="max-h-48 overflow-y-auto scrollbar-thin space-y-2">
                     {drivers.length === 0 ? (
                       <p className="text-sm text-slate-400 text-center py-2">No drivers available</p>
                     ) : (
@@ -610,7 +610,7 @@ export default function DispatchBoardPage() {
                   </button>
                 </div>
               )}
-              <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 450px)' }}>
+              <div className="overflow-y-auto scrollbar-thin flex-1" style={{ maxHeight: 'calc(100vh - 450px)' }}>
                 {unassignedLoads.length === 0 ? (
                   <div className="p-8 text-center">
                     <p className="text-slate-400">All loads assigned</p>

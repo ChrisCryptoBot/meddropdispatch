@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import { showToast, showApiError } from '@/lib/toast'
 
 interface Vehicle {
@@ -11,6 +12,7 @@ interface Vehicle {
   vehicleModel?: string | null
   vehicleYear?: number | null
   vehiclePlate: string
+  vehicleNumber?: string | null
   hasRefrigeration: boolean
   nickname?: string | null
   isActive: boolean
@@ -42,6 +44,7 @@ export default function DriverVehiclePage() {
     vehicleModel: '',
     vehicleYear: '',
     vehiclePlate: '',
+    vehicleNumber: '',
     hasRefrigeration: false,
     nickname: '',
     registrationExpiryDate: '',
@@ -54,6 +57,11 @@ export default function DriverVehiclePage() {
     registrationNumber: '',
     registrationDocument: null as File | null,
   })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     // Get driver from API auth check (httpOnly cookie) - layout handles redirects
@@ -106,6 +114,7 @@ export default function DriverVehiclePage() {
       vehicleModel: '',
       vehicleYear: '',
       vehiclePlate: '',
+      vehicleNumber: '',
       hasRefrigeration: false,
       nickname: '',
       registrationExpiryDate: '',
@@ -165,6 +174,7 @@ export default function DriverVehiclePage() {
       vehicleModel: vehicle.vehicleModel || '',
       vehicleYear: vehicle.vehicleYear?.toString() || '',
       vehiclePlate: vehicle.vehiclePlate,
+      vehicleNumber: vehicle.vehicleNumber || '',
       hasRefrigeration: vehicle.hasRefrigeration,
       nickname: vehicle.nickname || '',
       registrationExpiryDate: vehicle.registrationExpiryDate ? new Date(vehicle.registrationExpiryDate).toISOString().split('T')[0] : '',
@@ -222,6 +232,19 @@ export default function DriverVehiclePage() {
     e.preventDefault()
     if (!driver) return
 
+    // Validate vehicleNumber
+    const trimmedVehicleNumber = formData.vehicleNumber.trim().toUpperCase()
+    if (!trimmedVehicleNumber) {
+      showToast.error('Vehicle number is required', 'Please enter a unique vehicle identifier')
+      return
+    }
+
+    // Validate format
+    if (!/^[A-Z0-9_-]+$/.test(trimmedVehicleNumber)) {
+      showToast.error('Invalid vehicle number format', 'Only letters, numbers, dashes, and underscores are allowed')
+      return
+    }
+
     setIsSaving(true)
 
     try {
@@ -240,6 +263,7 @@ export default function DriverVehiclePage() {
           vehicleModel: formData.vehicleModel || null,
           vehicleYear: formData.vehicleYear ? parseInt(formData.vehicleYear) : null,
           vehiclePlate: formData.vehiclePlate,
+          vehicleNumber: trimmedVehicleNumber,
           hasRefrigeration: formData.hasRefrigeration,
           nickname: formData.nickname || null,
         }),
@@ -364,6 +388,11 @@ export default function DriverVehiclePage() {
                       {getComplianceStatus(vehicle).badge}
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm text-slate-400">
+                      {vehicle.vehicleNumber && (
+                        <div className="col-span-2">
+                          <span className="font-medium text-cyan-400">Vehicle Number:</span> <span className="font-semibold text-white">{vehicle.vehicleNumber}</span>
+                        </div>
+                      )}
                       <div>
                         <span className="font-medium">Type:</span> {vehicle.vehicleType.replace(/_/g, ' ')}
                       </div>
@@ -458,15 +487,65 @@ export default function DriverVehiclePage() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
-            </h2>
+      {/* Add/Edit Modal - Portal to body for proper centering */}
+      {showAddModal && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddModal(false)
+              resetForm()
+            }
+          }}
+        >
+          <div className="glass-primary max-w-2xl w-full rounded-xl border border-slate-700/50 shadow-2xl my-8 relative max-h-[90vh] flex flex-col">
+            {/* Close X Button */}
+            <button
+              onClick={() => {
+                setShowAddModal(false)
+                resetForm()
+              }}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors z-10"
+              title="Close"
+              type="button"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 border-b border-slate-700/50 flex-shrink-0">
+              <h2 className="text-2xl font-bold text-white pr-8">
+                {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+              </h2>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-6">
+              <form onSubmit={handleSubmit} className="space-y-6" id="vehicle-form">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  Vehicle Number <span className="text-cyan-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.vehicleNumber}
+                  onChange={(e) => {
+                    // Remove any invalid characters and convert to uppercase
+                    const value = e.target.value.replace(/[^A-Z0-9_-]/gi, '').toUpperCase()
+                    setFormData({ ...formData, vehicleNumber: value })
+                  }}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
+                  placeholder="e.g., V001, SPRINTER-A, TRUCK-1"
+                  required
+                  pattern="[A-Z0-9_-]+"
+                  title="Only letters, numbers, dashes, and underscores are allowed"
+                />
+                <p className="text-xs text-slate-500 mt-1">Unique identifier for this vehicle (used for odometer tracking). Must be unique per driver.</p>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Vehicle Nickname (Optional)
@@ -610,28 +689,33 @@ export default function DriverVehiclePage() {
             </div>
           </div>
 
-              <div className="flex gap-4 pt-4">
-            <button
-              type="button"
-                  onClick={() => {
-                    setShowAddModal(false)
-                    resetForm()
-                  }}
-                  className="flex-1 px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
-            >
-              Cancel
-            </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
-                >
-                  {isSaving ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
-                </button>
+              </form>
+            </div>
+
+            {/* Footer with buttons - Fixed at bottom */}
+            <div className="px-6 py-4 border-t border-slate-700/50 flex-shrink-0 flex gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddModal(false)
+                  resetForm()
+                }}
+                className="flex-1 px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="vehicle-form"
+                disabled={isSaving}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

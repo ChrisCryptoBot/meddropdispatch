@@ -12,6 +12,7 @@ interface ShipperAutocompleteProps {
     contactName: string
     phone: string
     clientType: string
+    shipperCode: string | null // Client ID
   }) => void
   placeholder?: string
   className?: string
@@ -27,6 +28,7 @@ interface Shipper {
   contactName: string
   phone: string
   clientType: string
+  shipperCode: string | null // Client ID
 }
 
 export default function ShipperAutocomplete({
@@ -278,9 +280,16 @@ export default function ShipperAutocomplete({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {shipper.companyName}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-white truncate">
+                      {shipper.companyName}
+                    </p>
+                    {shipper.shipperCode && (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-cyan-500/20 text-cyan-300 rounded border border-cyan-500/30 flex-shrink-0">
+                        ID: {shipper.shipperCode}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400 truncate">
                     {shipper.email} • {shipper.contactName}
                   </p>

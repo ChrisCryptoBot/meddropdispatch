@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import { showToast, showApiError } from '@/lib/toast'
@@ -28,6 +29,11 @@ export default function BlockedEmailsPage() {
   })
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const adminData = localStorage.getItem('admin')
@@ -337,8 +343,12 @@ export default function BlockedEmailsPage() {
       )}
 
       {/* Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAddModal(false)}>
+      {showAddModal && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowAddModal(false)}
+        >
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4 font-heading">Block Email</h2>
 
@@ -386,12 +396,17 @@ export default function BlockedEmailsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Modal */}
-      {showEditModal && selectedEmail && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowEditModal(false)}>
+      {showEditModal && selectedEmail && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowEditModal(false)}
+        >
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4 font-heading">Edit Blocked Email</h2>
             <p className="text-slate-400 mb-6">
@@ -432,7 +447,8 @@ export default function BlockedEmailsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

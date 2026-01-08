@@ -41,6 +41,7 @@ export async function GET(
       shift: {
         id: currentShift.id,
         driverId: currentShift.driverId,
+        vehicleId: currentShift.vehicleId || null,
         clockIn: currentShift.clockIn.toISOString(),
         clockOut: currentShift.clockOut?.toISOString() || null,
         totalHours: currentShift.totalHours,

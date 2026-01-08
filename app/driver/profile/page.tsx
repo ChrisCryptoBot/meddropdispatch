@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import { showToast, showApiError } from '@/lib/toast'
 import DocumentViewButton from '@/components/features/DocumentViewButton'
 import ProfilePictureUpload from '@/components/features/ProfilePictureUpload'
@@ -50,6 +51,11 @@ export default function DriverProfilePage() {
   const [uploadExpiryDate, setUploadExpiryDate] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [ratings, setRatings] = useState<{ averageRating: number; ratingCount: number } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Documents that can expire (for display purposes only)
   const EXPIRABLE_DOCS = [
@@ -906,8 +912,12 @@ export default function DriverProfilePage() {
       </div>
 
       {/* Upload Document Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {showUploadModal && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowUploadModal(false)}
+        >
           <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg">
             <h3 className="text-2xl font-bold text-white mb-6">Upload Document</h3>
 
@@ -1022,7 +1032,8 @@ export default function DriverProfilePage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

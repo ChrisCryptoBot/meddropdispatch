@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { LOAD_STATUS_LABELS, LOAD_STATUS_COLORS, TRACKING_EVENT_LABELS } from '@/lib/constants'
@@ -63,6 +64,11 @@ export default function AdminLoadDetailPage() {
   const [isAutoAssigning, setIsAutoAssigning] = useState(false)
   const [autoAssignPreview, setAutoAssignPreview] = useState<any>(null)
   const [showAutoAssignModal, setShowAutoAssignModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load data
   useEffect(() => {
@@ -942,8 +948,11 @@ export default function AdminLoadDetailPage() {
       </div>
 
       {/* Full-Screen GPS Map Modal */}
-      {showFullScreenMap && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      {showFullScreenMap && mounted && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
           <div className="w-full h-full max-w-7xl">
             <GPSTrackingMap
               loadId={load.id}
@@ -954,12 +963,17 @@ export default function AdminLoadDetailPage() {
               onCloseFullScreen={() => setShowFullScreenMap(false)}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Auto-Quote Preview Modal */}
-      {showAutoQuoteModal && autoQuotePreview && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAutoQuoteModal(false)}>
+      {showAutoQuoteModal && autoQuotePreview && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowAutoQuoteModal(false)}
+        >
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4 font-heading">Auto-Quote Preview</h2>
             <div className="space-y-4 mb-6">
@@ -1000,11 +1014,12 @@ export default function AdminLoadDetailPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Auto-Assign Preview Modal */}
-      {showAutoAssignModal && autoAssignPreview && (
+      {showAutoAssignModal && autoAssignPreview ? (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAutoAssignModal(false)}>
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4 font-heading">Auto-Assign Driver</h2>
@@ -1051,7 +1066,7 @@ export default function AdminLoadDetailPage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { showToast, showApiError } from '@/lib/toast'
@@ -95,6 +96,11 @@ export default function ShipperLoadDetailPage() {
   const [feedback, setFeedback] = useState('')
   const [wouldRecommend, setWouldRecommend] = useState(true)
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   const [existingRating, setExistingRating] = useState<any>(null)
   const [showFullScreenMap, setShowFullScreenMap] = useState(false)
 
@@ -900,15 +906,18 @@ export default function ShipperLoadDetailPage() {
             )}
 
             {/* Full Screen Map Modal - Uber Style */}
-            {showFullScreenMap && load && load.gpsTrackingEnabled && (
-              <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
-                    <GPSTrackingMap
-                      loadId={load.id}
-                      pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
-                      dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
-                      enabled={load.gpsTrackingEnabled}
-                      fullScreen={true}
-                      onCloseFullScreen={() => setShowFullScreenMap(false)}
+            {showFullScreenMap && load && load.gpsTrackingEnabled && mounted ? createPortal(
+              <div 
+                className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-sm" 
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+              >
+                <GPSTrackingMap
+                  loadId={load.id}
+                  pickupAddress={`${load.pickupFacility.addressLine1}, ${load.pickupFacility.city}, ${load.pickupFacility.state}`}
+                  dropoffAddress={`${load.dropoffFacility.addressLine1}, ${load.dropoffFacility.city}, ${load.dropoffFacility.state}`}
+                  enabled={load.gpsTrackingEnabled}
+                  fullScreen={true}
+                  onCloseFullScreen={() => setShowFullScreenMap(false)}
                   driver={load.driver}
                   uberStyle={true}
                   onCallDriver={() => {
@@ -917,8 +926,8 @@ export default function ShipperLoadDetailPage() {
                     }
                   }}
                 />
-              </div>
-            )}
+              </div>,
+              document.body) : null}
 
             {/* Tracking Timeline */}
             <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
@@ -1212,8 +1221,12 @@ export default function ShipperLoadDetailPage() {
       </div>
 
       {/* Document Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {showUploadModal && mounted ? createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowUploadModal(false)}
+        >
           <div className="glass-primary max-w-2xl w-full rounded-3xl p-6 border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Upload Document</h3>
 
@@ -1310,12 +1323,16 @@ export default function ShipperLoadDetailPage() {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body) : null}
 
       {/* Reject Driver Quote Modal */}
-      {showRejectQuoteModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowRejectQuoteModal(false)}>
+      {showRejectQuoteModal && mounted ? createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowRejectQuoteModal(false)}
+        >
           <div className="glass-primary max-w-md w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Reject Driver Quote</h3>
             <p className="text-sm text-gray-600 mb-4">
@@ -1361,22 +1378,22 @@ export default function ShipperLoadDetailPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body) : null}
 
       {/* Cancel Load Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Cancel Load</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="glass-primary rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto scrollbar-thin border border-slate-700/50">
+            <h2 className="text-2xl font-bold text-white mb-4">Cancel Load</h2>
+            <p className="text-slate-300 mb-6">
               Are you sure you want to cancel this load? This action cannot be undone.
             </p>
 
             <div className="space-y-4">
               {/* Cancellation Reason */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Reason for Cancellation *
                 </label>
                 <select
@@ -1396,7 +1413,7 @@ export default function ShipperLoadDetailPage() {
 
               {/* Billing Rule */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Billing Rule *
                 </label>
                 <select
@@ -1413,7 +1430,7 @@ export default function ShipperLoadDetailPage() {
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
                   Additional Notes (Optional)
                 </label>
                 <textarea
@@ -1448,11 +1465,12 @@ export default function ShipperLoadDetailPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Rating Modal */}
-      {showRatingModal && (
+      {showRatingModal && mounted ? createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass-primary max-w-md w-full rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -1550,8 +1568,8 @@ export default function ShipperLoadDetailPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body) : null}
     </div>
   )
 }

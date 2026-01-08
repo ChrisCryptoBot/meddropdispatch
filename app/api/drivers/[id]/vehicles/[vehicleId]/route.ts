@@ -10,6 +10,7 @@ const updateVehicleSchema = z.object({
   vehicleModel: z.string().optional().nullable(),
   vehicleYear: z.number().int().min(1900).max(2100).optional().nullable(),
   vehiclePlate: z.string().min(1).optional(),
+  vehicleNumber: z.string().optional().nullable(), // Personalized vehicle identifier for odometer tracking
   hasRefrigeration: z.boolean().optional(),
   nickname: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
@@ -102,6 +103,71 @@ export async function PATCH(
 
     const data = validation.data
 
+    // Validate vehicleNumber uniqueness per driver (if being updated)
+    if (data.vehicleNumber !== undefined) {
+      const trimmedVehicleNumber = data.vehicleNumber ? data.vehicleNumber.trim().toUpperCase() : null
+      
+      if (trimmedVehicleNumber !== null && trimmedVehicleNumber.length === 0) {
+        throw new ValidationError('Vehicle number cannot be empty. Use null to remove the vehicle number.')
+      }
+
+      if (trimmedVehicleNumber) {
+        // Check for duplicate vehicleNumber for this driver (excluding current vehicle)
+        const existingVehicle = await prisma.vehicle.findFirst({
+          where: {
+            driverId,
+            vehicleNumber: trimmedVehicleNumber,
+            isActive: true,
+            id: { not: vehicleId }, // Exclude the current vehicle being edited
+          },
+        })
+
+        if (existingVehicle) {
+          throw new ValidationError(`Vehicle number "${trimmedVehicleNumber}" is already in use. Please choose a different number.`)
+        }
+
+        // Validate format: alphanumeric, dash, underscore only
+        if (!/^[A-Z0-9_-]+$/.test(trimmedVehicleNumber)) {
+          throw new ValidationError('Vehicle number can only contain letters, numbers, dashes, and underscores')
+        }
+
+        // Check if vehicle number is being changed
+        if (vehicle.vehicleNumber !== trimmedVehicleNumber) {
+          // Check if vehicle has active shifts (warn but allow change)
+          const activeShifts = await prisma.driverShift.count({
+            where: {
+              vehicleId,
+              clockOut: null, // Active shifts only
+            },
+          })
+
+          if (activeShifts > 0) {
+            // Note: Changing vehicle number while vehicle is in use
+            // The current shift keeps the existing vehicleId reference, but future shifts will use the new number
+            // This is acceptable since the shift record stores vehicleId, not vehicleNumber
+          }
+
+          // Check if vehicle is assigned to active loads (PICKED_UP, IN_TRANSIT, SCHEDULED)
+          const activeLoads = await prisma.loadRequest.count({
+            where: {
+              vehicleId,
+              status: {
+                in: ['SCHEDULED', 'PICKED_UP', 'IN_TRANSIT'], // Active load statuses
+              },
+            },
+          })
+
+          if (activeLoads > 0) {
+            // Note: Vehicle number change is allowed even with active loads
+            // The load record stores vehicleId, not vehicleNumber, so historical data integrity is maintained
+          }
+
+          // Update data with trimmed/normalized value
+          data.vehicleNumber = trimmedVehicleNumber
+        }
+      }
+    }
+
     // Parse dates if provided
     const registrationExpiryDate = data.registrationExpiryDate
       ? (data.registrationExpiryDate instanceof Date 
@@ -126,6 +192,7 @@ export async function PATCH(
     if (data.vehicleModel !== undefined) updateData.vehicleModel = data.vehicleModel || null
     if (data.vehicleYear !== undefined) updateData.vehicleYear = data.vehicleYear || null
     if (data.vehiclePlate !== undefined) updateData.vehiclePlate = data.vehiclePlate
+    if (data.vehicleNumber !== undefined) updateData.vehicleNumber = data.vehicleNumber || null
     if (data.hasRefrigeration !== undefined) updateData.hasRefrigeration = data.hasRefrigeration
     if (data.nickname !== undefined) updateData.nickname = data.nickname || null
     if (data.isActive !== undefined) updateData.isActive = data.isActive

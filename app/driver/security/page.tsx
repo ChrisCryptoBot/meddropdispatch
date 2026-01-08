@@ -123,59 +123,59 @@ export default function DriverSecurityPage() {
       <div className="max-w-2xl">
         <form onSubmit={handlePasswordChange} className="space-y-6">
           <div className="glass rounded-2xl p-6 space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">Change Password</h2>
+            <h2 className="text-xl font-bold text-white">Change Password</h2>
 
             {error && (
-              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="p-4 bg-red-500/20 rounded-lg border border-red-500/30">
+                <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-800">Password updated successfully!</p>
+              <div className="p-4 bg-green-500/20 rounded-lg border border-green-500/30">
+                <p className="text-sm text-green-400">Password updated successfully!</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Current Password *
               </label>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
                 New Password *
               </label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
                 minLength={8}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Password must be at least 8 characters long
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
                 Confirm New Password *
               </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-teal-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-teal-50/60"
+                className="w-full px-4 py-3 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 bg-slate-800/50 text-slate-200 placeholder:text-slate-500"
                 required
                 minLength={8}
               />
@@ -198,7 +198,7 @@ export default function DriverSecurityPage() {
                   setError(null)
                   setSuccess(false)
                 }}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-slate-700/50 text-slate-200 rounded-lg font-semibold hover:bg-slate-700 transition-colors border border-slate-600/50"
               >
                 Clear
               </button>

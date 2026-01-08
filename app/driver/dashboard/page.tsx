@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -87,6 +88,7 @@ export default function DriverDashboardPage() {
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showDenyModal, setShowDenyModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [denyLoadId, setDenyLoadId] = useState<string | null>(null)
   const [denyReason, setDenyReason] = useState<string>('OTHER')
   const [denyNotes, setDenyNotes] = useState('')
@@ -105,6 +107,10 @@ export default function DriverDashboardPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
   const [enableLocationTracking, setEnableLocationTracking] = useState(false)
   const [earnings, setEarnings] = useState<any>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Get driver from layout's auth state - no need to duplicate auth check
   // The layout handles authentication, we just fetch data here
@@ -1037,8 +1043,12 @@ export default function DriverDashboardPage() {
         )}
 
         {/* Deny Load Modal */}
-        {showDenyModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDenyModal(false)}>
+        {showDenyModal && mounted ? createPortal(
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+            onClick={() => setShowDenyModal(false)}
+          >
             <div className="glass-primary max-w-md w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-white mb-4">Deny Load</h3>
               <p className="text-sm text-slate-300 mb-4">Why are you declining this load?</p>
@@ -1098,12 +1108,16 @@ export default function DriverDashboardPage() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </div>,
+          document.body) : null}
 
         {/* Submit Quote Modal */}
-        {showQuoteModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowQuoteModal(false)}>
+        {showQuoteModal && mounted ? createPortal(
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+            onClick={() => setShowQuoteModal(false)}
+          >
             <div className="glass-primary max-w-md w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-white mb-4">Submit Quote</h3>
               <p className="text-sm text-slate-300 mb-4">Provide your quote amount and any notes for the shipper.</p>
@@ -1164,13 +1178,17 @@ export default function DriverDashboardPage() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </div>,
+          document.body) : null}
 
         {/* Smart Route Modal */}
-        {showSmartRouteModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSmartRouteModal(false)}>
-            <div className="glass-primary max-w-4xl w-full rounded-xl p-6 max-h-[90vh] overflow-y-auto border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
+        {showSmartRouteModal && mounted ? createPortal(
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto" 
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+            onClick={() => setShowSmartRouteModal(false)}
+          >
+            <div className="glass-primary max-w-4xl w-full rounded-xl p-6 max-h-[90vh] overflow-y-auto scrollbar-thin border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold text-white">Smart Route Optimization</h3>
                 <button
@@ -1312,12 +1330,15 @@ export default function DriverDashboardPage() {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          </div>,
+          document.body) : null}
 
         {/* Vehicle Selection Modal */}
-        {showVehicleSelectModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => {
+        {showVehicleSelectModal && mounted ? createPortal(
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+            onClick={() => {
             setShowVehicleSelectModal(false)
             setPendingLoadId(null)
             setSelectedVehicleId('')
@@ -1436,9 +1457,10 @@ export default function DriverDashboardPage() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </div>,
+          document.body) : null}
       </div>
     </div>
   )
 }
+

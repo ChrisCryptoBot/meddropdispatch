@@ -237,36 +237,15 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // If shipper exists but doesn't have a shipperCode, generate one
+        // EDGE CASE: Ensure shipper has a shipperCode (client ID) - generate if missing
         if (shipper && !shipper.shipperCode) {
-          const cleanName = (shipper.companyName || 'SHIPPER').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
-          let baseCode = cleanName.substring(0, 4)
-          if (baseCode.length < 3) {
-            baseCode = baseCode.padEnd(3, 'X')
-          }
-
-          let shipperCode = baseCode
-          let attempts = 0
-          while (attempts < 50) {
-            const existing = await prisma.shipper.findUnique({
-              where: { shipperCode },
-              select: { id: true }
-            })
-
-            if (!existing) {
-              break
-            }
-
-            attempts++
-            const timestamp = Date.now().toString().slice(-4)
-            shipperCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
-          }
-
-          // Update shipper with generated code
           try {
-            shipper = await prisma.shipper.update({
+            const { ensureShipperCode } = await import('@/lib/shipper-code')
+            const shipperCode = await ensureShipperCode(shipper.id)
+            
+            // Refresh shipper data to get updated code
+            shipper = await prisma.shipper.findUnique({
               where: { id: shipper.id },
-              data: { shipperCode },
               select: {
                 id: true,
                 companyName: true,
@@ -276,11 +255,15 @@ export async function POST(request: NextRequest) {
                 phone: true,
                 email: true,
               }
-            })
-          } catch (updateError) {
-            console.error('Error updating shipper code:', updateError)
-            // Continue with existing shipper even if code update fails, but set the code locally
-            shipper = { ...shipper, shipperCode }
+            }) || shipper
+            
+            // If refresh didn't work, manually set the code
+            if (shipper && !shipper.shipperCode) {
+              shipper = { ...shipper, shipperCode }
+            }
+          } catch (codeError) {
+            console.error('Error ensuring shipper code:', codeError)
+            // Continue with existing shipper even if code generation fails
           }
         }
       }
@@ -324,45 +307,9 @@ export async function POST(request: NextRequest) {
           console.warn('BlockedEmail check skipped - model may not be available yet:', error)
         }
 
-        // Auto-generate shipper code from company name - ensure uniqueness
-        const cleanName = (data.companyName || 'SHIPPER').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
-        let baseCode = cleanName.substring(0, 4)
-        if (baseCode.length < 3) {
-          baseCode = baseCode.padEnd(3, 'X')
-        }
-
-        // Generate unique shipperCode - try base code first, then add numbers
-        let shipperCode = baseCode
-        let attempts = 0
-        const maxAttempts = 100
-
-        while (attempts < maxAttempts) {
-          // Check if this code already exists
-          const existing = await prisma.shipper.findUnique({
-            where: { shipperCode },
-            select: { id: true }
-          })
-
-          if (!existing) {
-            // Code is available, use it
-            break
-          }
-
-          // Code exists, try next variation
-          attempts++
-          if (attempts === 1) {
-            // First attempt: try with number suffix
-            shipperCode = `${baseCode.substring(0, Math.max(2, baseCode.length - 1))}${attempts}`
-          } else {
-            shipperCode = `${baseCode.substring(0, Math.max(2, baseCode.length - 1))}${attempts}`
-          }
-        }
-
-        // If we couldn't find a unique code after max attempts, use timestamp-based fallback
-        if (attempts >= maxAttempts) {
-          const timestamp = Date.now().toString().slice(-4)
-          shipperCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
-        }
+        // Generate unique shipperCode using utility function (ensures uniqueness and handles edge cases)
+        const { generateShipperCode } = await import('@/lib/shipper-code')
+        const shipperCode = await generateShipperCode(data.companyName)
 
         // EDGE CASE VALIDATION: 1.4 Account Creation Edge Cases
         try {
@@ -399,6 +346,8 @@ export async function POST(request: NextRequest) {
           // If unique constraint on shipperCode failed, try one more time with timestamp
           if (createError?.code === 'P2002' && createError?.meta?.target?.includes('shipperCode')) {
             const timestamp = Date.now().toString().slice(-4)
+            const cleanName = (data.companyName || 'SHIPPER').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+            const baseCode = cleanName.substring(0, 4) || 'SHIP'
             const fallbackCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
 
             try {
@@ -487,97 +436,51 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Generate shipperCode if missing - with multiple fallbacks to ensure it always works
+      // EDGE CASE: Final validation - ensure shipper has a shipperCode before load creation
       if (!finalShipper.shipperCode || finalShipper.shipperCode.trim() === '' || finalShipper.shipperCode === null) {
-        const cleanName = (finalShipper.companyName || 'SHIPPER').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
-        let baseCode = cleanName.substring(0, 4)
-        if (baseCode.length < 3) {
-          baseCode = baseCode.padEnd(3, 'X')
-        }
-
-        let shipperCode = baseCode
-        let attempts = 0
-        const maxAttempts = 50
-
-        // Try to find unique code
-        while (attempts < maxAttempts) {
-          try {
-            const existing = await prisma.shipper.findUnique({
-              where: { shipperCode },
-              select: { id: true }
-            })
-
-            if (!existing || existing.id === finalShipper.id) {
-              break
+        try {
+          const { ensureShipperCode } = await import('@/lib/shipper-code')
+          const shipperCode = await ensureShipperCode(finalShipper.id)
+          
+          // Refresh to get updated shipper with code
+          finalShipper = await prisma.shipper.findUnique({
+            where: { id: finalShipper.id },
+            select: {
+              id: true,
+              companyName: true,
+              shipperCode: true,
+              email: true,
+              contactName: true,
             }
-
-            attempts++
-            if (attempts < 10) {
-              shipperCode = `${baseCode.substring(0, Math.max(2, baseCode.length - 1))}${attempts}`
-            } else {
-              // Use timestamp for uniqueness
-              const timestamp = Date.now().toString().slice(-4)
-              shipperCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
-              break
-            }
-          } catch (findError) {
-            // If lookup fails, use timestamp-based code
-            const timestamp = Date.now().toString().slice(-4)
-            shipperCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
-            break
+          }) || finalShipper
+          
+          // If still no code after ensure, throw error (this should never happen)
+          if (!finalShipper.shipperCode) {
+            throw new Error('Failed to generate shipperCode')
           }
-        }
-
-        // Final fallback - guaranteed unique timestamp-based code
-        if (!shipperCode || shipperCode.trim() === '') {
-          const timestamp = Date.now().toString().slice(-6)
-          shipperCode = `SH${timestamp}`.substring(0, 4)
-        }
-
-        // Update shipper with code - with retry logic
-        let updateSuccess = false
-        for (let retry = 0; retry < 3; retry++) {
-          try {
-            finalShipper = await prisma.shipper.update({
-              where: { id: finalShipper.id },
-              data: { shipperCode },
-              select: {
-                id: true,
-                companyName: true,
-                shipperCode: true,
-                email: true,
-                contactName: true,
-              }
-            })
-            updateSuccess = true
-            break
-          } catch (updateError: any) {
-            console.error(`Error updating shipper code (attempt ${retry + 1}):`, updateError)
-
-            // If unique constraint violation, generate new code
-            if (updateError?.code === 'P2002') {
-              const timestamp = Date.now().toString().slice(-6)
-              shipperCode = `SH${timestamp}${retry}`.substring(0, 4)
-            } else if (retry === 2) {
-              // Last attempt failed - use generated code anyway
-              finalShipper = { ...finalShipper, shipperCode }
-              console.warn('Using locally generated shipperCode due to update failure')
-            }
-          }
-        }
-
-        // Ensure we have a shipperCode even if update failed
-        if (!finalShipper.shipperCode || finalShipper.shipperCode.trim() === '') {
-          finalShipper = { ...finalShipper, shipperCode }
+        } catch (codeError) {
+          console.error('Error ensuring shipper code in final validation:', codeError)
+          return NextResponse.json(
+            {
+              error: 'Missing Client ID',
+              message: 'Unable to generate client ID for shipper. Please contact support.',
+              details: 'A client ID is required to create a load request.'
+            },
+            { status: 500 }
+          )
         }
       }
 
-      // Double-check we have shipperCode before proceeding
+      // Final validation: Ensure shipperCode exists (should be guaranteed by ensureShipperCode above)
       if (!finalShipper.shipperCode || finalShipper.shipperCode.trim() === '' || finalShipper.shipperCode === null) {
-        // Last resort fallback
-        const timestamp = Date.now().toString().slice(-6)
-        finalShipper = { ...finalShipper, shipperCode: `SH${timestamp}`.substring(0, 4) }
-        console.warn('Using emergency fallback shipperCode')
+        return NextResponse.json(
+          {
+            error: 'Missing Client ID',
+            message: 'Shipper does not have a client ID. This should not happen. Please contact support.',
+            details: 'A client ID is required to create a load request.'
+          },
+          { status: 500 }
+        )
       }
 
       // Now generate tracking code with guaranteed shipperCode
@@ -642,11 +545,13 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if driver is assigned and validate
+      // Support both driverId and assignedDriverId field names (for admin/internal creation)
       let assignedDriverId: string | null = null
-      if (data.driverId) {
+      const driverIdToCheck = data.driverId || (rawData as any).assignedDriverId
+      if (driverIdToCheck) {
         // Verify driver exists and is active
         const assignedDriver = await prisma.driver.findUnique({
-          where: { id: data.driverId },
+          where: { id: driverIdToCheck },
           select: { id: true, status: true },
         })
 
@@ -700,6 +605,19 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Determine createdVia - allow INTERNAL for admin/internal creation
+      const createdVia = (rawData as any).createdVia || 'WEB_FORM'
+      const validCreatedVia = ['WEB_FORM', 'EMAIL', 'INTERNAL', 'DRIVER_MANUAL'].includes(createdVia) ? createdVia : 'WEB_FORM'
+      
+      // Determine initial status - INTERNAL/DRIVER_MANUAL loads start as SCHEDULED if driver assigned, otherwise REQUESTED
+      let initialStatus = 'REQUESTED'
+      if (assignedDriverId) {
+        initialStatus = 'SCHEDULED'
+      } else if (validCreatedVia === 'INTERNAL' || validCreatedVia === 'DRIVER_MANUAL') {
+        // Admin/internal loads without driver assignment start as REQUESTED (will need quote/assignment)
+        initialStatus = 'REQUESTED'
+      }
+
       // Create load request
       const loadRequest = await prisma.loadRequest.create({
         data: {
@@ -717,12 +635,28 @@ export async function POST(request: NextRequest) {
           declaredValue: data.declaredValue ? parseFloat(data.declaredValue.toString()) : null,
           readyTime: data.readyTime ? new Date(data.readyTime) : null,
           deliveryDeadline: data.deliveryDeadline ? new Date(data.deliveryDeadline) : null,
-          accessNotes: data.accessNotes || null,
+          accessNotes: data.accessNotes || data.notes || null, // Support both field names
           preferredContactMethod: data.preferredContactMethod as any,
-          status: assignedDriverId ? 'SCHEDULED' : 'REQUESTED', // If driver assigned, mark as scheduled
-          createdVia: 'WEB_FORM',
-          driverId: assignedDriverId, // Assign driver if provided
+          status: initialStatus,
+          createdVia: validCreatedVia,
+          driverId: assignedDriverId, // Assign driver if provided (can be from assignedDriverId field)
           assignedAt: assignedDriverId ? new Date() : null, // Set assignment timestamp
+          // Compliance & Handling fields
+          chainOfCustodyRequired: data.chainOfCustodyRequired === true || data.chainOfCustodyRequired === 'true',
+          signatureRequiredAtPickup: data.signatureRequiredAtPickup !== false && data.signatureRequiredAtPickup !== 'false',
+          signatureRequiredAtDelivery: data.signatureRequiredAtDelivery !== false && data.signatureRequiredAtDelivery !== 'false',
+          electronicPodAcceptable: data.electronicPodAcceptable !== false && data.electronicPodAcceptable !== 'false',
+          temperatureLoggingRequired: data.temperatureLoggingRequired === true || data.temperatureLoggingRequired === 'true',
+          driverInstructions: data.driverInstructions || null,
+          // Billing & Internal Ops
+          poNumber: data.poNumber || null,
+          priorityLevel: (data.priorityLevel as any) || 'NORMAL',
+          tags: data.tags ? (typeof data.tags === 'string' ? data.tags : JSON.stringify(data.tags)) : null,
+          // Scheduling options
+          isRecurring: data.isRecurring === true || data.isRecurring === 'true',
+          directDriveRequired: data.directDriveRequired === true || data.directDriveRequired === 'true',
+          // Quoted rate (if provided during creation)
+          quoteAmount: data.quotedRate || data.quoteAmount ? parseFloat((data.quotedRate || data.quoteAmount).toString()) : null,
         }
       })
 

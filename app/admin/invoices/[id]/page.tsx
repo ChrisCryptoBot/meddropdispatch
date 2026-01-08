@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatCurrency } from '@/lib/utils'
@@ -87,6 +88,7 @@ export default function InvoiceDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [paymentData, setPaymentData] = useState({
     paymentMethod: '',
     paymentReference: '',
@@ -97,6 +99,10 @@ export default function InvoiceDetailPage() {
     reason: '',
     notes: '',
   })
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     fetchInvoice()
@@ -511,8 +517,12 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowPaymentModal(false)}>
+      {showPaymentModal && mounted ? createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowPaymentModal(false)}
+        >
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4">Mark Invoice as Paid</h2>
             <p className="text-slate-400 mb-6">
@@ -567,12 +577,17 @@ export default function InvoiceDetailPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
 
       {/* Adjustment Modal */}
-      {showAdjustmentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAdjustmentModal(false)}>
+      {showAdjustmentModal && mounted ? createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowAdjustmentModal(false)}
+        >
           <div className="glass-primary rounded-xl p-8 max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4">Add Invoice Adjustment</h2>
             <p className="text-slate-400 mb-6">
@@ -651,8 +666,9 @@ export default function InvoiceDetailPage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </div>
   )
 }

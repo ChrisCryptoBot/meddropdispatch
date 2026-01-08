@@ -297,7 +297,7 @@ export default function AdminLayout({
 
       {/* Sidebar - Fixed full height - Hidden on mobile - Gold Standard */}
       <aside className="hidden md:block fixed left-0 top-[85px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 85px)' }}>
-        <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
+        <div className="flex flex-col h-full overflow-y-auto scrollbar-thin relative z-[55]">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
             {navigation.map((item) => {
@@ -336,7 +336,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile - Gold Standard */}
-      <main className="flex-1 overflow-y-auto pt-[85px] md:pl-64">
+      <main className="flex-1 overflow-y-auto scrollbar-thin pt-[85px] md:pl-64">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

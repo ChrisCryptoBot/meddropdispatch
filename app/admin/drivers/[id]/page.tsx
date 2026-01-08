@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminFromStorage } from '@/lib/auth-admin'
@@ -55,6 +56,11 @@ export default function AdminDriverReviewPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'loads' | 'performance' | 'earnings' | 'shifts'>('overview')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   const [metrics, setMetrics] = useState<any>(null)
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
 
@@ -692,8 +698,15 @@ export default function AdminDriverReviewPage() {
       )}
 
       {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {showRejectModal && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => {
+            setShowRejectModal(false)
+            setRejectionReason('')
+          }}
+        >
           <div className="glass-primary p-8 rounded-3xl max-w-md w-full border-2 border-blue-200/30 shadow-glass">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Reject Application</h2>
             <p className="text-gray-600 mb-4">
@@ -732,7 +745,8 @@ export default function AdminDriverReviewPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

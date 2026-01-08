@@ -99,6 +99,51 @@ export async function PATCH(
     // AUTHORIZATION: Verify user has permission to update this load's status
     await verifyLoadStatusUpdateAccess(nextReq, id)
 
+    // Get current status early for validation
+    const currentStatus = loadRequest.status
+    const newStatus = data.status
+
+    // LOGICAL VALIDATION: If driver is updating status, verify they're not INACTIVE/PENDING_APPROVAL
+    // Exception: Allow completion of in-progress loads (PICKED_UP/IN_TRANSIT → DELIVERED) even if driver is INACTIVE
+    // This allows drivers to complete loads they've already started, but prevents picking up new ones
+    if (loadRequest.driverId) {
+      const auth = await requireAuth(nextReq)
+      if (auth.userType === 'driver' && auth.userId === loadRequest.driverId) {
+        const driver = await prisma.driver.findUnique({
+          where: { id: loadRequest.driverId },
+          select: { status: true, isDeleted: true },
+        })
+        
+        if (driver) {
+          // Always block deleted drivers
+          if (driver.isDeleted) {
+            throw new ValidationError(
+              'Cannot update load status: Driver account has been deleted. Please contact support.'
+            )
+          }
+          
+          // Block INACTIVE/PENDING_APPROVAL drivers from picking up NEW loads
+          // But allow them to complete loads they've already started
+          const isPickingUpNewLoad = currentStatus === 'SCHEDULED' && ['EN_ROUTE', 'PICKED_UP'].includes(newStatus)
+          const isCompletingInProgressLoad = ['PICKED_UP', 'IN_TRANSIT'].includes(currentStatus) && newStatus === 'DELIVERED'
+          
+          if (driver.status === 'INACTIVE' || driver.status === 'PENDING_APPROVAL') {
+            if (isPickingUpNewLoad) {
+              throw new ValidationError(
+                `Cannot pick up new loads: Driver account is ${driver.status === 'INACTIVE' ? 'inactive' : 'pending approval'}. Please contact support to reactivate your account.`
+              )
+            }
+            // Allow completing in-progress loads (they've already started the work)
+            if (!isCompletingInProgressLoad && !['PICKED_UP', 'IN_TRANSIT', 'DELIVERED'].includes(currentStatus)) {
+              throw new ValidationError(
+                `Cannot update load status: Driver account is ${driver.status === 'INACTIVE' ? 'inactive' : 'pending approval'}. Please contact support.`
+              )
+            }
+          }
+        }
+      }
+    }
+
     // CHAIN-OF-CUSTODY: Enforce linear status transitions (scheduling system)
     // Allow flexible transitions - drivers can skip EN_ROUTE if already at pickup location
     const validTransitions: Record<string, string[]> = {
@@ -116,9 +161,6 @@ export async function PATCH(
       'CANCELLED': [], // Terminal state
       'COMPLETED': [], // Terminal state
     }
-
-    const currentStatus = loadRequest.status
-    const newStatus = data.status
 
     if (newStatus !== currentStatus) {
       // EDGE CASE VALIDATION: Section 5.2 - Status Transition Enforcement

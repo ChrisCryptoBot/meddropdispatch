@@ -4,6 +4,7 @@
 // Manage recurring load templates
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import LoadTemplateCard from '@/components/features/LoadTemplateCard'
@@ -299,7 +300,8 @@ export default function ShipperTemplatesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

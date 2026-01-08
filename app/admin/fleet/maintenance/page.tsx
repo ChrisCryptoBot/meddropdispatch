@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { showToast, showApiError } from '@/lib/toast'
 import { EmptyStates } from '@/components/ui/EmptyState'
 
@@ -36,6 +37,11 @@ export default function FleetMaintenancePage() {
     performedAt: new Date().toISOString().split('T')[0],
     notes: '',
   })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     fetchMaintenanceData()
@@ -302,8 +308,12 @@ export default function FleetMaintenancePage() {
       </div>
 
       {/* Log Maintenance Modal */}
-      {showLogMaintenanceModal && selectedVehicle && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowLogMaintenanceModal(false)}>
+      {showLogMaintenanceModal && selectedVehicle && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowLogMaintenanceModal(false)}
+        >
           <div className="glass-primary p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4">Log Maintenance Service</h2>
             
@@ -401,7 +411,8 @@ export default function FleetMaintenancePage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

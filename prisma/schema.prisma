@@ -620,6 +620,7 @@ model Vehicle {
 
   // Optional nickname for easy identification
   nickname String? // e.g., "Work Van", "Backup Truck"
+  vehicleNumber String? // Unique vehicle number/identifier (e.g., "VAN-001", "TRUCK-002")
 
   // Compliance & Liability Shield (V2 - Strict Liability)
   registrationExpiryDate DateTime? // GATEKEEPER FIELD - Required for compliance
@@ -643,10 +644,12 @@ model Vehicle {
   driver               Driver          @relation(fields: [driverId], references: [id], onDelete: Cascade)
   loadRequests         LoadRequest[]
   registrationDocument DriverDocument? @relation("VehicleRegistration", fields: [registrationDocumentId], references: [id])
+  shifts               DriverShift[] // Shifts that used this vehicle
 
   @@index([driverId])
   @@index([isActive])
   @@index([registrationExpiryDate])
+  @@index([vehicleNumber])
 }
 
 // VehicleMaintenance: Maintenance logs for vehicles (Fleet Enterprise - Tier 1)
@@ -671,14 +674,19 @@ model VehicleMaintenance {
 model DriverShift {
   id         String    @id @default(cuid())
   driverId   String
+  vehicleId  String? // Vehicle used for this shift (allows tracking odometer per vehicle)
   clockIn    DateTime
   clockOut   DateTime?
+  clockInOdometer  Int? // Odometer reading at clock-in (for this vehicle)
+  clockOutOdometer Int? // Odometer reading at clock-out (for this vehicle)
   totalHours Float? // Calculated on clockOut
 
   // Relations
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
 
   @@index([driverId])
+  @@index([vehicleId])
   @@index([clockIn])
   @@index([clockOut])
 }

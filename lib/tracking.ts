@@ -23,75 +23,17 @@ export async function generateTrackingCode(shipperId: string): Promise<string> {
   }
 
   // Generate shipper code if missing (fallback to first 3-4 letters of company name)
+  // EDGE CASE: Ensure shipper has a shipperCode using utility function (handles all edge cases)
   let shipperCode = shipper.shipperCode
   if (!shipperCode || shipperCode.trim() === '' || shipperCode === null) {
-    // Auto-generate from company name (first 3-4 uppercase letters, alphanumeric only)
-    const cleanName = (shipper.companyName || 'SHIPPER').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
-    let baseCode = cleanName.substring(0, 4)
-    if (baseCode.length < 3) {
-      baseCode = baseCode.padEnd(3, 'X')
-    }
-    
-    // Ensure uniqueness
-    shipperCode = baseCode
-    let attempts = 0
-    const maxAttempts = 100
-    
-    while (attempts < maxAttempts) {
-      try {
-        const existing = await prisma.shipper.findUnique({
-          where: { shipperCode },
-          select: { id: true }
-        })
-        
-        if (!existing || existing.id === shipperId) {
-          break
-        }
-      } catch (findError) {
-        // If findUnique fails (e.g., null shipperCode), just use the generated one
-        console.error('Error checking shipper code uniqueness:', findError)
-        break
-      }
-      
-      attempts++
-      if (attempts < 10) {
-        shipperCode = `${baseCode.substring(0, Math.max(2, baseCode.length - 1))}${attempts}`
-      } else {
-        // Use timestamp as fallback
-        const timestamp = Date.now().toString().slice(-4)
-        shipperCode = `${baseCode.substring(0, 2)}${timestamp}`.substring(0, 4)
-        break
-      }
-    }
-    
-    // Final fallback if all attempts failed
-    if (!shipperCode || shipperCode.trim() === '') {
+    try {
+      const { ensureShipperCode } = await import('./shipper-code')
+      shipperCode = await ensureShipperCode(shipperId)
+    } catch (codeError) {
+      console.error('Error ensuring shipper code in tracking generation:', codeError)
+      // Final fallback - this should never happen, but ensures we always have a code
       const timestamp = Date.now().toString().slice(-6)
       shipperCode = `SH${timestamp}`.substring(0, 4)
-    }
-    
-    // Update shipper with generated code (handle errors gracefully)
-    try {
-      await prisma.shipper.update({
-        where: { id: shipperId },
-        data: { shipperCode }
-      })
-    } catch (updateError: any) {
-      console.error('Error updating shipper code in tracking generation:', updateError)
-      // If update fails due to unique constraint, try one more time with timestamp
-      if (updateError?.code === 'P2002') {
-        const timestamp = Date.now().toString().slice(-6)
-        shipperCode = `SH${timestamp}`.substring(0, 4)
-        try {
-          await prisma.shipper.update({
-            where: { id: shipperId },
-            data: { shipperCode }
-          })
-        } catch (retryError) {
-          console.error('Error updating shipper code on retry:', retryError)
-          // Continue with generated code even if update fails
-        }
-      }
     }
   }
   

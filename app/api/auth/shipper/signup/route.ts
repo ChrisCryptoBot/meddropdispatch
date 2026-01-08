@@ -62,12 +62,17 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
+    // Generate unique shipperCode (client ID) for new shipper
+    const { generateShipperCode } = await import('@/lib/shipper-code')
+    const shipperCode = await generateShipperCode(companyName)
+
     // Create shipper
     const shipper = await prisma.shipper.create({
       data: {
         email: email.toLowerCase(),
         passwordHash,
         companyName,
+        shipperCode, // Include client ID
         contactName,
         phone,
         clientType: clientType || 'CLINIC',

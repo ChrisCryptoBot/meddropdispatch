@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
 import { showToast, showApiError } from '@/lib/toast'
@@ -63,6 +64,11 @@ export default function DriverBusinessPage() {
   const [fleetInvites, setFleetInvites] = useState<any[]>([])
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [newInvite, setNewInvite] = useState({ role: 'DRIVER', expiresInDays: 7, maxUses: 1 })
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -826,8 +832,12 @@ export default function DriverBusinessPage() {
       )}
 
       {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowInviteModal(false)}>
+      {showInviteModal && mounted && createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setShowInviteModal(false)}
+        >
           <div className="glass-primary p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4">Create Invite</h2>
             
@@ -907,7 +917,8 @@ export default function DriverBusinessPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

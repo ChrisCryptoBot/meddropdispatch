@@ -397,7 +397,7 @@ export default function DriverLayout({
                 {notificationDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-[45] md:left-64" onClick={() => setNotificationDropdownOpen(false)}></div>
-                    <div className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-[60] border border-slate-700/50 overflow-hidden max-h-96 overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-80 bg-slate-800/95 backdrop-blur-xl rounded-lg shadow-xl z-[60] border border-slate-700/50 overflow-hidden max-h-96 overflow-y-auto scrollbar-thin">
                       <div className="p-3 border-b border-slate-700/50 bg-slate-800/80">
                         <h3 className="font-semibold text-white">Notifications</h3>
                       </div>
@@ -645,7 +645,7 @@ export default function DriverLayout({
 
       {/* Sidebar - Fixed full height - Hidden on mobile */}
       <aside className="hidden md:block fixed left-0 top-[100px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 100px)' }}>
-        <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
+        <div className="flex flex-col h-full overflow-y-auto scrollbar-thin relative z-[55]">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
             {/* Driver Navigation */}

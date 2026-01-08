@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import { showToast } from '@/lib/toast'
@@ -33,6 +34,11 @@ export default function SavedFacilitiesPage() {
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null)
   const [deletingFacilityId, setDeletingFacilityId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     // Get shipper from API auth check (httpOnly cookie) - layout handles redirects
@@ -463,8 +469,12 @@ export default function SavedFacilitiesPage() {
       )}
 
       {/* Facility Detail Modal */}
-      {selectedFacility && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedFacility(null)}>
+      {selectedFacility && mounted ? createPortal(
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto" 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={() => setSelectedFacility(null)}
+        >
           <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">{selectedFacility.name}</h2>
@@ -591,13 +601,13 @@ export default function SavedFacilitiesPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body) : null}
 
       {/* Edit Facility Modal */}
       {editingFacility && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setEditingFacility(null)}>
-          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="glass-primary max-w-2xl w-full rounded-xl p-6 border border-slate-700/50 shadow-lg max-h-[90vh] overflow-y-auto scrollbar-thin" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">Edit Facility</h2>
               <button

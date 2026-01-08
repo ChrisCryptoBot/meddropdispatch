@@ -31,6 +31,7 @@ function DriverManualLoadPageContent() {
     contactName: string
     phone: string
     clientType: string
+    shipperCode: string | null // Client ID
   } | null>(null)
   const [drivers, setDrivers] = useState<Array<{id: string, firstName: string, lastName: string, email: string, status: string}>>([])
   const [selectedDriverId, setSelectedDriverId] = useState<string>('')
@@ -410,27 +411,27 @@ function DriverManualLoadPageContent() {
 
   return (
     <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header - Gold Standard Sticky */}
-        <div className="sticky top-[100px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/driver/dashboard"
-              className="text-slate-300 hover:text-cyan-400 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">Record Manual Load</h1>
-              <p className="text-slate-400">
-                Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
-              </p>
-            </div>
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-[100px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/driver/dashboard"
+            className="text-slate-300 hover:text-cyan-400 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">Record Manual Load</h1>
+            <p className="text-slate-400">
+              Document a load that wasn't created through the system (e.g., from email, phone call, or direct request)
+            </p>
           </div>
         </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto">
         {/* Workflow Explanation Banner */}
         <div className="glass p-6 rounded-xl mb-6 bg-blue-50 border border-blue-200">
           <div className="flex items-start gap-3">
@@ -525,12 +526,19 @@ function DriverManualLoadPageContent() {
                       required
                     />
                     {selectedShipperData && (
-                      <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Found existing shipper - fields auto-populated
-                      </p>
+                      <div className="mt-1 space-y-1">
+                        <p className="text-xs text-green-400 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Found existing shipper - fields auto-populated
+                        </p>
+                        {selectedShipperData.shipperCode && (
+                          <p className="text-xs text-cyan-400 font-medium">
+                            Client ID: <span className="font-bold">{selectedShipperData.shipperCode}</span>
+                          </p>
+                        )}
+                      </div>
                     )}
                     {!selectedShipperData && newShipperData.companyName && (
                       <p className="text-xs text-cyan-400 mt-1">

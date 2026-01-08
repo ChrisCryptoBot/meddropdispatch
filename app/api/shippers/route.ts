@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         companyName: true,
+        shipperCode: true, // Include client ID
         clientType: true,
         contactName: true,
         phone: true,
@@ -52,6 +53,22 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { companyName: 'asc' },
       take: search ? 10 : undefined, // Limit results when searching
+    })
+
+    // Ensure all shippers have a shipperCode (generate if missing, but don't block response)
+    // We'll generate codes asynchronously to not slow down the API response
+    import('@/lib/shipper-code').then(({ ensureShipperCode }) => {
+      shippers.forEach(async (shipper) => {
+        if (!shipper.shipperCode) {
+          try {
+            await ensureShipperCode(shipper.id)
+          } catch (error) {
+            console.error(`Error ensuring shipper code for ${shipper.id}:`, error)
+          }
+        }
+      })
+    }).catch((error) => {
+      console.error('Error importing shipper-code utility:', error)
     })
 
     return NextResponse.json({ shippers })

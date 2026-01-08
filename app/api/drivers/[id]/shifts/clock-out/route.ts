@@ -8,6 +8,7 @@ import { requireDriver } from '@/lib/authorization'
 import { z } from 'zod'
 
 const clockOutSchema = z.object({
+  vehicleId: z.string().min(1).optional(), // Optional - should match clock-in vehicle, validated if provided
   odometerReading: z.number().int().min(0).optional(), // Optional - driver can provide odometer at clock-out
 })
 
@@ -29,7 +30,7 @@ export async function PATCH(
       throw new ValidationError('Invalid clock-out data', validation.error.errors)
     }
 
-    const { odometerReading } = validation.data
+    const { vehicleId, odometerReading } = validation.data
 
     // AUTHORIZATION: Verify authenticated driver matches driverId
     const auth = await requireDriver(request)
@@ -37,13 +38,48 @@ export async function PATCH(
       throw new AuthorizationError('Cannot clock out as another driver')
     }
 
-    // Find the current open shift
+    // Find the current open shift (with vehicle info)
     const currentShift = await prisma.driverShift.findFirst({
       where: { driverId, clockOut: null },
+      include: { vehicle: true },
     })
 
     if (!currentShift) {
       throw new NotFoundError('No active shift found to clock out from')
+    }
+
+    // Edge Case: Validate vehicle matches clock-in vehicle (if provided)
+    if (vehicleId && currentShift.vehicleId && vehicleId !== currentShift.vehicleId) {
+      throw new ValidationError('Vehicle must match the vehicle used at clock-in. Please use the same vehicle or contact support.')
+    }
+
+    // If vehicleId not provided but shift has one, use shift's vehicle
+    const shiftVehicleId = vehicleId || currentShift.vehicleId
+    if (!shiftVehicleId) {
+      throw new ValidationError('Vehicle information is required for clock-out. Please specify the vehicle.')
+    }
+
+    // Verify vehicle belongs to driver and is active
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: shiftVehicleId },
+      select: { id: true, currentOdometer: true, driverId: true, isActive: true },
+    })
+
+    if (!vehicle || vehicle.driverId !== driverId || !vehicle.isActive) {
+      throw new ValidationError('Vehicle not found, inactive, or does not belong to driver')
+    }
+
+    // Validate odometer if provided
+    if (odometerReading !== undefined) {
+      // Odometer should be >= clock-in odometer if available, or >= current vehicle odometer
+      const minOdometer = currentShift.clockInOdometer || vehicle.currentOdometer
+      if (odometerReading < minOdometer) {
+        throw new ValidationError(`Clock-out odometer (${odometerReading}) cannot be less than clock-in odometer (${minOdometer}).`)
+      }
+      // Also validate against vehicle's current odometer
+      if (odometerReading < vehicle.currentOdometer) {
+        throw new ValidationError(`Clock-out odometer (${odometerReading}) cannot be less than vehicle's current odometer (${vehicle.currentOdometer}).`)
+      }
     }
 
     // TIER 1.1 - Edge Case 6.3: Prevent Clock Out if active loads
@@ -73,6 +109,7 @@ export async function PATCH(
       where: { id: currentShift.id },
       data: {
         clockOut: clockOutTime,
+        clockOutOdometer: odometerReading || null,
         totalHours: parseFloat(totalHours.toFixed(2)),
       },
     })
@@ -87,25 +124,15 @@ export async function PATCH(
     }
 
     // TIER 2.1: Update vehicle odometer with manual input if provided
-    if (odometerReading !== undefined) {
-      const driverVehicle = await prisma.vehicle.findFirst({
-        where: { driverId, isActive: true }, // Assuming driver uses one primary vehicle for shifts
-        select: { id: true, currentOdometer: true },
+    if (odometerReading !== undefined && vehicle) {
+      await prisma.vehicle.update({
+        where: { id: shiftVehicleId },
+        data: {
+          currentOdometer: odometerReading,
+          lastManualOdometerEntry: odometerReading,
+          lastManualEntryDate: clockOutTime,
+        },
       })
-
-      if (driverVehicle) {
-        if (odometerReading < driverVehicle.currentOdometer) {
-          throw new ValidationError(`Clock-out odometer (${odometerReading}) cannot be less than current odometer (${driverVehicle.currentOdometer}).`)
-        }
-        await prisma.vehicle.update({
-          where: { id: driverVehicle.id },
-          data: {
-            currentOdometer: odometerReading,
-            lastManualOdometerEntry: odometerReading,
-            lastManualEntryDate: clockOutTime,
-          },
-        })
-      }
     }
 
     return NextResponse.json({
