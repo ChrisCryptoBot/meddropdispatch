@@ -604,6 +604,69 @@ export async function autoGenerateInvoiceForLoad(loadRequestId: string): Promise
             invoicedAt: new Date(),
           },
         })
+
+        // AUTOMATIC BILLING ADJUSTMENTS: Create adjustments for late delivery and temperature exceptions
+        const adjustments: any[] = []
+
+        // Check for late delivery
+        if (loadRequest.lateDeliveryFlag) {
+          // Apply 10% credit for late delivery (configurable)
+          const lateDeliveryCredit = loadRequest.quoteAmount ? loadRequest.quoteAmount * 0.10 : 0
+          if (lateDeliveryCredit > 0) {
+            adjustments.push({
+              invoiceId: invoice.id,
+              type: 'CREDIT',
+              amount: lateDeliveryCredit,
+              reason: 'Late Delivery Credit',
+              notes: `Automatic credit for late delivery. ${loadRequest.lateDeliveryReasonNotes || 'Delivery was completed after the deadline.'}`,
+              createdBy: 'system-auto-adjustment',
+              createdByType: 'ADMIN',
+            })
+          }
+        }
+
+        // Check for temperature exceptions
+        if (loadRequest.pickupTempException || loadRequest.deliveryTempException) {
+          // Apply 5% credit per temperature exception (configurable)
+          const tempExceptionCredit = loadRequest.quoteAmount ? loadRequest.quoteAmount * 0.05 : 0
+          if (tempExceptionCredit > 0) {
+            const exceptionTypes: string[] = []
+            if (loadRequest.pickupTempException) exceptionTypes.push('pickup')
+            if (loadRequest.deliveryTempException) exceptionTypes.push('delivery')
+            
+            adjustments.push({
+              invoiceId: invoice.id,
+              type: 'CREDIT',
+              amount: tempExceptionCredit * exceptionTypes.length, // Apply per exception
+              reason: 'Temperature Exception Credit',
+              notes: `Automatic credit for temperature exception(s) at ${exceptionTypes.join(' and ')}. ${loadRequest.temperatureExceptionNotes || 'Temperature was outside acceptable range.'}`,
+              createdBy: 'system-auto-adjustment',
+              createdByType: 'ADMIN',
+            })
+          }
+        }
+
+        // Create adjustments if any exist
+        if (adjustments.length > 0) {
+          await tx.invoiceAdjustment.createMany({
+            data: adjustments,
+          })
+
+          // Recalculate invoice total with adjustments
+          const allAdjustments = await tx.invoiceAdjustment.findMany({
+            where: { invoiceId: invoice.id },
+          })
+
+          const adjustmentTotal = allAdjustments.reduce((sum, adj) => sum + adj.amount, 0)
+          const newTotal = invoice.subtotal + invoice.tax + adjustmentTotal
+
+          await tx.invoice.update({
+            where: { id: invoice.id },
+            data: {
+              total: newTotal,
+            },
+          })
+        }
       }
 
       return invoice?.id || null

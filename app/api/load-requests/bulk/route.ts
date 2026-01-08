@@ -83,14 +83,159 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const assigned = await prisma.loadRequest.updateMany({
+        // EDGE CASE 6.4: Atomic Bulk Verification - Validate ALL loads before ANY assignment
+        // This prevents partial success states and compliance violations
+        const { validateDriverEligibility } = await import('@/lib/edge-case-validations')
+        const { isMaintenanceCompliant } = await import('@/lib/vehicle-compliance')
+
+        // Fetch all loads to validate
+        const loadsToAssign = await prisma.loadRequest.findMany({
           where: {
             id: { in: loadRequestIds },
+            driverId: null, // Only assign unassigned loads
+            status: {
+              in: ['NEW', 'REQUESTED', 'QUOTED', 'QUOTE_ACCEPTED'], // Only assignable statuses
+            },
           },
-          data: { driverId },
+          include: {
+            shipper: {
+              select: { id: true, companyName: true },
+            },
+          },
         })
 
-        result = { assigned: assigned.count }
+        // Verify driver exists and is eligible
+        const driver = await prisma.driver.findUnique({
+          where: { id: driverId },
+          include: {
+            vehicles: {
+              where: { isActive: true },
+            },
+          },
+        })
+
+        if (!driver) {
+          throw new ValidationError('Driver not found')
+        }
+
+        // Check if driver has opted out of assignments
+        if (driver.canBeAssignedLoads === false) {
+          throw new ValidationError('Driver has opted out of load assignments. Cannot assign loads to this driver.')
+        }
+
+        // Validate driver has at least one active vehicle
+        if (!driver.vehicles || driver.vehicles.length === 0) {
+          throw new ValidationError('Driver must have at least one active vehicle to receive assignments')
+        }
+
+        // EDGE CASE 6.4: Atomic Verification - Check ALL loads for eligibility
+        const validationErrors: Array<{ loadId: string; trackingCode: string; error: string }> = []
+        
+        for (const load of loadsToAssign) {
+          try {
+            // Validate driver eligibility for each load
+            await validateDriverEligibility(driverId, {
+              temperatureRequirement: load.temperatureRequirement || undefined,
+              specimenCategory: load.specimenCategory || undefined,
+              readyTime: load.readyTime || undefined,
+              deliveryDeadline: load.deliveryDeadline || undefined,
+            })
+
+            // Check if driver has compliant vehicle (maintenance check)
+            let hasCompliantVehicle = false
+            for (const vehicle of driver.vehicles) {
+              try {
+                const maintenanceCompliance = await isMaintenanceCompliant(vehicle.id)
+                if (maintenanceCompliance.status !== 'DUE') {
+                  hasCompliantVehicle = true
+                  break
+                }
+              } catch (error) {
+                // If maintenance check fails, assume vehicle is not compliant for safety
+                continue
+              }
+            }
+
+            if (!hasCompliantVehicle) {
+              validationErrors.push({
+                loadId: load.id,
+                trackingCode: load.publicTrackingCode,
+                error: 'Driver has no maintenance-compliant vehicles available',
+              })
+              continue
+            }
+
+            // Additional validations can be added here (e.g., vehicle compliance, certifications)
+          } catch (error) {
+            validationErrors.push({
+              loadId: load.id,
+              trackingCode: load.publicTrackingCode,
+              error: error instanceof Error ? error.message : 'Driver eligibility check failed',
+            })
+          }
+        }
+
+        // EDGE CASE 6.4: If ANY load fails validation, REJECT ENTIRE BATCH (atomic operation)
+        if (validationErrors.length > 0) {
+          const failedCodes = validationErrors.map(e => e.trackingCode).join(', ')
+          const errorMessages = validationErrors.map(e => `${e.trackingCode}: ${e.error}`).join('; ')
+          
+          return NextResponse.json(
+            {
+              error: 'BulkAssignmentValidationFailed',
+              message: `Bulk assignment rejected: ${validationErrors.length} of ${loadsToAssign.length} loads failed validation. All loads must pass validation before any assignment occurs.`,
+              details: {
+                totalLoads: loadsToAssign.length,
+                passed: loadsToAssign.length - validationErrors.length,
+                failed: validationErrors.length,
+                failedLoads: validationErrors,
+                failedTrackingCodes: failedCodes,
+                errorMessages,
+              },
+              timestamp: new Date().toISOString(),
+            },
+            { status: 400 }
+          )
+        }
+
+        // All loads passed validation - proceed with atomic assignment
+        // Use transaction to ensure all-or-nothing assignment
+        const assigned = await prisma.$transaction(async (tx) => {
+          // Update all loads atomically
+          const updated = await tx.loadRequest.updateMany({
+            where: {
+              id: { in: loadsToAssign.map(l => l.id) },
+            },
+            data: {
+              driverId,
+              assignedAt: new Date(),
+              status: 'SCHEDULED', // Auto-schedule assigned loads
+              // Snapshot contractedFleetId if driver is in a fleet
+              contractedFleetId: driver.fleetId || null,
+            },
+          })
+
+          // Create tracking events for each load
+          for (const load of loadsToAssign) {
+            await tx.trackingEvent.create({
+              data: {
+                loadRequestId: load.id,
+                code: 'DRIVER_ASSIGNED',
+                label: `Assigned to ${driver.firstName} ${driver.lastName}`,
+                description: 'Bulk assignment via dispatch board',
+                actorType: 'ADMIN',
+              },
+            })
+          }
+
+          return updated
+        })
+
+        result = {
+          assigned: assigned.count,
+          totalValidated: loadsToAssign.length,
+          message: `Successfully assigned ${assigned.count} load${assigned.count !== 1 ? 's' : ''} to ${driver.firstName} ${driver.lastName}`,
+        }
         break
 
       case 'generate_invoices':

@@ -34,6 +34,7 @@ export async function GET(
         email: true,
         isActive: true,
         paymentTerms: true,
+        preferredPaymentMethod: true,
         billingContactName: true,
         billingContactEmail: true,
         billingAddressLine1: true,
@@ -42,6 +43,8 @@ export async function GET(
         billingState: true,
         billingPostalCode: true,
         stripeCustomerId: true,
+        achAccountNumber: true,
+        achRoutingNumber: true,
         smsNotificationsEnabled: true,
         smsPhoneNumber: true,
         subscriptionTier: true,
@@ -150,6 +153,9 @@ export async function PATCH(
       email,
       phone,
       paymentTerms,
+      preferredPaymentMethod,
+      achAccountNumber,
+      achRoutingNumber,
       billingContactName,
       billingContactEmail,
       billingAddressLine1,
@@ -166,6 +172,9 @@ export async function PATCH(
     if (email !== undefined) updateData.email = email.toLowerCase()
     if (phone !== undefined) updateData.phone = phone
     if (paymentTerms !== undefined) updateData.paymentTerms = paymentTerms
+    if (preferredPaymentMethod !== undefined) updateData.preferredPaymentMethod = preferredPaymentMethod
+    if (achAccountNumber !== undefined) updateData.achAccountNumber = achAccountNumber || null
+    if (achRoutingNumber !== undefined) updateData.achRoutingNumber = achRoutingNumber || null
     if (billingContactName !== undefined) updateData.billingContactName = billingContactName || null
     if (billingContactEmail !== undefined) updateData.billingContactEmail = billingContactEmail || null
     if (billingAddressLine1 !== undefined) updateData.billingAddressLine1 = billingAddressLine1 || null
@@ -186,6 +195,7 @@ export async function PATCH(
         email: true,
         isActive: true,
         paymentTerms: true,
+        preferredPaymentMethod: true,
         billingContactName: true,
         billingContactEmail: true,
         billingAddressLine1: true,
@@ -194,6 +204,8 @@ export async function PATCH(
         billingState: true,
         billingPostalCode: true,
         stripeCustomerId: true,
+        achAccountNumber: true,
+        achRoutingNumber: true,
         createdAt: true,
         updatedAt: true,
       },

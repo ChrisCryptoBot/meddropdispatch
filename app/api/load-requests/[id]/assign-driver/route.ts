@@ -57,6 +57,7 @@ export async function POST(
       where: { id },
       select: {
         status: true,
+        driverId: true,
         temperatureRequirement: true,
         specimenCategory: true,
         readyTime: true,
@@ -66,6 +67,26 @@ export async function POST(
 
     if (!currentLoad) {
       throw new NotFoundError('Load request')
+    }
+
+    // Check if this is a reassignment (different driver)
+    const isReassignment = currentLoad.driverId && currentLoad.driverId !== driverId
+    
+    // Reassignment is only allowed for SCHEDULED loads (not picked up or in transit)
+    if (isReassignment && currentLoad.status !== 'SCHEDULED') {
+      throw new ValidationError(
+        `Cannot reassign load that is ${currentLoad.status}. Reassignment is only allowed for SCHEDULED loads (before pickup).`
+      )
+    }
+
+    // Require admin for reassignments
+    if (isReassignment) {
+      try {
+        const { requireAdmin } = await import('@/lib/authorization')
+        await requireAdmin(request)
+      } catch (adminError) {
+        throw new ValidationError('Only admins can reassign loads from one driver to another.')
+      }
     }
 
     // EDGE CASE VALIDATION: Section 3.1 - Driver Eligibility
@@ -179,18 +200,31 @@ export async function POST(
     })
     const contractedFleetId = driver?.fleetRole !== 'INDEPENDENT' ? driver?.fleetId || null : null
 
-    // ATOMIC UPDATE: Only assign if driverId is null (or already set to same driver for idempotency) 
-    // AND status is acceptable AND NOT in terminal state
-    const atomicResult = await prisma.loadRequest.updateMany({
-      where: {
-        id,
-        OR: [{ driverId: null }, { driverId }],
-        status: { in: acceptableStatuses },
-        // Explicitly exclude terminal states (defense in depth)
-        NOT: {
-          status: { in: terminalStatuses },
-        },
+    // Store previous driver for notifications if this is a reassignment
+    const previousDriverId = currentLoad.driverId
+
+    // ATOMIC UPDATE: Allow assignment if:
+    // 1. driverId is null (unassigned load), OR
+    // 2. driverId matches new driver (idempotency), OR
+    // 3. This is a reassignment (isReassignment = true) and load is SCHEDULED
+    const whereClause: any = {
+      id,
+      status: { in: acceptableStatuses },
+      NOT: {
+        status: { in: terminalStatuses },
       },
+    }
+
+    // For reassignment, allow if current driver matches previous driver
+    // For new assignment, allow if driverId is null or matches
+    if (isReassignment) {
+      whereClause.driverId = previousDriverId
+    } else {
+      whereClause.OR = [{ driverId: null }, { driverId }]
+    }
+
+    const atomicResult = await prisma.loadRequest.updateMany({
+      where: whereClause,
       data: {
         driverId,
         assignedAt: new Date(),
@@ -208,7 +242,10 @@ export async function POST(
       if (!latest) {
         throw new NotFoundError('Load request')
       }
-      if (latest.driverId && latest.driverId !== driverId) {
+      if (isReassignment && latest.driverId !== previousDriverId) {
+        throw new ConflictError('Load was reassigned by another admin. Please refresh and try again.')
+      }
+      if (latest.driverId && latest.driverId !== driverId && !isReassignment) {
         throw new ConflictError('Load already assigned to another driver')
       }
       throw new ConflictError('Load could not be assigned due to concurrent update')
@@ -233,24 +270,83 @@ export async function POST(
       },
     })
 
-    // Create tracking event for driver assignment
+    // Get previous driver info if this was a reassignment
+    let previousDriver: { firstName: string; lastName: string; email: string } | null = null
+    if (isReassignment && previousDriverId) {
+      const prevDriver = await prisma.driver.findUnique({
+        where: { id: previousDriverId },
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      })
+      if (prevDriver) {
+        previousDriver = prevDriver
+      }
+    }
+
+    // Create tracking event for driver assignment or reassignment
+    const eventCode = isReassignment ? 'DRIVER_REASSIGNED' : 'SHIPPER_CONFIRMED'
+    const eventLabel = isReassignment
+      ? `Reassigned from ${previousDriver?.firstName} ${previousDriver?.lastName} to ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`
+      : `Assigned to driver: ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`
+    const eventDescription = isReassignment
+      ? `Load reassigned from ${previousDriver?.firstName} ${previousDriver?.lastName} to ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`
+      : `Load scheduled with driver ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`
+
     await prisma.trackingEvent.create({
       data: {
         loadRequestId: id,
-        code: 'SHIPPER_CONFIRMED',
-        label: `Assigned to driver: ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`,
-        description: `Load scheduled with driver ${updatedLoad?.driver?.firstName} ${updatedLoad?.driver?.lastName}`,
+        code: eventCode,
+        label: eventLabel,
+        description: eventDescription,
         locationText: 'MED DROP Dispatch',
         actorType: 'ADMIN',
       },
     })
 
-    logger.info('Driver assigned to load', {
+    // Send notifications for reassignment
+    if (isReassignment && previousDriver && updatedLoad?.driver) {
+      const { sendLoadStatusEmail } = await import('@/lib/email')
+      const { getTrackingUrl } = await import('@/lib/utils')
+      const trackingUrl = getTrackingUrl(updatedLoad.publicTrackingCode)
+
+      // Notify previous driver
+      await sendLoadStatusEmail({
+        to: previousDriver.email,
+        trackingCode: updatedLoad.publicTrackingCode,
+        companyName: updatedLoad.shipper.companyName,
+        status: 'CANCELLED',
+        statusLabel: 'Load Reassigned',
+        trackingUrl,
+        quoteAmount: updatedLoad.quoteAmount || undefined,
+        quoteCurrency: updatedLoad.quoteCurrency || 'USD',
+        eta: `This load has been reassigned to another driver.`,
+      })
+
+      // Notify new driver
+      await sendLoadStatusEmail({
+        to: updatedLoad.driver.email,
+        trackingCode: updatedLoad.publicTrackingCode,
+        companyName: updatedLoad.shipper.companyName,
+        status: 'SCHEDULED',
+        statusLabel: 'Load Assigned',
+        trackingUrl,
+        quoteAmount: updatedLoad.quoteAmount || undefined,
+        quoteCurrency: updatedLoad.quoteCurrency || 'USD',
+        eta: `You have been assigned to this load.`,
+      })
+    }
+
+    logger.info(isReassignment ? 'Driver reassigned to load' : 'Driver assigned to load', {
       loadId: id,
       driverId,
+      previousDriverId: previousDriverId || null,
       previousStatus: currentLoad.status,
       newStatus: updatedLoad?.status,
       trackingCode: updatedLoad?.publicTrackingCode,
+      isReassignment,
     })
 
     return NextResponse.json({

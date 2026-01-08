@@ -120,6 +120,7 @@ export default function DriverLoadDetailPage() {
   const [showDeletePasswordInput, setShowDeletePasswordInput] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deletePasswordError, setDeletePasswordError] = useState('')
+  const [isReleasing, setIsReleasing] = useState(false)
 
   useEffect(() => {
     // Get driver from auth check API (httpOnly cookie)
@@ -178,6 +179,35 @@ export default function DriverLoadDetailPage() {
     } catch (error) {
       console.error('Error deleting document:', error)
       showToast.error('Failed to delete document', error instanceof Error ? error.message : 'Unknown error')
+    }
+  }
+
+  const handleReleaseLoad = async () => {
+    if (!load) return
+
+    if (!confirm('Release this load? It will become available for other drivers to accept.')) {
+      return
+    }
+
+    setIsReleasing(true)
+    try {
+      const response = await fetch(`/api/load-requests/${load.id}/release`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || 'Failed to release load')
+      }
+
+      showToast.success('Load released successfully. It is now available for other drivers.')
+      router.push('/driver/dashboard')
+    } catch (error) {
+      console.error('Error releasing load:', error)
+      showApiError(error, 'Failed to release load')
+    } finally {
+      setIsReleasing(false)
     }
   }
 
@@ -1018,6 +1048,37 @@ export default function DriverLoadDetailPage() {
               </button>
             )}
           </div>
+          
+          {/* Release Load Button - Only for SCHEDULED loads (before pickup) */}
+          {load.status === 'SCHEDULED' && (
+            <div className="mt-6 pt-6 border-t-2 border-yellow-200">
+              <div className="glass-accent rounded-2xl p-6 border-2 border-yellow-200/30 shadow-medical">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Release Load</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Release this load back to the load board. It will become available for other drivers to accept. Use this if you cannot complete the load.
+                </p>
+                <button
+                  onClick={handleReleaseLoad}
+                  disabled={isReleasing}
+                  className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isReleasing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Releasing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Release This Load
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
           
           {/* Remove Load Button - Available for all loads */}
           <div className="mt-6 pt-6 border-t-2 border-red-200">

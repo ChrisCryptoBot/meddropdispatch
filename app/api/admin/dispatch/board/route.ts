@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
             },
           },
           orderBy: { readyTime: 'asc' },
+          take: 100, // PERFORMANCE: Limit loads per driver to prevent excessive queries (40+ vehicle fleets)
         },
         fleet: {
           select: {
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { readyTime: 'asc' },
-      take: 50, // Limit unassigned loads queue
+      take: 200, // SCALABILITY: Increased limit for large fleets (40+ vehicles)
     })
 
     // Format response for frontend

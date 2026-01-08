@@ -204,6 +204,10 @@ export const updateDriverVehicleSchema = z.object({
 
 // Shipper Validation
 export const updateShipperSchema = z.object({
+  // Payment preferences
+  preferredPaymentMethod: z.enum(['CHECK', 'ACH', 'STRIPE_ACH', 'WIRE', 'OTHER']).optional(),
+  achAccountNumber: z.string().optional().nullable(),
+  achRoutingNumber: z.string().optional().nullable(),
   companyName: nonEmptyStringSchema.optional(),
   contactName: nonEmptyStringSchema.optional(),
   email: emailSchema.optional(),

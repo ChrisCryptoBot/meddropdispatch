@@ -78,6 +78,9 @@ export default function DispatchBoardPage() {
   const [showMap, setShowMap] = useState(true)
   const [draggedLoad, setDraggedLoad] = useState<UnassignedLoad | null>(null)
   const [selectedLoad, setSelectedLoad] = useState<string | null>(null)
+  const [selectedLoadsForBulk, setSelectedLoadsForBulk] = useState<Set<string>>(new Set())
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false)
+  const [showBulkAssignMenu, setShowBulkAssignMenu] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
   const timelineRef = useRef<HTMLDivElement>(null)
 
@@ -175,6 +178,72 @@ export default function DispatchBoardPage() {
       }
     } catch (error) {
       showApiError(error, 'Failed to assign load')
+    }
+  }
+
+  // Handle bulk assignment of selected loads to driver
+  const handleBulkAssign = async (driver: Driver) => {
+    if (selectedLoadsForBulk.size === 0) {
+      showToast.warning('Please select at least one load')
+      return
+    }
+
+    setIsBulkAssigning(true)
+    setShowBulkAssignMenu(false)
+
+    try {
+      const response = await fetch('/api/load-requests/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'assign_driver',
+          loadRequestIds: Array.from(selectedLoadsForBulk),
+          driverId: driver.id,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        showToast.success(data.result?.message || `Successfully assigned ${selectedLoadsForBulk.size} load(s) to ${driver.name}`)
+        setSelectedLoadsForBulk(new Set())
+        await fetchDispatchData()
+      } else {
+        const error = await response.json()
+        // Handle Edge Case 6.4: Atomic Bulk Verification errors
+        if (error.error === 'BulkAssignmentValidationFailed' && error.details) {
+          const failedCodes = error.details.failedTrackingCodes
+          showToast.error(`Bulk assignment rejected: ${error.details.failed} of ${error.details.totalLoads} loads failed validation. Failed: ${failedCodes}`)
+          // Optionally show detailed errors in a modal or expandable section
+          console.error('Bulk assignment validation errors:', error.details.failedLoads)
+        } else {
+          showApiError(error, 'Failed to assign loads')
+        }
+      }
+    } catch (error) {
+      showApiError(error, 'Failed to assign loads')
+    } finally {
+      setIsBulkAssigning(false)
+    }
+  }
+
+  // Toggle load selection for bulk operations
+  const toggleLoadSelection = (loadId: string) => {
+    const newSelected = new Set(selectedLoadsForBulk)
+    if (newSelected.has(loadId)) {
+      newSelected.delete(loadId)
+    } else {
+      newSelected.add(loadId)
+    }
+    setSelectedLoadsForBulk(newSelected)
+  }
+
+  // Select all loads
+  const selectAllLoads = () => {
+    if (selectedLoadsForBulk.size === unassignedLoads.length) {
+      setSelectedLoadsForBulk(new Set())
+    } else {
+      setSelectedLoadsForBulk(new Set(unassignedLoads.map(l => l.id)))
     }
   }
 
@@ -464,19 +533,80 @@ export default function DispatchBoardPage() {
             </div>
 
             {/* Unassigned Loads Queue */}
-            <div className="flex-1 glass-primary rounded-xl border border-slate-700/50 overflow-hidden">
+            <div className="flex-1 glass-primary rounded-xl border border-slate-700/50 overflow-hidden flex flex-col">
               <div className="p-4 border-b border-slate-700/50 bg-slate-800/50">
-                <h2 className="text-lg font-bold text-white">
-                  Unassigned Loads
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-white">
+                    Unassigned Loads
+                    {unassignedLoads.length > 0 && (
+                      <span className="ml-2 px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-semibold border border-orange-500/30">
+                        {unassignedLoads.length}
+                      </span>
+                    )}
+                  </h2>
                   {unassignedLoads.length > 0 && (
-                    <span className="ml-2 px-2 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-semibold border border-orange-500/30">
-                      {unassignedLoads.length}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedLoadsForBulk.size === unassignedLoads.length && unassignedLoads.length > 0}
+                        onChange={selectAllLoads}
+                        className="w-4 h-4 rounded border-slate-600/50 bg-slate-800/50 text-cyan-600 focus:ring-cyan-500/50"
+                      />
+                      <span className="text-xs text-slate-400">Select All</span>
+                    </div>
                   )}
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">Drag loads to assign to drivers</p>
+                </div>
+                <p className="text-xs text-slate-400">Drag loads to assign, or select multiple for bulk assignment</p>
+                {selectedLoadsForBulk.size > 0 && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-sm text-cyan-400 font-semibold">
+                      {selectedLoadsForBulk.size} selected
+                    </span>
+                    <button
+                      onClick={() => setShowBulkAssignMenu(!showBulkAssignMenu)}
+                      disabled={isBulkAssigning}
+                      className="ml-auto px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isBulkAssigning ? 'Assigning...' : 'Assign to Driver'}
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 450px)' }}>
+              {showBulkAssignMenu && selectedLoadsForBulk.size > 0 && (
+                <div className="p-4 border-b border-slate-700/50 bg-slate-800/30">
+                  <p className="text-sm text-slate-300 mb-3">Select driver to assign {selectedLoadsForBulk.size} load(s):</p>
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {drivers.length === 0 ? (
+                      <p className="text-sm text-slate-400 text-center py-2">No drivers available</p>
+                    ) : (
+                      drivers.map((driver) => (
+                        <button
+                          key={driver.id}
+                          onClick={() => handleBulkAssign(driver)}
+                          disabled={isBulkAssigning}
+                          className="w-full px-3 py-2 text-left bg-slate-700/50 hover:bg-slate-700/70 rounded-lg border border-slate-600/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="font-semibold text-white text-sm">{driver.name}</div>
+                          <div className="text-xs text-slate-400">
+                            {driver.vehicles[0]?.vehiclePlate || 'No vehicle'}
+                            {driver.currentShift && ` • On Shift: ${driver.currentShift.currentHours?.toFixed(1)}h`}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowBulkAssignMenu(false)
+                      setSelectedLoadsForBulk(new Set())
+                    }}
+                    className="mt-3 w-full px-3 py-2 text-sm text-slate-400 hover:text-slate-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+              <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 450px)' }}>
                 {unassignedLoads.length === 0 ? (
                   <div className="p-8 text-center">
                     <p className="text-slate-400">All loads assigned</p>
@@ -489,9 +619,16 @@ export default function DispatchBoardPage() {
                     onDragStart={() => handleDragStart(load)}
                     className={`p-3 border-b border-slate-700/50 hover:bg-slate-800/50 cursor-move transition-colors ${
                       draggedLoad?.id === load.id ? 'bg-slate-800/70 opacity-50' : ''
-                    }`}
+                    } ${selectedLoadsForBulk.has(load.id) ? 'bg-cyan-500/10 border-cyan-500/30' : ''}`}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedLoadsForBulk.has(load.id)}
+                        onChange={() => toggleLoadSelection(load.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 w-4 h-4 rounded border-slate-600/50 bg-slate-800/50 text-cyan-600 focus:ring-cyan-500/50 cursor-pointer"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-white text-sm flex items-center gap-2">
                           {load.trackingCode}

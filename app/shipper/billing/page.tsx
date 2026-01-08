@@ -13,6 +13,9 @@ export default function ShipperBillingPage() {
   // Form state
   const [formData, setFormData] = useState({
     paymentTerms: 'NET_14',
+    preferredPaymentMethod: 'CHECK',
+    achAccountNumber: '',
+    achRoutingNumber: '',
     billingContactName: '',
     billingContactEmail: '',
     billingAddressLine1: '',
@@ -61,6 +64,9 @@ export default function ShipperBillingPage() {
         setShipper(data.shipper)
         setFormData({
           paymentTerms: data.shipper.paymentTerms || 'NET_14',
+          preferredPaymentMethod: data.shipper.preferredPaymentMethod || 'CHECK',
+          achAccountNumber: data.shipper.achAccountNumber || '',
+          achRoutingNumber: data.shipper.achRoutingNumber || '',
           billingContactName: data.shipper.billingContactName || '',
           billingContactEmail: data.shipper.billingContactEmail || '',
           billingAddressLine1: data.shipper.billingAddressLine1 || '',
@@ -150,6 +156,61 @@ export default function ShipperBillingPage() {
                 Invoice due date will be calculated based on your payment terms
               </p>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Preferred Payment Method *
+              </label>
+              <select
+                value={formData.preferredPaymentMethod}
+                onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border border-slate-600/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none bg-slate-800/50 text-slate-200"
+                required
+              >
+                <option value="CHECK">Check (Mailed)</option>
+                <option value="ACH">ACH Transfer (Direct)</option>
+                <option value="STRIPE_ACH">Stripe ACH (Online)</option>
+                <option value="WIRE">Wire Transfer</option>
+                <option value="OTHER">Other</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Select how you prefer to pay invoices. Most shippers use check by mail.
+              </p>
+            </div>
+
+            {formData.preferredPaymentMethod === 'ACH' && (
+              <div className="space-y-4 p-4 bg-blue-50/20 rounded-lg border border-blue-200/30">
+                <h4 className="text-sm font-semibold text-gray-800">ACH Account Information</h4>
+                <p className="text-xs text-gray-600 mb-4">
+                  Secure ACH information for direct bank transfers. This information is encrypted and stored securely.
+                </p>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Routing Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.achRoutingNumber}
+                    onChange={(e) => setFormData({ ...formData, achRoutingNumber: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    placeholder="123456789"
+                    maxLength={9}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.achAccountNumber}
+                    onChange={(e) => setFormData({ ...formData, achAccountNumber: e.target.value })}
+                    className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    placeholder="Account number"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="glass rounded-2xl p-6 space-y-6">

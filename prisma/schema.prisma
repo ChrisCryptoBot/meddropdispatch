@@ -56,15 +56,18 @@ model Shipper {
   deletedReason String? // Reason for deletion
 
   // Payment Terms & Billing
-  paymentTerms        String  @default("NET_14") // NET_7, NET_14, NET_30, INVOICE_ONLY
-  billingContactName  String?
-  billingContactEmail String?
-  billingAddressLine1 String?
-  billingAddressLine2 String?
-  billingCity         String?
-  billingState        String?
-  billingPostalCode   String?
-  stripeCustomerId    String? // Optional - only if client uses Stripe ACH
+  paymentTerms           String  @default("NET_14") // NET_7, NET_14, NET_30, INVOICE_ONLY
+  preferredPaymentMethod String  @default("CHECK") // CHECK, ACH, STRIPE_ACH, WIRE, OTHER
+  billingContactName     String?
+  billingContactEmail    String?
+  billingAddressLine1    String?
+  billingAddressLine2    String?
+  billingCity            String?
+  billingState           String?
+  billingPostalCode      String?
+  stripeCustomerId       String? // Optional - only if client uses Stripe ACH
+  achAccountNumber       String? // Encrypted ACH account number (for direct ACH)
+  achRoutingNumber       String? // Encrypted ACH routing number (for direct ACH)
 
   // SMS Notifications (Phase 1.2)
   smsNotificationsEnabled Boolean @default(true)
