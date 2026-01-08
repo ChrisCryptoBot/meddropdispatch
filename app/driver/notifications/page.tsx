@@ -348,7 +348,7 @@ export default function DriverNotificationsPage() {
   return (
     <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
       {/* Header - Gold Standard Sticky */}
-      <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+      <div className="sticky top-[100px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">

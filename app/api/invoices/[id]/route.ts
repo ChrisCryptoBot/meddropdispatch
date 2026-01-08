@@ -38,6 +38,9 @@ export async function GET(
             dropoffFacility: true,
           },
         },
+        adjustments: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
     })
 

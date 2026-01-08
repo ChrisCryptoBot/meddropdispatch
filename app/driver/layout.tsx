@@ -362,16 +362,16 @@ export default function DriverLayout({
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* Header - Same as Homepage */}
-      <header className="bg-slate-900/95 backdrop-blur-xl fixed top-0 left-0 right-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[85px]">
-        <div className="w-full py-5">
+      <header className="bg-slate-900/95 backdrop-blur-xl fixed top-0 left-0 right-0 z-[60] border-b border-slate-700/50 flex-shrink-0 h-[100px]">
+        <div className="w-full py-6 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 pl-4 md:pl-4">
+            <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">MED DROP</h1>
                 <p className="text-sm font-semibold text-slate-400">Medical Courier Services</p>
               </div>
             </div>
-            <nav className="flex items-center space-x-3 pr-4">
+            <nav className="flex items-center space-x-4">
               {/* Shift Clock Widget (Fleet Enterprise - Tier 1) */}
               {driver?.id && (
                 <ShiftClockWidget driverId={driver.id} />
@@ -644,7 +644,7 @@ export default function DriverLayout({
       </header>
 
       {/* Sidebar - Fixed full height - Hidden on mobile */}
-      <aside className="hidden md:block fixed left-0 top-[85px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 85px)' }}>
+      <aside className="hidden md:block fixed left-0 top-[100px] w-64 bg-slate-800/80 backdrop-blur-xl border-r border-slate-700/50 z-[55]" style={{ height: 'calc(100vh - 100px)' }}>
         <div className="flex flex-col h-full overflow-y-auto relative z-[55]">
           {/* Navigation */}
           <nav className="flex-1 p-4 pt-8 space-y-2">
@@ -745,8 +745,8 @@ export default function DriverLayout({
       </aside>
 
       {/* Main Content - Offset for fixed sidebar on desktop, full width on mobile */}
-      <main className="md:ml-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen pb-16 md:pb-0 pt-[85px]">
-        <div className="min-h-[calc(100vh-85px)]">
+      <main className="md:ml-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen pb-16 md:pb-0 pt-[100px]">
+        <div className="min-h-[calc(100vh-100px)]">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>

@@ -51,6 +51,25 @@ export async function POST(
 
     const clockInTime = new Date()
 
+    // Check driver status before clocking in
+    const driver = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { status: true },
+    })
+
+    if (!driver) {
+      throw new ValidationError('Driver not found')
+    }
+
+    // Only allow clock-in if driver is approved
+    if (driver.status === 'PENDING_APPROVAL') {
+      throw new ValidationError('Cannot clock in while driver account is pending approval')
+    }
+
+    if (driver.status === 'INACTIVE') {
+      throw new ValidationError('Cannot clock in while driver account is inactive')
+    }
+
     // Create new shift
     const newShift = await prisma.driverShift.create({
       data: {
@@ -58,6 +77,15 @@ export async function POST(
         clockIn: clockInTime,
       },
     })
+
+    // Update driver status to AVAILABLE when clocking in (unless already ON_ROUTE with a load)
+    // Only change status if currently OFF_DUTY or AVAILABLE
+    if (driver.status === 'OFF_DUTY' || driver.status === 'AVAILABLE') {
+      await prisma.driver.update({
+        where: { id: driverId },
+        data: { status: 'AVAILABLE' },
+      })
+    }
 
     // TIER 2.1: Update vehicle odometer with manual input if provided
     if (odometerReading !== undefined) {

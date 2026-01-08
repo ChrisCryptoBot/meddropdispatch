@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getAdminFromStorage } from '@/lib/auth-admin'
+import { formatDate, formatCurrency } from '@/lib/utils'
 
 interface DriverDocument {
   id: string
@@ -53,16 +54,39 @@ export default function AdminDriverReviewPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
   const [showRejectModal, setShowRejectModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'loads' | 'performance' | 'earnings' | 'shifts'>('overview')
+  const [metrics, setMetrics] = useState<any>(null)
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false)
 
-  useEffect(() => {
-    const adminData = getAdminFromStorage()
-    if (!adminData) {
-      router.push('/admin/login')
-      return
+  const fetchMetrics = async (adminData: any) => {
+    try {
+      setIsLoadingMetrics(true)
+      const response = await fetch(`/api/admin/drivers/${driverId}/metrics`, {
+        headers: {
+          'x-admin-id': adminData.id,
+          'x-admin-role': adminData.role,
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Driver metrics not found')
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Failed to fetch metrics' }))
+          setError(errorData.error || 'Failed to fetch metrics')
+        }
+        return
+      }
+
+      const data = await response.json()
+      setMetrics(data)
+    } catch (err) {
+      console.error('Error fetching metrics:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch metrics')
+    } finally {
+      setIsLoadingMetrics(false)
     }
-    setAdmin(adminData)
-    fetchDriver(adminData)
-  }, [driverId, router])
+  }
 
   const fetchDriver = async (adminData: any) => {
     try {
@@ -73,7 +97,7 @@ export default function AdminDriverReviewPage() {
         headers: {
           'x-admin-id': adminData.id,
           'x-admin-role': adminData.role,
-        }
+        },
       })
 
       if (!response.ok) {
@@ -86,6 +110,11 @@ export default function AdminDriverReviewPage() {
 
       const data = await response.json()
       setDriver(data.driver)
+      
+      // If driver is approved, fetch metrics
+      if (data.driver.status !== 'PENDING_APPROVAL') {
+        await fetchMetrics(adminData)
+      }
     } catch (err) {
       console.error('Error fetching driver:', err)
       setError(err instanceof Error ? err.message : 'Failed to load driver details')
@@ -93,6 +122,17 @@ export default function AdminDriverReviewPage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const adminData = getAdminFromStorage()
+    if (!adminData) {
+      router.push('/admin/login')
+      return
+    }
+    setAdmin(adminData)
+    fetchDriver(adminData)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driverId, router])
 
   const handleApprove = async () => {
     if (!admin || !driver) return
@@ -161,15 +201,6 @@ export default function AdminDriverReviewPage() {
     }
   }
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return 'N/A'
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
-
   const getDocumentTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       DRIVERS_LICENSE: "Driver's License",
@@ -230,10 +261,68 @@ export default function AdminDriverReviewPage() {
             <h1 className="text-4xl font-bold text-gray-900 mb-2 print:text-2xl">
               Review Driver: {driver.firstName} {driver.lastName}
             </h1>
-            <p className="text-gray-600 print:text-sm">Review application and documents</p>
+            <p className="text-gray-600 print:text-sm">
+              {driver.status === 'PENDING_APPROVAL' ? 'Review application and documents' : 'Driver details and performance'}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Tabs for approved drivers */}
+      {driver.status !== 'PENDING_APPROVAL' && (
+        <div className="flex gap-2 mb-6 border-b border-slate-700/50 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'overview'
+                ? 'border-cyan-500 text-cyan-300'
+                : 'border-transparent text-slate-400 hover:text-cyan-400'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('loads')}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'loads'
+                ? 'border-cyan-500 text-cyan-300'
+                : 'border-transparent text-slate-400 hover:text-cyan-400'
+            }`}
+          >
+            Loads {metrics ? `(${metrics.metrics.totalLoads})` : ''}
+          </button>
+          <button
+            onClick={() => setActiveTab('performance')}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'performance'
+                ? 'border-cyan-500 text-cyan-300'
+                : 'border-transparent text-slate-400 hover:text-cyan-400'
+            }`}
+          >
+            Performance
+          </button>
+          <button
+            onClick={() => setActiveTab('earnings')}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'earnings'
+                ? 'border-cyan-500 text-cyan-300'
+                : 'border-transparent text-slate-400 hover:text-cyan-400'
+            }`}
+          >
+            Earnings
+          </button>
+          <button
+            onClick={() => setActiveTab('shifts')}
+            className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'shifts'
+                ? 'border-cyan-500 text-cyan-300'
+                : 'border-transparent text-slate-400 hover:text-cyan-400'
+            }`}
+          >
+            Shifts
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 bg-urgent-50 border-2 border-urgent-200 rounded-xl">
@@ -241,7 +330,9 @@ export default function AdminDriverReviewPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8 mb-8">
+      {/* Overview Tab or Pending Review */}
+      {(activeTab === 'overview' || driver.status === 'PENDING_APPROVAL') && (
+        <div className="grid lg:grid-cols-2 gap-8 mb-8">
         {/* Left: Driver Information */}
         <div className="space-y-6">
           <div className="glass-primary rounded-2xl p-6 border-2 border-blue-200/30 shadow-glass">
@@ -397,10 +488,190 @@ export default function AdminDriverReviewPage() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Action Buttons */}
-      <div className="sticky bottom-0 bg-gradient-medical-bg backdrop-blur-sm pt-4 pb-4 border-t border-blue-200/30 shadow-lg">
+      {/* Loads Tab */}
+      {activeTab === 'loads' && metrics && (
+        <div className="space-y-4 mb-8">
+          {metrics.loads.length === 0 ? (
+            <div className="glass-primary rounded-xl p-12 text-center border border-slate-700/50 shadow-lg">
+              <p className="text-slate-400">No loads found</p>
+            </div>
+          ) : (
+            metrics.loads.map((load: any) => (
+              <Link
+                key={load.id}
+                href={`/admin/loads/${load.id}`}
+                className="block glass-primary rounded-xl p-5 border border-slate-700/50 hover:border-cyan-500/50 hover:shadow-lg transition-all"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-mono font-bold text-cyan-400 text-lg font-data">{load.publicTrackingCode}</p>
+                    <p className="text-sm text-slate-300">
+                      {load.pickupFacility.city}, {load.pickupFacility.state} → {load.dropoffFacility.city}, {load.dropoffFacility.state}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">{formatDate(load.createdAt)}</p>
+                  </div>
+                  <div className="text-right">
+                    {load.quoteAmount && (
+                      <p className="font-bold text-white font-data">{formatCurrency(load.quoteAmount)}</p>
+                    )}
+                    <span className="text-xs text-slate-400">{load.status}</span>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Performance Tab */}
+      {activeTab === 'performance' && metrics && (
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">On-Time Delivery Rate</p>
+            <p className="text-3xl font-bold text-white font-data">{metrics.metrics.onTimeRate}%</p>
+            <p className="text-xs text-slate-400 mt-1">{metrics.metrics.completedLoads} completed loads</p>
+          </div>
+          <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">Average Rating</p>
+            <p className="text-3xl font-bold text-white font-data">
+              {metrics.metrics.averageRating > 0 ? `${metrics.metrics.averageRating}/5` : 'N/A'}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">{metrics.metrics.totalRatings} ratings</p>
+          </div>
+          <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+            <p className="text-sm text-slate-400 mb-1">Active Loads</p>
+            <p className="text-3xl font-bold text-white font-data">{metrics.metrics.activeLoads}</p>
+            <p className="text-xs text-slate-400 mt-1">Currently in progress</p>
+          </div>
+        </div>
+      )}
+
+      {/* Earnings Tab */}
+      {activeTab === 'earnings' && (
+        <div className="space-y-6 mb-8">
+          {isLoadingMetrics ? (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading earnings data...</p>
+              </div>
+            </div>
+          ) : !metrics ? (
+            <div className="glass-primary rounded-2xl p-8 border-2 border-blue-200/30 shadow-glass text-center">
+              <p className="text-gray-600 mb-4">Unable to load earnings data</p>
+              <button
+                onClick={() => admin && fetchMetrics(admin)}
+                className="px-4 py-2 bg-gradient-primary text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                  <p className="text-sm text-slate-400 mb-1">Total Earnings</p>
+                  <p className="text-3xl font-bold text-white font-data">{formatCurrency(metrics.metrics.totalEarnings)}</p>
+                </div>
+                <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                  <p className="text-sm text-slate-400 mb-1">Total Paid</p>
+                  <p className="text-3xl font-bold text-green-400 font-data">{formatCurrency(metrics.metrics.totalPaid)}</p>
+                </div>
+                <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                  <p className="text-sm text-slate-400 mb-1">Pending Payments</p>
+                  <p className="text-3xl font-bold text-yellow-400 font-data">{formatCurrency(metrics.metrics.pendingPayments)}</p>
+                </div>
+              </div>
+              {metrics.payments && metrics.payments.length > 0 ? (
+                <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+                  <h3 className="text-xl font-bold text-white mb-4">Payment History</h3>
+                  <div className="space-y-3">
+                    {metrics.payments.map((payment: any) => (
+                      <div key={payment.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-white">{formatCurrency(payment.amount)}</p>
+                            <p className="text-sm text-slate-400">{formatDate(payment.paymentDate)}</p>
+                            {payment.loadRequest && (
+                              <p className="text-xs text-slate-500 mt-1">Load: {payment.loadRequest.publicTrackingCode}</p>
+                            )}
+                          </div>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            payment.status === 'COMPLETED' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                            'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          }`}>
+                            {payment.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg text-center">
+                  <p className="text-slate-400">No payment history available</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Shifts Tab */}
+      {activeTab === 'shifts' && metrics && (
+        <div className="space-y-6 mb-8">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+              <p className="text-sm text-slate-400 mb-1">Total Shift Hours</p>
+              <p className="text-3xl font-bold text-white font-data">{metrics.metrics.totalShiftHours} hrs</p>
+            </div>
+            {metrics.metrics.activeShift && (
+              <div className="glass-primary rounded-xl p-6 border border-green-500/30 shadow-lg bg-green-500/10">
+                <p className="text-sm text-green-400 mb-1">Currently On Shift</p>
+                <p className="text-3xl font-bold text-green-400 font-data">
+                  {Math.round(metrics.metrics.activeShift.currentHours * 10) / 10} hrs
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Started: {formatDate(metrics.metrics.activeShift.clockIn)}
+                </p>
+              </div>
+            )}
+          </div>
+          {metrics.shifts.length > 0 && (
+            <div className="glass-primary rounded-xl p-6 border border-slate-700/50 shadow-lg">
+              <h3 className="text-xl font-bold text-white mb-4">Shift History</h3>
+              <div className="space-y-3">
+                {metrics.shifts.map((shift: any) => (
+                  <div key={shift.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-white">
+                          {formatDate(shift.clockIn)} - {shift.clockOut ? formatDate(shift.clockOut) : 'Ongoing'}
+                        </p>
+                        {shift.totalHours && (
+                          <p className="text-sm text-slate-400">{shift.totalHours} hours</p>
+                        )}
+                      </div>
+                      {!shift.clockOut && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action Buttons - Only show for pending drivers */}
+      {driver.status === 'PENDING_APPROVAL' && (
+        <div className="sticky bottom-0 bg-gradient-medical-bg backdrop-blur-sm pt-4 pb-4 border-t border-blue-200/30 shadow-lg">
         <div className="flex flex-col sm:flex-row gap-4 justify-end">
           <button
             onClick={() => setShowRejectModal(true)}
@@ -417,7 +688,8 @@ export default function AdminDriverReviewPage() {
             {isProcessing ? 'Processing...' : 'Approve Driver'}
           </button>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Reject Modal */}
       {showRejectModal && (

@@ -212,7 +212,12 @@ export default function ShippersPage() {
                 shippers.map((shipper) => (
                   <tr key={shipper.id} className="hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-white">{shipper.companyName}</div>
+                      <Link
+                        href={`/admin/shippers/${shipper.id}`}
+                        className="font-semibold text-white hover:text-cyan-400 transition-colors"
+                      >
+                        {shipper.companyName}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-slate-300">

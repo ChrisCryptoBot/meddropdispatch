@@ -323,29 +323,33 @@ export default function DispatchBoardPage() {
 
   return (
     <div className="h-[calc(100vh-85px)] flex flex-col px-6 md:px-8 pb-6 md:pb-8">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Visual Dispatch Board</h1>
-          <p className="text-slate-400">Real-time driver timeline and load assignments</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowMap(!showMap)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-              showMap
-                ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
-                : 'bg-slate-700/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/70'
-            }`}
-          >
-            {showMap ? 'Hide Map' : 'Show Map'}
-          </button>
-          <button
-            onClick={fetchDispatchData}
-            className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold border border-slate-600/50 hover:bg-slate-700/70 transition-colors"
-          >
-            Refresh
-          </button>
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-0 z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
+              Visual Dispatch Board
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base">Real-time driver timeline and load assignments</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                showMap
+                  ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-500/30'
+                  : 'bg-slate-700/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/70'
+              }`}
+            >
+              {showMap ? 'Hide Map' : 'Show Map'}
+            </button>
+            <button
+              onClick={fetchDispatchData}
+              className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-semibold border border-slate-600/50 hover:bg-slate-700/70 transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 

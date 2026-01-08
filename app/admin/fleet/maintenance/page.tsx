@@ -188,10 +188,14 @@ export default function FleetMaintenancePage() {
 
   return (
     <div className="px-6 md:px-8 pb-6 md:pb-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Fleet Maintenance Dashboard</h1>
-        <p className="text-slate-400">Monitor vehicle maintenance status and service intervals</p>
+      {/* Header - Gold Standard Sticky */}
+      <div className="sticky top-0 z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
+            Fleet Maintenance Dashboard
+          </h1>
+          <p className="text-slate-400 text-sm md:text-base">Monitor vehicle maintenance status and service intervals</p>
+        </div>
       </div>
 
       {/* Alert Banners */}

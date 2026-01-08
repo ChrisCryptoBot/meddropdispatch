@@ -63,6 +63,12 @@ export async function PATCH(
     const clockOutTime = new Date()
     const totalHours = (clockOutTime.getTime() - currentShift.clockIn.getTime()) / (1000 * 60 * 60)
 
+    // Get current driver status
+    const driver = await prisma.driver.findUnique({
+      where: { id: driverId },
+      select: { status: true },
+    })
+
     const updatedShift = await prisma.driverShift.update({
       where: { id: currentShift.id },
       data: {
@@ -70,6 +76,15 @@ export async function PATCH(
         totalHours: parseFloat(totalHours.toFixed(2)),
       },
     })
+
+    // Update driver status to OFF_DUTY when clocking out
+    // Only change if currently AVAILABLE or ON_ROUTE (and no active loads as checked above)
+    if (driver && (driver.status === 'AVAILABLE' || driver.status === 'ON_ROUTE')) {
+      await prisma.driver.update({
+        where: { id: driverId },
+        data: { status: 'OFF_DUTY' },
+      })
+    }
 
     // TIER 2.1: Update vehicle odometer with manual input if provided
     if (odometerReading !== undefined) {

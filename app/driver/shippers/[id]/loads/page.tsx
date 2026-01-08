@@ -205,7 +205,7 @@ export default function ShipperLoadsPage() {
     <div className="px-6 md:px-8 pb-6 md:pb-8">
       <div className="max-w-7xl mx-auto">
         {/* Header - Gold Standard Sticky */}
-        <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+        <div className="sticky top-[100px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
           <div className="flex items-center gap-4">
             <Link
               href="/driver/shippers"

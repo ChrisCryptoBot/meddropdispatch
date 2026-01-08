@@ -489,6 +489,12 @@ export default function AdminInvoicesPage() {
                     {formatCurrency(invoice.total)}
                   </div>
                   <div className="flex gap-2 flex-col">
+                    <Link
+                      href={`/admin/invoices/${invoice.id}`}
+                      className="px-3 py-1 text-sm bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded hover:shadow-xl hover:shadow-cyan-500/50 transition-all text-center shadow-lg shadow-cyan-500/30"
+                    >
+                      View Details
+                    </Link>
                     <button
                       onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}
                       className="px-3 py-1 text-sm bg-slate-700/50 text-slate-200 rounded hover:bg-slate-700 transition-colors border border-slate-600/50"

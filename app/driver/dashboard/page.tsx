@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { formatDateTime, formatDate } from '@/lib/utils'
+import { formatDateTime, formatDate, formatCurrency } from '@/lib/utils'
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS } from '@/lib/constants'
 import RateCalculator from '@/components/features/RateCalculator'
 import { showToast, showApiError } from '@/lib/toast'
@@ -104,6 +104,7 @@ export default function DriverDashboardPage() {
   const [pendingLoadId, setPendingLoadId] = useState<string | null>(null)
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('')
   const [enableLocationTracking, setEnableLocationTracking] = useState(false)
+  const [earnings, setEarnings] = useState<any>(null)
 
   // Get driver from layout's auth state - no need to duplicate auth check
   // The layout handles authentication, we just fetch data here
@@ -127,9 +128,10 @@ export default function DriverDashboardPage() {
         
         const driverData = authData.user
         setDriver(driverData)
-        // Fetch all loads and vehicles
+        // Fetch all loads, vehicles, and earnings
         fetchLoads(driverData.id)
         fetchVehicles(driverData.id)
+        fetchEarnings(driverData.id)
       } catch (error) {
         console.error('Error fetching driver data:', error)
         setIsLoading(false)
@@ -194,6 +196,53 @@ export default function DriverDashboardPage() {
     }
   }
 
+  const fetchEarnings = async (driverId: string) => {
+    try {
+      // Calculate earnings from completed loads
+      const response = await fetch(`/api/drivers/${driverId}/my-loads?status=DELIVERED&limit=1000`)
+      if (response.ok) {
+        const data = await response.json()
+        const completedLoads = data.loads || []
+        
+        const now = new Date()
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()))
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const startOfYear = new Date(now.getFullYear(), 0, 1)
+
+        const thisWeek = completedLoads.filter((l: Load) => 
+          new Date(l.createdAt) >= startOfWeek && l.quoteAmount
+        )
+        const thisMonth = completedLoads.filter((l: Load) => 
+          new Date(l.createdAt) >= startOfMonth && l.quoteAmount
+        )
+        const thisYear = completedLoads.filter((l: Load) => 
+          new Date(l.createdAt) >= startOfYear && l.quoteAmount
+        )
+
+        setEarnings({
+          total: completedLoads.reduce((sum: number, l: Load) => sum + (l.quoteAmount || 0), 0),
+          thisWeek: thisWeek.reduce((sum: number, l: Load) => sum + (l.quoteAmount || 0), 0),
+          thisMonth: thisMonth.reduce((sum: number, l: Load) => sum + (l.quoteAmount || 0), 0),
+          thisYear: thisYear.reduce((sum: number, l: Load) => sum + (l.quoteAmount || 0), 0),
+          completedLoads: completedLoads.length,
+        })
+      }
+
+      // Also fetch pending payments
+      const payoutsResponse = await fetch(`/api/drivers/${driverId}/payouts?status=PENDING`)
+      if (payoutsResponse.ok) {
+        const payoutsData = await payoutsResponse.json()
+        const pendingPayments = payoutsData.payouts?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0
+        setEarnings((prev: any) => ({
+          ...prev,
+          pendingPayments,
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching earnings:', error)
+    }
+  }
+
   const handleAcceptLoad = async (loadId: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -239,8 +288,9 @@ export default function DriverDashboardPage() {
         throw new Error(error.message || error.error || 'Failed to accept load')
       }
 
-      // Refresh loads
+      // Refresh loads and earnings
       await fetchLoads(driver.id)
+      await fetchEarnings(driver.id)
       setShowVehicleSelectModal(false)
       setPendingLoadId(null)
       setSelectedVehicleId('')
@@ -450,7 +500,7 @@ export default function DriverDashboardPage() {
   return (
     <div className="px-6 md:px-8 pb-6 md:pb-8 print:p-4">
       {/* Header - Gold Standard Sticky */}
-      <div className="sticky top-[85px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
+      <div className="sticky top-[100px] z-[55] mb-6 bg-slate-900/95 backdrop-blur-sm -mx-6 md:-mx-8 px-6 md:px-8 pt-4 pb-4 border-b border-slate-700/50">
         <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 tracking-tight">
           Load Board
         </h1>
@@ -484,6 +534,39 @@ export default function DriverDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Earnings Summary Widget */}
+      {earnings && (
+        <div className="glass-primary rounded-xl p-6 mb-6 border border-slate-700/50 shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">Earnings Summary</h2>
+            <Link
+              href="/driver/earnings"
+              className="text-sm text-cyan-400 hover:text-cyan-300 font-medium"
+            >
+              View Details →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <p className="text-xs text-slate-400 mb-1">This Week</p>
+              <p className="text-2xl font-bold text-white font-data">{formatCurrency(earnings.thisWeek || 0)}</p>
+            </div>
+            <div className="text-center p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <p className="text-xs text-slate-400 mb-1">This Month</p>
+              <p className="text-2xl font-bold text-white font-data">{formatCurrency(earnings.thisMonth || 0)}</p>
+            </div>
+            <div className="text-center p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <p className="text-xs text-slate-400 mb-1">Total Earned</p>
+              <p className="text-2xl font-bold text-white font-data">{formatCurrency(earnings.total || 0)}</p>
+            </div>
+            <div className="text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+              <p className="text-xs text-yellow-400 mb-1">Pending</p>
+              <p className="text-2xl font-bold text-yellow-400 font-data">{formatCurrency(earnings.pendingPayments || 0)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats Cards - Uniform Professional Style */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

@@ -21,26 +21,92 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
   const [showOdometerModal, setShowOdometerModal] = useState(false)
   const [odometerReading, setOdometerReading] = useState('')
   const [actionType, setActionType] = useState<'clock-in' | 'clock-out'>('clock-in')
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [fetchError, setFetchError] = useState(false)
+
+  // Load shift from localStorage on mount (backup if API fails)
+  useEffect(() => {
+    const storedShift = localStorage.getItem(`driver_${driverId}_shift`)
+    if (storedShift) {
+      try {
+        const parsed = JSON.parse(storedShift)
+        // Only use stored shift if it's recent (within last 24 hours)
+        const clockInTime = new Date(parsed.clockIn).getTime()
+        const now = Date.now()
+        const hoursSinceClockIn = (now - clockInTime) / (1000 * 60 * 60)
+        if (hoursSinceClockIn < 24 && !parsed.clockOut) {
+          setCurrentShift(parsed)
+        } else {
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        }
+      } catch (e) {
+        // Invalid stored data, remove it
+        localStorage.removeItem(`driver_${driverId}_shift`)
+      }
+    }
+  }, [driverId])
 
   // Fetch current shift status
   useEffect(() => {
     fetchCurrentShift()
-    // Poll every 30 seconds to update current hours
+    // Poll every 30 seconds to update current hours from server
     const interval = setInterval(fetchCurrentShift, 30000)
     return () => clearInterval(interval)
   }, [driverId])
 
+  // Live timer that updates every second when clocked in
+  useEffect(() => {
+    if (!currentShift) {
+      setElapsedTime(0)
+      return
+    }
+
+    // Calculate initial elapsed time from clock in
+    const calculateElapsed = () => {
+      const clockInTime = new Date(currentShift.clockIn).getTime()
+      const now = Date.now()
+      return Math.floor((now - clockInTime) / 1000) // seconds
+    }
+
+    setElapsedTime(calculateElapsed())
+
+    // Update every second
+    const timer = setInterval(() => {
+      setElapsedTime(calculateElapsed())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [currentShift])
+
   const fetchCurrentShift = async () => {
     try {
+      setFetchError(false)
       const response = await fetch(`/api/drivers/${driverId}/shifts/current`, {
         credentials: 'include',
       })
       if (response.ok) {
         const data = await response.json()
-        setCurrentShift(data.currentShift)
+        const shift = data.shift || null
+        
+        // Update localStorage backup
+        if (shift && !shift.clockOut) {
+          localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(shift))
+        } else {
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        }
+        
+        // Only update if we got a valid response (don't clear on network errors)
+        setCurrentShift(shift)
+      } else if (response.status === 401) {
+        // Session expired - but keep showing shift if we have one (user might still be clocked in)
+        // Don't clear the shift on auth errors
+        console.warn('Session expired, but keeping shift display')
       }
     } catch (error) {
       console.error('Error fetching shift status:', error)
+      setFetchError(true)
+      // Don't clear currentShift on network errors - keep showing what we have
+      // The shift state persists from localStorage or previous successful fetch
     }
   }
 
@@ -79,15 +145,35 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
 
       if (response.ok) {
         const data = await response.json()
-        showToast.success(data.message || (actionType === 'clock-in' ? 'Clocked in successfully' : 'Clocked out successfully'))
+        if (actionType === 'clock-out' && data.shift?.totalHours) {
+          const hours = Math.floor(data.shift.totalHours)
+          const minutes = Math.floor((data.shift.totalHours - hours) * 60)
+          const timeWorked = hours > 0 
+            ? `${hours}h ${minutes}m` 
+            : `${minutes}m`
+          showToast.success(`Clocked out successfully. Time worked: ${timeWorked}`)
+          setCurrentShift(null)
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        } else if (actionType === 'clock-in') {
+          showToast.success(data.message || 'Clocked in successfully')
+          if (data.shift) {
+            localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(data.shift))
+          }
+        } else {
+          showToast.success(data.message || 'Clocked out successfully')
+          setCurrentShift(null)
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        }
         setShowOdometerModal(false)
         setOdometerReading('')
         await fetchCurrentShift()
       } else {
         const error = await response.json()
+        // Don't clear shift on error - preserve state
         showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
       }
     } catch (error) {
+      // Don't clear shift on network errors
       showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
     } finally {
       setIsLoading(false)
@@ -107,6 +193,17 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
     return `${h}h ${m}m`
   }
 
+  const formatElapsedTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
   return (
     <>
       <div className="flex items-center gap-2">
@@ -121,11 +218,21 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
             Clock In
           </button>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-2 bg-slate-800/50 rounded-lg border border-green-500/30">
-              <div className="text-xs text-slate-400">On Shift</div>
-              <div className="text-sm font-semibold text-green-400">
-                {formatTime(currentShift.clockIn)} - {formatHours(currentShift.currentHours)}
+          <div className="flex items-center gap-3">
+            <div className="px-4 py-2.5 bg-slate-800/50 rounded-lg border border-green-500/30">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="text-xs text-slate-400">On Shift</div>
+                {fetchError && (
+                  <div className="text-xs text-yellow-400" title="Unable to sync with server, showing cached shift">
+                    ⚠
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-slate-500">{formatTime(currentShift.clockIn)}</div>
+                <div className="text-2xl font-mono font-bold text-green-400 tracking-wider">
+                  {formatElapsedTime(elapsedTime)}
+                </div>
               </div>
             </div>
             <button
@@ -144,7 +251,16 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
 
       {/* Odometer Input Modal */}
       {showOdometerModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowOdometerModal(false)}>
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" 
+          onClick={() => {
+            // Only allow closing if not loading and it's not critical (clock out can be cancelled)
+            if (!isLoading) {
+              setShowOdometerModal(false)
+              setOdometerReading('')
+            }
+          }}
+        >
           <div className="glass-primary p-8 rounded-2xl max-w-md w-full border border-slate-700/50 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold text-white mb-4">
               {actionType === 'clock-in' ? 'Clock In' : 'Clock Out'}
@@ -200,23 +316,47 @@ export default function ShiftClockWidget({ driverId }: ShiftClockWidgetProps) {
                       body.odometerReading = parseInt(odometerReading)
                     }
 
-                    const response = await fetch(endpoint, {
-                      method,
-                      headers: { 'Content-Type': 'application/json' },
-                      credentials: 'include',
-                      body: JSON.stringify(body),
-                    })
+      const response = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      })
 
-                    if (response.ok) {
-                      const data = await response.json()
-                      showToast.success(data.message || (actionType === 'clock-in' ? 'Clocked in successfully' : 'Clocked out successfully'))
-                      setShowOdometerModal(false)
-                      setOdometerReading('')
-                      await fetchCurrentShift()
-                    } else {
-                      const error = await response.json()
-                      showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
-                    }
+      if (response.ok) {
+        const data = await response.json()
+        if (actionType === 'clock-out' && data.shift?.totalHours) {
+          const hours = Math.floor(data.shift.totalHours)
+          const minutes = Math.floor((data.shift.totalHours - hours) * 60)
+          const timeWorked = hours > 0 
+            ? `${hours}h ${minutes}m` 
+            : `${minutes}m`
+          showToast.success(`Clocked out successfully. Time worked: ${timeWorked}`)
+          // Clear shift and localStorage on successful clock out
+          setCurrentShift(null)
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        } else if (actionType === 'clock-in') {
+          showToast.success(data.message || 'Clocked in successfully')
+          // Store new shift in localStorage
+          if (data.shift) {
+            localStorage.setItem(`driver_${driverId}_shift`, JSON.stringify(data.shift))
+          }
+        } else {
+          showToast.success(data.message || 'Clocked out successfully')
+          // Clear shift on clock out
+          setCurrentShift(null)
+          localStorage.removeItem(`driver_${driverId}_shift`)
+        }
+        setShowOdometerModal(false)
+        setOdometerReading('')
+        await fetchCurrentShift()
+      } else {
+        const error = await response.json()
+        // If clock-out fails, don't clear the shift - keep showing it
+        // If clock-in fails, user can try again
+        showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
+        // Don't clear currentShift on error - preserve the current state
+      }
                   } catch (error) {
                     showApiError(error, actionType === 'clock-in' ? 'Failed to clock in' : 'Failed to clock out')
                   } finally {
